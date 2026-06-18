@@ -2,10 +2,10 @@ import { Link } from "@tanstack/react-router";
 import { HavenlySearch } from "@/components/home/havenly-search";
 import { AiSearchField } from "@/components/ai-search-field";
 import { PublicHeader, type HomeTab } from "@/components/public-header";
-import { Typewriter } from "@/components/typewriter";
+import { FadePhrases } from "@/components/fade-phrases";
 import { Map } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { HAVENLY_HERO_IMAGE } from "@/lib/constants";
+import { HeroKenyaGallery } from "@/components/kenya-gallery-provider";
 
 const HERO_PHRASES = [
   "Your Next Investment, Simplified",
@@ -31,13 +31,11 @@ const BUY_PHRASES = [
 type HavenlyHeroProps = {
   homeTab: HomeTab;
   onHomeTabChange: (tab: HomeTab) => void;
-  heroImage?: string;
 };
 
 export function HavenlyHero({
   homeTab,
   onHomeTabChange,
-  heroImage = HAVENLY_HERO_IMAGE,
 }: HavenlyHeroProps) {
   const phrases =
     homeTab === "rent" ? RENT_PHRASES : homeTab === "buy" ? BUY_PHRASES : HERO_PHRASES;
@@ -52,24 +50,19 @@ export function HavenlyHero({
   return (
     <div className="p-1.5 sm:p-4 md:p-5 lg:p-6">
       <div className="relative mx-auto flex min-h-[min(78vh,680px)] w-full max-w-[1440px] flex-col overflow-hidden rounded-[20px] sm:min-h-[min(85vh,820px)] sm:rounded-[40px] md:rounded-[48px]">
-        <img
-          key={heroImage}
-          src={heroImage}
-          alt=""
-          className="absolute inset-0 h-full w-full object-cover"
-          fetchPriority="high"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-black/35" />
-        <div className="absolute inset-0 bg-gradient-to-r from-black/50 via-transparent to-transparent" />
+        <HeroKenyaGallery />
+        {/* Light overlays — keep photos bright, darken only where text sits */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/5 to-transparent" />
+        <div className="absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-black/30 to-transparent sm:h-32" />
 
         <PublicHeader variant="overlay" homeTab={homeTab} onHomeTabChange={onHomeTabChange} />
 
         <div className="relative z-10 mt-auto px-4 pb-4 sm:px-8 sm:pb-6 lg:px-10 lg:pb-8">
           <div className="max-w-2xl">
-            <h1 className="min-h-[2.4em] text-2xl font-bold leading-[1.1] tracking-tight text-white sm:min-h-[1.3em] sm:text-5xl md:text-6xl lg:text-[3.5rem]">
-              <Typewriter key={homeTab} phrases={phrases} />
+            <h1 className="min-h-[2.4em] text-2xl font-bold leading-[1.1] tracking-tight text-white drop-shadow-md sm:min-h-[1.3em] sm:text-5xl md:text-6xl lg:text-[3.5rem]">
+              <FadePhrases key={homeTab} phrases={phrases} />
             </h1>
-            <p className="mt-2 max-w-md text-[13px] leading-relaxed text-white/70 sm:mt-4 sm:text-base">
+            <p className="mt-2 max-w-md text-[13px] leading-relaxed text-white/90 drop-shadow sm:mt-4 sm:text-base">
               {subtitle}
             </p>
           </div>
@@ -81,7 +74,7 @@ export function HavenlyHero({
                 <Button
                   variant="secondary"
                   size="sm"
-                  className="h-11 gap-2 rounded-full border-white/20 bg-black/40 px-4 text-white backdrop-blur hover:bg-black/60"
+                  className="h-11 gap-2 rounded-full border-white/40 bg-white/90 px-4 text-neutral-900 shadow-sm backdrop-blur hover:bg-white"
                 >
                   <Map className="h-4 w-4 shrink-0" />
                   View map

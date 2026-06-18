@@ -7,6 +7,7 @@ import {
   deleteProperty,
   upsertProperty,
   setPropertyPublished,
+  setPropertyFeatured,
 } from "@/lib/properties.functions";
 import { useAdminAuth } from "@/hooks/use-admin-auth";
 import { useEffect, useState } from "react";
@@ -24,7 +25,7 @@ import {
 } from "@/components/ui/dialog";
 import { formatPrice, propertyTypeLabel } from "@/lib/format";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, ExternalLink } from "lucide-react";
+import { Plus, Pencil, Trash2, ExternalLink, Star } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { BRAND } from "@/lib/constants";
 
@@ -42,6 +43,7 @@ function AdminProperties() {
   const remove = useServerFn(deleteProperty);
   const save = useServerFn(upsertProperty);
   const publish = useServerFn(setPropertyPublished);
+  const feature = useServerFn(setPropertyFeatured);
   const [createOpen, setCreateOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
 
@@ -76,6 +78,16 @@ function AdminProperties() {
     onSuccess: (row) => {
       qc.invalidateQueries({ queryKey: ["admin-properties"] });
       toast.success(row.is_published ? "Property is now live on the public site" : "Property unpublished (draft)");
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const featureMut = useMutation({
+    mutationFn: ({ id, is_featured }: { id: string; is_featured: boolean }) =>
+      feature({ data: { id, is_featured } }),
+    onSuccess: (row) => {
+      qc.invalidateQueries({ queryKey: ["admin-properties"] });
+      toast.success(row.is_featured ? "Property featured" : "Property unfeatured");
     },
     onError: (e) => toast.error(e.message),
   });
@@ -140,16 +152,17 @@ function AdminProperties() {
               <th className="px-4 py-3">Type</th>
               <th className="px-4 py-3">Price</th>
               <th className="px-4 py-3">Map</th>
+              <th className="px-4 py-3">Featured</th>
               <th className="px-4 py-3">Status</th>
               <th className="px-4 py-3 text-right">Actions</th>
             </tr>
           </thead>
           <tbody>
             {isLoading && (
-              <tr><td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">Loading…</td></tr>
+              <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">Loading…</td></tr>
             )}
             {!isLoading && rows.length === 0 && (
-              <tr><td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">No properties yet — add your first listing.</td></tr>
+              <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">No properties yet — add your first listing.</td></tr>
             )}
             {rows.map((p) => (
               <tr key={p.id} className="border-b border-border/60 last:border-0">
@@ -163,6 +176,26 @@ function AdminProperties() {
                   <Badge variant={p.latitude != null ? "default" : "secondary"} className="text-xs">
                     {p.latitude != null ? "On map" : "No coords"}
                   </Badge>
+                </td>
+                <td className="px-4 py-3">
+                  <div className="flex flex-col items-start gap-1.5">
+                    <Badge
+                      variant={p.is_featured ? "default" : "secondary"}
+                      className={p.is_featured ? "gap-1 bg-amber-500 text-black hover:bg-amber-500" : "text-xs"}
+                    >
+                      {p.is_featured && <Star className="h-3 w-3 fill-current" />}
+                      {p.is_featured ? "Featured" : "Standard"}
+                    </Badge>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-7 rounded-full text-xs"
+                      disabled={featureMut.isPending}
+                      onClick={() => featureMut.mutate({ id: p.id, is_featured: !p.is_featured })}
+                    >
+                      {p.is_featured ? "Unfeature" : "Feature"}
+                    </Button>
+                  </div>
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex flex-col items-start gap-1.5">

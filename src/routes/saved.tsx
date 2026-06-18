@@ -34,24 +34,24 @@ function SavedPage() {
   return (
     <SiteLayout>
       <section className="page-panel">
-        <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">Saved properties</h1>
-        <p className="mt-2 text-sm text-white/50">Your shortlist across all devices when signed in.</p>
+        <h1 className="text-2xl font-bold tracking-tight text-neutral-900 sm:text-3xl">Saved properties</h1>
+        <p className="mt-2 text-sm text-neutral-600">Your shortlist across all devices when signed in.</p>
         {!user && !loading && (
-          <div className="mt-8 rounded-2xl border border-dashed border-white/15 px-4 py-8 text-center sm:mt-12 sm:p-12">
-            <p className="text-base font-medium text-white sm:text-lg">Sign in to see saved listings</p>
+          <div className="mt-8 rounded-2xl border border-dashed border-neutral-300 px-4 py-8 text-center sm:mt-12 sm:p-12">
+            <p className="text-base font-medium text-neutral-900 sm:text-lg">Sign in to see saved listings</p>
             <Button
-              className="mt-4 h-11 rounded-full bg-[#c6f135] px-6 text-[#0a0a0a] hover:bg-[#d4ff4a]"
+              className="mt-4 h-11 rounded-full bg-neutral-900 px-6 text-white hover:bg-neutral-800"
               onClick={() => setAuthOpen(true)}
             >
               Create account
             </Button>
           </div>
         )}
-        {user && isLoading && <div className="mt-8 h-48 animate-pulse rounded-xl bg-white/5" />}
+        {user && isLoading && <div className="mt-8 h-48 animate-pulse rounded-xl bg-neutral-100" />}
         {user && !isLoading && properties.length === 0 && (
-          <div className="mt-8 rounded-2xl border border-dashed border-white/15 px-4 py-8 text-center text-white/50 sm:mt-12 sm:p-12">
+          <div className="mt-8 rounded-2xl border border-dashed border-neutral-300 px-4 py-8 text-center text-neutral-600 sm:mt-12 sm:p-12">
             No saved properties yet. Browse the{" "}
-            <Link to="/properties" className="inline-flex min-h-[44px] items-center text-[#c6f135] underline">
+            <Link to="/properties" className="inline-flex min-h-[44px] items-center text-blue-600 underline">
               collection
             </Link>{" "}
             and tap Save.

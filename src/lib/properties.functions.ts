@@ -22,6 +22,7 @@ const FilterSchema = z.object({
   limit: z.number().int().min(1).max(100).optional(),
   offset: z.number().int().min(0).optional(),
   featuredOnly: z.boolean().optional(),
+  slugs: z.array(z.string().max(120)).max(25).optional(),
 });
 
 export type PropertyFilters = z.infer<typeof FilterSchema>;
@@ -44,13 +45,29 @@ export const listProperties = createServerFn({ method: "POST" })
       .range(offset, offset + limit - 1);
 
     if (data.propertyType && data.propertyType !== "any") q = q.eq("property_type", data.propertyType);
-    if (data.listingType && data.listingType !== "any") q = q.eq("listing_type", data.listingType);
+    if (data.listingType && data.listingType !== "any") {
+      q =
+        data.listingType === "rent"
+          ? q.in("listing_type", ["rent", "short_let"])
+          : q.eq("listing_type", data.listingType);
+    }
     if (data.minPrice != null) q = q.gte("price", data.minPrice);
     if (data.maxPrice != null) q = q.lte("price", data.maxPrice);
     if (data.bedrooms != null) q = q.gte("bedrooms", data.bedrooms);
     if (data.bathrooms != null) q = q.gte("bathrooms", data.bathrooms);
     if (data.city) q = q.ilike("city", `%${sanitizeFilter(data.city)}%`);
     if (data.featuredOnly) q = q.eq("is_featured", true);
+    if (data.slugs?.length) {
+      const slugList = data.slugs.filter((s) => !UUID_RE.test(s));
+      const idList = data.slugs.filter((s) => UUID_RE.test(s));
+      if (slugList.length && idList.length) {
+        q = q.or(`slug.in.(${slugList.join(",")}),id.in.(${idList.join(",")})`);
+      } else if (slugList.length) {
+        q = q.in("slug", slugList);
+      } else if (idList.length) {
+        q = q.in("id", idList);
+      }
+    }
     if (data.query) {
       const sq = sanitizeFilter(data.query);
       q = q.or(`title.ilike.%${sq}%,description.ilike.%${sq}%,city.ilike.%${sq}%`);
@@ -61,15 +78,20 @@ export const listProperties = createServerFn({ method: "POST" })
     return { rows: rows ?? [], total: count ?? 0 };
   });
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export const getPropertyBySlug = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => z.object({ slug: z.string().max(120) }).parse(input))
   .handler(async ({ data }) => {
-    const { data: row, error } = await supabaseAnonServer
+    const base = supabaseAnonServer
       .from("properties")
       .select("*, agents(id, name, email, phone, whatsapp, agency, bio, photo_url)")
-      .eq("slug", data.slug)
-      .eq("is_published", true)
-      .maybeSingle();
+      .eq("is_published", true);
+
+    const { data: row, error } = UUID_RE.test(data.slug)
+      ? await base.eq("id", data.slug).maybeSingle()
+      : await base.eq("slug", data.slug).maybeSingle();
+
     if (error) throw error;
     return row;
   });
@@ -216,6 +238,22 @@ export const setPropertyPublished = createServerFn({ method: "POST" })
       .update({ is_published: data.is_published })
       .eq("id", data.id)
       .select("id, slug, is_published")
+      .single();
+    if (error) throw error;
+    return row;
+  });
+
+export const setPropertyFeatured = createServerFn({ method: "POST" })
+  .middleware([requireAdminAuth])
+  .inputValidator((input: unknown) =>
+    z.object({ id: z.string().uuid(), is_featured: z.boolean() }).parse(input),
+  )
+  .handler(async ({ data }) => {
+    const { data: row, error } = await supabaseAdmin
+      .from("properties")
+      .update({ is_featured: data.is_featured })
+      .eq("id", data.id)
+      .select("id, slug, is_featured")
       .single();
     if (error) throw error;
     return row;

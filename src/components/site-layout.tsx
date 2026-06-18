@@ -4,16 +4,23 @@ export function SiteLayout({
   children,
   className = "",
   showFooter = true,
+  compactHeader = false,
+  mainClassName = "",
+  overflowVisible = false,
 }: {
   children: React.ReactNode;
   className?: string;
   showFooter?: boolean;
+  compactHeader?: boolean;
+  mainClassName?: string;
+  overflowVisible?: boolean;
 }) {
+  const overflow = overflowVisible ? "overflow-visible" : "overflow-x-hidden";
   return (
-    <div className={`flex min-h-screen flex-col overflow-x-hidden bg-[#c8c8c8] ${className}`}>
-      <div className="flex min-h-screen flex-1 flex-col overflow-x-hidden rounded-none bg-[#0a0a0a] sm:m-3 sm:rounded-[32px] md:m-4 md:rounded-[40px] lg:m-5 lg:rounded-[48px]">
-        <SiteHeader />
-        <main className="flex-1 overflow-x-hidden text-white">{children}</main>
+    <div className={`flex min-h-screen flex-col ${overflow} bg-[#f8fafc] ${className}`}>
+      <div className={`flex min-h-screen flex-1 flex-col ${overflow} bg-white`}>
+        <SiteHeader compact={compactHeader} />
+        <main className={`flex-1 text-neutral-900 ${mainClassName || overflow}`}>{children}</main>
         {showFooter && <SiteFooter />}
       </div>
     </div>

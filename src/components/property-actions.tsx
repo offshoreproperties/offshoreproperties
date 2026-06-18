@@ -100,8 +100,8 @@ export function PropertyActions({ propertyId }: { propertyId: string }) {
           className={cn(
             "flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium transition active:scale-95 sm:px-3 sm:py-1.5 sm:text-xs",
             mine?.liked
-              ? "bg-red-500/15 text-red-400"
-              : "bg-white/5 text-white/50 hover:bg-white/10 hover:text-white/80",
+              ? "bg-red-50 text-red-600"
+              : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200 hover:text-neutral-900",
           )}
           disabled={authLoading || likeMut.isPending}
           onClick={() => requireAuth(() => likeMut.mutate())}
@@ -114,8 +114,8 @@ export function PropertyActions({ propertyId }: { propertyId: string }) {
           className={cn(
             "flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium transition active:scale-95 sm:px-3 sm:py-1.5 sm:text-xs",
             mine?.saved
-              ? "bg-[#c6f135]/15 text-[#c6f135]"
-              : "bg-white/5 text-white/50 hover:bg-white/10 hover:text-white/80",
+              ? "bg-blue-50 text-blue-600"
+              : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200 hover:text-neutral-900",
           )}
           disabled={authLoading || saveMut.isPending}
           onClick={() => requireAuth(() => saveMut.mutate())}

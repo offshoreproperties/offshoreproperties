@@ -10,20 +10,21 @@ import {
   Scripts,
 } from "@tanstack/react-router";
 import { Toaster } from "@/components/ui/sonner";
+import { KenyaGalleryProvider } from "@/components/kenya-gallery-provider";
 import { BRAND } from "@/lib/constants";
 import appCss from "../styles.css?url";
 
 function NotFoundComponent() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-[#0a0a0a] px-4 text-white">
-      <p className="text-xs uppercase tracking-[0.28em] text-[#c6f135]">404</p>
+      <p className="text-xs uppercase tracking-[0.28em] text-[#2563eb]">404</p>
       <h1 className="mt-4 text-5xl font-bold">Page not found</h1>
       <p className="mt-3 max-w-sm text-center text-sm text-white/50">
         The page you&apos;re looking for doesn&apos;t exist or has been moved.
       </p>
       <Link
         to="/"
-        className="mt-8 inline-flex h-11 items-center rounded-full bg-[#c6f135] px-8 text-xs font-semibold uppercase tracking-wider text-[#0a0a0a] hover:bg-[#d4ff4a]"
+        className="mt-8 inline-flex h-11 items-center rounded-full bg-neutral-900 px-8 text-xs font-semibold uppercase tracking-wider text-white hover:bg-neutral-800"
       >
         Return home
       </Link>
@@ -52,7 +53,7 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
             router.invalidate();
             reset();
           }}
-          className="inline-flex h-11 items-center rounded-full bg-[#c6f135] px-6 text-xs font-semibold uppercase tracking-wider text-[#0a0a0a]"
+          className="inline-flex h-11 items-center rounded-full bg-neutral-900 px-6 text-xs font-semibold uppercase tracking-wider text-white hover:bg-neutral-800"
         >
           Try again
         </button>
@@ -121,9 +122,11 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <ScrollToTop />
-      <Outlet />
-      <Toaster position="top-center" richColors closeButton />
+      <KenyaGalleryProvider>
+        <ScrollToTop />
+        <Outlet />
+        <Toaster position="top-center" richColors closeButton />
+      </KenyaGalleryProvider>
     </QueryClientProvider>
   );
 }

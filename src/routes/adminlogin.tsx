@@ -69,14 +69,14 @@ function AdminLoginPage() {
           <Button
             type="submit"
             disabled={loading}
-            className="h-12 w-full rounded-full bg-[#c6f135] text-sm font-semibold text-[#0a0a0a] hover:bg-[#d4ff4a]"
+            className="h-12 w-full rounded-full bg-neutral-900 text-sm font-semibold text-white hover:bg-neutral-800"
           >
             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Continue
           </Button>
         </form>
         <p className="mt-6 text-center text-xs text-white/40">
-          <Link to="/" className="text-[#c6f135] hover:underline">
+          <Link to="/" className="text-[#2563eb] hover:underline">
             ← Back to website
           </Link>
         </p>

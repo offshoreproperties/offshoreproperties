@@ -93,7 +93,7 @@ export function EnquiryForm({
       <Button
         type="submit"
         disabled={loading}
-        className="w-full rounded-full bg-[#c6f135] font-semibold uppercase tracking-wider text-[#0a0a0a] hover:bg-[#d4ff4a]"
+        className="w-full rounded-full bg-neutral-900 font-semibold uppercase tracking-wider text-white hover:bg-neutral-800"
       >
         {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
         Send enquiry

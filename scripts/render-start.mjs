@@ -39,7 +39,17 @@ const ENV_KEYS = [
   "ADMIN_PASSWORD",
   "VITE_GOOGLE_MAPS_API_KEY",
   "VITE_GOOGLE_MAP_ID",
+  "GOOGLE_MAPS_API_KEY",
+  "ANTHROPIC_API_KEY",
+  "ANTHROPIC_MODEL",
+  "OPENAI_API_KEY",
+  "OPENAI_MODEL",
+  "GEMINI_API_KEY",
+  "GOOGLE_AI_API_KEY",
+  "GOOGLE_GENERATIVE_AI_API_KEY",
+  "GEMINI_MODEL",
   "LOVABLE_API_KEY",
+  "LOVABLE_MODEL",
 ];
 
 const devVarsPath = path.join(root, "dist", "server", ".dev.vars");

@@ -161,7 +161,7 @@ export function AuthDialog({
             <Button
               type="submit"
               disabled={loading}
-              className="w-full rounded-full bg-[#c6f135] text-[#0a0a0a] hover:bg-[#d4ff4a]"
+              className="w-full rounded-full bg-neutral-900 text-white hover:bg-neutral-800"
             >
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Send reset link
@@ -248,7 +248,7 @@ export function AuthDialog({
               <Button
                 type="submit"
                 disabled={loading || googleLoading}
-                className="w-full rounded-full bg-[#c6f135] text-[#0a0a0a] hover:bg-[#d4ff4a]"
+                className="w-full rounded-full bg-neutral-900 text-white hover:bg-neutral-800"
               >
                 {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {mode === "signup" ? "Create account" : "Sign in with email"}

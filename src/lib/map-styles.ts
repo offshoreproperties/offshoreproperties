@@ -1,5 +1,5 @@
 export const MAP_PIN_COLORS: Record<string, string> = {
-  villa: "#c6f135",
+  villa: "#2563eb",
   apartment: "#60a5fa",
   townhouse: "#f472b6",
   land: "#fbbf24",

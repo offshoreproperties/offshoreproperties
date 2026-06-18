@@ -31,8 +31,8 @@ export function HomeTabStrip({
             className={cn(
               "shrink-0 rounded-full px-4 py-1.5 text-xs font-medium transition",
               active === tab.id
-                ? "bg-[#c6f135] text-[#0a0a0a]"
-                : "bg-[#141414] text-white/80 ring-1 ring-white/10",
+                ? "bg-white text-neutral-900"
+                : "bg-white/80 text-neutral-700 ring-1 ring-black/10",
             )}
           >
             {tab.label}

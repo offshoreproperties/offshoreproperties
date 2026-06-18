@@ -6,23 +6,35 @@ export function SectionHeading({
   description,
   className,
   align = "left",
+  variant = "dark",
 }: {
   eyebrow?: string;
   title: string;
   description?: string;
   className?: string;
   align?: "left" | "center";
+  variant?: "dark" | "light";
 }) {
+  const light = variant === "light";
   return (
     <div className={cn(align === "center" && "text-center", className)}>
       {eyebrow && (
-        <p className="text-xs font-medium uppercase tracking-[0.28em] text-[#c6f135]">{eyebrow}</p>
+        <p className={cn("text-xs font-semibold uppercase tracking-[0.28em]", light ? "text-[#64748b]" : "text-[#2563eb]")}>
+          {eyebrow}
+        </p>
       )}
-      <h2 className="mt-3 text-3xl font-bold tracking-tight text-white sm:text-4xl md:text-5xl text-balance">
+      <h2
+        className={cn(
+          "mt-3 text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl text-balance",
+          light ? "text-[#0a0a0a]" : "text-white",
+        )}
+      >
         {title}
       </h2>
       {description && (
-        <p className="mt-4 max-w-2xl text-sm leading-relaxed text-white/55 sm:text-base">{description}</p>
+        <p className={cn("mt-4 max-w-2xl text-sm leading-relaxed sm:text-base", light ? "text-black/55" : "text-white/55")}>
+          {description}
+        </p>
       )}
     </div>
   );

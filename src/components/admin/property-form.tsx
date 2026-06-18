@@ -219,29 +219,56 @@ export function PropertyForm({
 
   return (
     <form onSubmit={handleSave} className="space-y-6">
-      <div
-        className={`rounded-xl border p-4 ${
-          isPublished
-            ? "border-[#c6f135]/50 bg-[#c6f135]/10"
-            : "border-amber-500/40 bg-amber-500/10"
-        }`}
-      >
-        <label className="flex cursor-pointer items-start gap-3">
-          <input
-            type="checkbox"
-            className="mt-1"
-            checked={isPublished}
-            onChange={(e) => setIsPublished(e.target.checked)}
-          />
-          <span>
-            <span className="font-medium text-foreground">Publish on public site</span>
-            <span className="mt-0.5 block text-sm text-muted-foreground">
-              {isPublished
-                ? "This listing will appear on /properties, the homepage, and search."
-                : "Draft — saved in admin only until you check this box."}
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div
+          className={`rounded-xl border p-4 ${
+            isPublished
+              ? "border-[#2563eb]/50 bg-neutral-900/10"
+              : "border-amber-500/40 bg-amber-500/10"
+          }`}
+        >
+          <label className="flex cursor-pointer items-start gap-3">
+            <input
+              type="checkbox"
+              className="mt-1"
+              checked={isPublished}
+              onChange={(e) => setIsPublished(e.target.checked)}
+            />
+            <span>
+              <span className="font-medium text-foreground">Publish on public site</span>
+              <span className="mt-0.5 block text-sm text-muted-foreground">
+                {isPublished
+                  ? "Visible on /properties, the homepage, and search."
+                  : "Draft — saved in admin only until you check this."}
+              </span>
             </span>
-          </span>
-        </label>
+          </label>
+        </div>
+
+        <div
+          className={`rounded-xl border p-4 ${
+            isFeatured
+              ? "border-amber-400/60 bg-amber-400/10"
+              : "border-border bg-muted/30"
+          }`}
+        >
+          <label className="flex cursor-pointer items-start gap-3">
+            <input
+              type="checkbox"
+              className="mt-1"
+              checked={isFeatured}
+              onChange={(e) => setIsFeatured(e.target.checked)}
+            />
+            <span>
+              <span className="font-medium text-foreground">Feature this property</span>
+              <span className="mt-0.5 block text-sm text-muted-foreground">
+                {isFeatured
+                  ? "Shows a star badge and appears first in listings."
+                  : "Standard listing — not highlighted on the homepage."}
+              </span>
+            </span>
+          </label>
+        </div>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
@@ -424,11 +451,6 @@ export function PropertyForm({
         </div>
       </div>
 
-      <label className="flex items-center gap-2 text-sm">
-        <input type="checkbox" checked={isFeatured} onChange={(e) => setIsFeatured(e.target.checked)} />
-        Featured on homepage
-      </label>
-
       <div className="flex gap-3">
         {onCancel && (
           <Button type="button" variant="outline" className="flex-1" onClick={onCancel}>
@@ -504,7 +526,7 @@ function DraggableImageGrid({
           onDrop={(e) => handleDrop(e, idx)}
           onDragEnd={handleDragEnd}
           className={`group relative aspect-square cursor-grab overflow-hidden rounded-lg bg-muted transition-all duration-200 active:cursor-grabbing ${
-            overIdx === idx ? "scale-95 ring-2 ring-[#c6f135]" : ""
+            overIdx === idx ? "scale-95 ring-2 ring-[#2563eb]" : ""
           } ${dragIdx.current === idx ? "opacity-40" : "opacity-100"}`}
         >
           <img src={url} alt="" className="h-full w-full object-cover pointer-events-none" />
@@ -523,7 +545,7 @@ function DraggableImageGrid({
           </button>
           <button
             type="button"
-            className={`absolute bottom-1 left-1 rounded px-1.5 text-[10px] ${heroImage === url ? "bg-[#c6f135] text-black" : "bg-black/50 text-white"}`}
+            className={`absolute bottom-1 left-1 rounded px-1.5 text-[10px] ${heroImage === url ? "bg-neutral-900 text-black" : "bg-black/50 text-white"}`}
             onClick={() => onSetHero(url)}
           >
             Hero

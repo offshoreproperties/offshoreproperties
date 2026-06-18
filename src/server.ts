@@ -20,11 +20,11 @@ async function getServerEntry(): Promise<ServerEntry> {
 
 const CSP = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' https://maps.googleapis.com",
-  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-  "img-src 'self' https: data: blob:",
-  "font-src 'self' https://fonts.gstatic.com",
-  "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://ai.gateway.lovable.dev https://*.googleapis.com",
+  "script-src 'self' 'unsafe-inline' https://maps.googleapis.com https://maps.gstatic.com",
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://maps.googleapis.com",
+  "img-src 'self' https: data: blob: https://maps.googleapis.com https://maps.gstatic.com",
+  "font-src 'self' https://fonts.gstatic.com data:",
+  "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://ai.gateway.lovable.dev https://*.googleapis.com https://maps.googleapis.com https://*.gstatic.com https://api.openai.com https://api.anthropic.com",
   "frame-src https://www.google.com https://maps.google.com",
   "worker-src 'self' blob:",
   "object-src 'none'",
