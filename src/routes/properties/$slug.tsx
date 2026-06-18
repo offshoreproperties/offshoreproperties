@@ -4,18 +4,16 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect } from "react";
 import { getPropertyBySlug, recordPropertyView } from "@/lib/properties.functions";
 import { SiteLayout } from "@/components/site-layout";
-import { EnquiryForm } from "@/components/enquiry-form";
-import { ViewingForm } from "@/components/viewing-form";
 import {
   collectPropertyImages,
   PropertyImageGallery,
 } from "@/components/property-image-gallery";
 import { formatPrice, formatArea, propertyTypeLabel, statusLabel } from "@/lib/format";
 import { BRAND } from "@/lib/constants";
-import { Bed, Bath, Maximize, MapPin, ArrowLeft, Map, Phone } from "lucide-react";
+import { buildWhatsAppUrl } from "@/lib/whatsapp";
+import { Bed, Bath, Maximize, MapPin, ArrowLeft, Map, Phone, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export const Route = createFileRoute("/properties/$slug")({
   head: ({ params }) => {
@@ -36,7 +34,6 @@ function PropertyContactPanel({
   price,
   currency,
   listingType,
-  propertyId,
   propertyTitle,
   whatsapp,
   className,
@@ -44,11 +41,12 @@ function PropertyContactPanel({
   price: number;
   currency: string;
   listingType: string;
-  propertyId: string;
   propertyTitle: string;
   whatsapp: string | null;
   className?: string;
 }) {
+  const whatsappUrl = buildWhatsAppUrl(whatsapp, [`Hi, I'm interested in ${propertyTitle}.`]);
+
   return (
     <div className={className}>
       <div className="rounded-xl border border-neutral-200 bg-white p-3 shadow-sm sm:p-4">
@@ -57,7 +55,7 @@ function PropertyContactPanel({
         </p>
         <div className="mt-3 border-t border-neutral-100 pt-3">
           <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-neutral-500">Contact</p>
-          <ul className="mb-3 space-y-1 text-sm">
+          <ul className="space-y-1 text-sm">
             <li>
               <a href={`tel:${BRAND.phone.replace(/\s/g, "")}`} className="flex items-center gap-2 text-blue-600 hover:underline">
                 <Phone className="h-3.5 w-3.5 shrink-0" />
@@ -71,22 +69,15 @@ function PropertyContactPanel({
               </a>
             </li>
           </ul>
-          <Tabs defaultValue="enquiry">
-            <TabsList className="grid h-9 w-full grid-cols-2 bg-neutral-100">
-              <TabsTrigger value="enquiry" className="text-xs">
-                Enquire
-              </TabsTrigger>
-              <TabsTrigger value="viewing" className="text-xs">
-                Viewing
-              </TabsTrigger>
-            </TabsList>
-            <TabsContent value="enquiry" className="mt-3">
-              <EnquiryForm propertyId={propertyId} propertyTitle={propertyTitle} whatsapp={whatsapp} />
-            </TabsContent>
-            <TabsContent value="viewing" className="mt-3">
-              <ViewingForm propertyId={propertyId} propertyTitle={propertyTitle} whatsapp={whatsapp} />
-            </TabsContent>
-          </Tabs>
+          <a
+            href={whatsappUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-4 flex min-h-[44px] items-center justify-center gap-2 rounded-full bg-neutral-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-neutral-800"
+          >
+            <MessageCircle className="h-4 w-4" />
+            WhatsApp us
+          </a>
         </div>
       </div>
     </div>
@@ -111,7 +102,7 @@ function PropertyDetailPage() {
     return (
       <SiteLayout showFooter={false} compactHeader>
         <div className="animate-pulse bg-white">
-          <div className="mx-auto max-w-7xl px-3 pt-2 sm:px-4">
+          <div className="mx-auto max-w-7xl px-3 pt-4 sm:px-4 sm:pt-5 lg:pt-6">
             <div className="aspect-[4/3] rounded-lg bg-neutral-100" />
           </div>
           <div className="mx-auto max-w-7xl space-y-3 px-3 py-4 sm:px-4">
@@ -145,7 +136,6 @@ function PropertyDetailPage() {
       price={Number(p.price)}
       currency={p.currency}
       listingType={p.listing_type}
-      propertyId={p.id}
       propertyTitle={p.title}
       whatsapp={whatsappNumber}
     />
@@ -154,10 +144,10 @@ function PropertyDetailPage() {
   return (
     <SiteLayout showFooter={false} compactHeader overflowVisible>
       <article className="overflow-visible bg-white text-neutral-900">
-        <div className="mx-auto max-w-7xl overflow-visible px-3 pb-6 safe-bottom sm:px-4 lg:pb-8">
+        <div className="mx-auto max-w-7xl overflow-visible px-3 pt-4 pb-16 safe-bottom sm:px-4 sm:pt-5 sm:pb-20 lg:pt-6 lg:pb-24">
           <Link
             to="/properties"
-            className="inline-flex items-center gap-1.5 py-2 text-xs font-medium uppercase tracking-wider text-neutral-500 hover:text-neutral-900"
+            className="mb-4 inline-flex items-center gap-1.5 py-1 text-xs font-medium uppercase tracking-wider text-neutral-500 hover:text-neutral-900 sm:mb-5"
           >
             <ArrowLeft className="h-3.5 w-3.5" /> Back
           </Link>

@@ -2,7 +2,7 @@ import { Link, useLocation } from "@tanstack/react-router";
 import { useState } from "react";
 import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 
 export type HomeTab = "all" | "buy" | "rent";
@@ -50,14 +50,15 @@ export function PublicHeader({
   }
 
   function pillClass(active: boolean, block = false) {
+    const onOverlay = overlay && !block;
     return cn(
       block ? "w-full text-left" : "",
       "rounded-full px-4 py-2.5 text-sm font-medium transition-all min-h-[44px] sm:min-h-0 sm:py-2 sm:px-5",
       active
-        ? overlay
+        ? onOverlay
           ? "bg-white text-neutral-900 shadow-sm"
           : "bg-neutral-900 text-white shadow-sm"
-        : overlay
+        : onOverlay
           ? "text-white/90 hover:text-white"
           : "text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900",
     );
@@ -152,6 +153,7 @@ export function PublicHeader({
           <SheetContent side="right" className="w-[min(100vw-2rem,24rem)] border-neutral-200 bg-white text-neutral-900">
             <SheetHeader>
               <SheetTitle className="text-left text-xl font-bold text-neutral-900">Menu</SheetTitle>
+              <SheetDescription className="sr-only">Site navigation and listing filters</SheetDescription>
             </SheetHeader>
             <nav className="mt-6 flex flex-col gap-2">
               {PILLS.map((item) => renderPill(item, true))}

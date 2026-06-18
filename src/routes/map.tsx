@@ -69,11 +69,49 @@ function MapPage() {
             <div>
               <p className="font-medium">Google Maps setup required</p>
               <p className="mt-1 text-amber-900/90">{mapsStatus.message}</p>
-              {mapsStatus.apis.length > 0 && (
-                <p className="mt-2 text-xs text-amber-800">
-                  Enable in Google Cloud: {mapsStatus.apis.join(", ")}
-                </p>
+              {"detail" in mapsStatus && mapsStatus.detail && (
+                <p className="mt-1 text-xs text-amber-800/90">{mapsStatus.detail}</p>
               )}
+              {mapsStatus.apis.length > 0 && (
+                <ul className="mt-3 space-y-1 text-xs text-amber-900">
+                  <li>
+                    <a
+                      href="https://console.cloud.google.com/apis/library/maps-backend.googleapis.com"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-medium underline"
+                    >
+                      Enable Maps JavaScript API →
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      href="https://console.cloud.google.com/apis/library/geocoding-backend.googleapis.com"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-medium underline"
+                    >
+                      Enable Geocoding API →
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      href="https://console.cloud.google.com/apis/library/maps-embed-backend.googleapis.com"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-medium underline"
+                    >
+                      Enable Maps Embed API →
+                    </a>
+                  </li>
+                </ul>
+              )}
+              <p className="mt-3 text-xs text-amber-800">
+                Then under Credentials → your API key → Application restrictions, add{" "}
+                <code className="rounded bg-amber-100 px-1">http://localhost:8080/*</code>,{" "}
+                <code className="rounded bg-amber-100 px-1">https://offshoreproperties.co.ke/*</code>, and{" "}
+                <code className="rounded bg-amber-100 px-1">https://www.offshoreproperties.co.ke/*</code>
+              </p>
             </div>
           </div>
         )}

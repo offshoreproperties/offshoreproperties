@@ -29,13 +29,17 @@ export const checkGoogleMapsApi = createServerFn({ method: "GET" }).handler(asyn
   }
 
   const err = json.error_message ?? json.status;
-  const needsEnable = err.includes("not activated") || err.includes("REQUEST_DENIED");
+  const needsEnable =
+    err.includes("not activated") ||
+    err.includes("REQUEST_DENIED") ||
+    json.status === "REQUEST_DENIED";
 
   return {
     ok: false as const,
     message: needsEnable
-      ? "API key found but required APIs are not enabled. In Google Cloud Console enable: Maps JavaScript API, Geocoding API, and Maps Embed API. Also allow localhost and your production domain under key restrictions."
+      ? "Your API key is valid, but Maps APIs are not turned on for this Google Cloud project. Enable the three APIs below, turn on billing (Google requires it even for free usage), then wait 1–2 minutes and refresh."
       : err,
+    detail: needsEnable ? err : undefined,
     apis: ["Maps JavaScript API", "Geocoding API", "Maps Embed API"],
   };
 });

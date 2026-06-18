@@ -6,10 +6,12 @@ import { Button } from "@/components/ui/button";
 import {
   Sheet,
   SheetContent,
+  SheetDescription,
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
 import { Sparkles, Loader2, ArrowRight } from "lucide-react";
+import { AiReplyText } from "@/components/ai-reply-text";
 import { formatPrice } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { FadeRotator } from "@/components/fade-phrases";
@@ -150,6 +152,9 @@ export function AiSearchField({
               <Sparkles className="h-5 w-5 text-blue-600" />
               AI property assistant
             </SheetTitle>
+            <SheetDescription className="sr-only">
+              Natural language property search results and recommendations
+            </SheetDescription>
           </SheetHeader>
           {query && (
             <p className="text-sm text-neutral-500">
@@ -164,8 +169,8 @@ export function AiSearchField({
               </div>
             )}
             {reply && !loading && (
-              <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-4 text-sm leading-relaxed whitespace-pre-wrap text-neutral-700">
-                {reply}
+              <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-4 text-sm leading-relaxed text-neutral-700">
+                <AiReplyText text={reply} />
               </div>
             )}
             {matches.length > 0 && !loading && (
