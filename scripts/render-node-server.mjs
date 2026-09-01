@@ -1,6 +1,5 @@
 /**
  * Render production server — native Node HTTP (no wrangler dev).
- * Wrangler's local workerd RPC exceeds size limits on Render for this bundle.
  */
 import { createServer } from "node:http";
 import { readFile } from "node:fs/promises";
@@ -100,24 +99,42 @@ async function sendResponse(nodeRes, response) {
   }
 }
 
-const workerModule = await import(pathToFileURL(serverEntry).href);
-const worker = workerModule.default;
-if (!worker?.fetch) {
-  console.error("[render-node] Server entry missing default.fetch");
-  process.exit(1);
+let workerPromise;
+function getWorker() {
+  if (!workerPromise) {
+    console.log("[render-node] Loading SSR worker…");
+    workerPromise = import(pathToFileURL(serverEntry).href).then((mod) => {
+      if (!mod.default?.fetch) throw new Error("Server entry missing default.fetch");
+      console.log("[render-node] SSR worker ready");
+      return mod.default;
+    });
+  }
+  return workerPromise;
 }
+
+// Warm worker in background so first real page is faster
+getWorker().catch((err) => console.error("[render-node] Worker preload failed:", err));
 
 const ctx = { waitUntil: () => {}, passThroughOnException: () => {} };
 
 const server = createServer(async (req, res) => {
   try {
     const pathname = new URL(req.url ?? "/", `http://${req.headers.host ?? "localhost"}`).pathname;
+
+    if (pathname === "/health" || pathname === "/healthz") {
+      res.statusCode = 200;
+      res.setHeader("content-type", "text/plain; charset=utf-8");
+      res.end("ok");
+      return;
+    }
+
     const staticResponse = await tryStatic(pathname);
     if (staticResponse) {
       await sendResponse(res, staticResponse);
       return;
     }
 
+    const worker = await getWorker();
     const request = nodeRequestToFetch(req);
     const response = await worker.fetch(request, process.env, ctx);
     await sendResponse(res, response);
