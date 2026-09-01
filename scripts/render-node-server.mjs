@@ -9,9 +9,17 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const clientRoot = path.join(root, "dist", "client");
+const publicRoot = path.join(root, "public");
 const serverEntry = path.join(root, "dist", "server", "index.js");
 const port = Number(process.env.PORT ?? 10000);
 const host = "0.0.0.0";
+
+process.on("unhandledRejection", (err) => {
+  console.error("[render-node] unhandledRejection:", err);
+});
+process.on("uncaughtException", (err) => {
+  console.error("[render-node] uncaughtException:", err);
+});
 
 if (!existsSync(serverEntry)) {
   console.error(`[render-node] Missing ${serverEntry}. Run "npm run build" first.`);
@@ -28,6 +36,7 @@ const MIME = {
   ".jpeg": "image/jpeg",
   ".gif": "image/gif",
   ".webp": "image/webp",
+  ".avif": "image/avif",
   ".svg": "image/svg+xml",
   ".ico": "image/x-icon",
   ".woff": "font/woff",
@@ -40,25 +49,26 @@ function contentType(filePath) {
   return MIME[path.extname(filePath).toLowerCase()] ?? "application/octet-stream";
 }
 
-function safeClientPath(urlPath) {
+function resolveStaticFile(urlPath) {
   const decoded = decodeURIComponent(urlPath.split("?")[0] || "/");
   const normalized = path.normalize(decoded).replace(/^(\.\.[/\\])+/, "");
   const relative = normalized.startsWith("/") ? normalized.slice(1) : normalized;
-  const filePath = path.join(clientRoot, relative);
-  if (!filePath.startsWith(clientRoot)) return null;
-  return filePath;
+
+  for (const base of [clientRoot, publicRoot]) {
+    let filePath = path.join(base, relative);
+    if (!filePath.startsWith(base)) continue;
+    if (urlPath.endsWith("/")) {
+      const indexPath = path.join(filePath, "index.html");
+      if (existsSync(indexPath)) filePath = indexPath;
+    }
+    if (existsSync(filePath) && statSync(filePath).isFile()) return filePath;
+  }
+  return null;
 }
 
 async function tryStatic(urlPath) {
-  let filePath = safeClientPath(urlPath);
+  const filePath = resolveStaticFile(urlPath);
   if (!filePath) return null;
-
-  if (urlPath.endsWith("/")) {
-    const indexPath = path.join(filePath, "index.html");
-    if (existsSync(indexPath)) filePath = indexPath;
-  }
-
-  if (!existsSync(filePath) || !statSync(filePath).isFile()) return null;
 
   const body = await readFile(filePath);
   return new Response(body, {
@@ -112,9 +122,6 @@ function getWorker() {
   return workerPromise;
 }
 
-// Warm worker in background so first real page is faster
-getWorker().catch((err) => console.error("[render-node] Worker preload failed:", err));
-
 const ctx = { waitUntil: () => {}, passThroughOnException: () => {} };
 
 const server = createServer(async (req, res) => {
@@ -149,7 +156,9 @@ const server = createServer(async (req, res) => {
 });
 
 server.listen(port, host, () => {
-  console.log(`[render-node] Listening on http://${host}:${port}`);
+  const mem = Math.round(process.memoryUsage().rss / 1024 / 1024);
+  console.log(`[render-node] Listening on http://${host}:${port} (rss ${mem}MB)`);
+  console.log(`[render-node] Static roots: ${clientRoot}, ${publicRoot}`);
 });
 
 process.on("SIGTERM", () => server.close(() => process.exit(0)));
