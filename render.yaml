@@ -4,14 +4,14 @@ services:
     name: offshoreproperties
     runtime: node
     plan: starter
-    buildCommand: npm install && npm run build
+    # Do NOT set NODE_OPTIONS in the dashboard — it caps the build heap and causes OOM.
+    # Runtime memory is set in package.json "start" (--max-old-space-size=460).
+    buildCommand: npm install && npm run build:render
     startCommand: npm run start
     healthCheckPath: /health
     envVars:
       - key: NODE_VERSION
         value: "22"
-      - key: NODE_OPTIONS
-        value: "--max-old-space-size=460"
       # Add the rest in the Render dashboard (same as .env.example):
       # SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, SUPABASE_SERVICE_ROLE_KEY,
       # VITE_SUPABASE_URL, VITE_SUPABASE_PUBLISHABLE_KEY, VITE_SUPABASE_PROJECT_ID,

@@ -82,16 +82,38 @@ async function tryStatic(urlPath) {
   });
 }
 
-function nodeRequestToFetch(req) {
-  const url = `http://${req.headers.host ?? "localhost"}${req.url}`;
-  const init = {
-    method: req.method,
-    headers: req.headers,
-  };
-  if (req.method !== "GET" && req.method !== "HEAD") {
-    init.body = req;
-    init.duplex = "half";
+function getRequestUrl(req) {
+  const host =
+    req.headers["x-forwarded-host"]?.split(",")[0]?.trim() ??
+    req.headers.host ??
+    "localhost";
+  const proto =
+    req.headers["x-forwarded-proto"]?.split(",")[0]?.trim() ??
+    (String(host).includes("localhost") ? "http" : "https");
+  return `${proto}://${host}${req.url}`;
+}
+
+async function readRequestBody(req) {
+  if (req.method === "GET" || req.method === "HEAD") return undefined;
+  const chunks = [];
+  for await (const chunk of req) chunks.push(chunk);
+  const body = Buffer.concat(chunks);
+  return body.length ? body : undefined;
+}
+
+function nodeRequestToFetch(req, body) {
+  const url = getRequestUrl(req);
+  const headers = new Headers();
+  for (const [key, value] of Object.entries(req.headers)) {
+    if (value == null) continue;
+    if (Array.isArray(value)) {
+      for (const entry of value) headers.append(key, entry);
+    } else {
+      headers.set(key, value);
+    }
   }
+  const init = { method: req.method, headers };
+  if (body) init.body = body;
   return new Request(url, init);
 }
 
@@ -142,7 +164,8 @@ const server = createServer(async (req, res) => {
     }
 
     const worker = await getWorker();
-    const request = nodeRequestToFetch(req);
+    const body = await readRequestBody(req);
+    const request = nodeRequestToFetch(req, body);
     const response = await worker.fetch(request, process.env, ctx);
     await sendResponse(res, response);
   } catch (error) {
