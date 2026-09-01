@@ -98,7 +98,7 @@ export function PropertyImageGallery({
   if (images.length === 0) {
     return (
       <div className="bg-white">
-        <div className="flex aspect-[4/3] w-full max-h-[min(52vh,480px)] items-center justify-center rounded-lg bg-neutral-100 text-sm text-neutral-400">
+        <div className="flex aspect-[4/3] w-full max-h-[min(52dvh,52vh,480px)] items-center justify-center rounded-lg bg-neutral-100 text-sm text-neutral-400">
           No photos available
         </div>
       </div>
@@ -130,12 +130,13 @@ export function PropertyImageGallery({
             className="group relative w-full overflow-hidden rounded-lg bg-neutral-100 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
             aria-label={`View ${title} photos full screen`}
           >
-            <div className="aspect-[4/3] w-full max-h-[min(52vh,480px)] sm:max-h-[min(58vh,520px)]">
+            <div className="aspect-[4/3] w-full max-h-[min(52dvh,52vh,480px)] sm:max-h-[min(58dvh,58vh,520px)]">
               <img
                 key={images[active]}
                 src={images[active]}
                 alt={`${title} — photo ${active + 1}`}
                 className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.01]"
+                sizes="(max-width: 1024px) 100vw, 70vw"
               />
             </div>
 
@@ -201,7 +202,7 @@ export function PropertyImageGallery({
               key={images[active]}
               src={images[active]}
               alt={`${title} — photo ${active + 1}`}
-              className="max-h-[calc(100vh-10rem)] max-w-full object-contain"
+              className="max-h-[calc(100vh-10rem)] max-h-[calc(100dvh-10rem)] max-w-full object-contain"
             />
             {images.length > 1 && (
               <>

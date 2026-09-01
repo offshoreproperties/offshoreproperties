@@ -48,43 +48,41 @@ export function HavenlyHero({
         : "Explore curated properties — search, filter, and discover.";
 
   return (
-    <div className="p-1.5 sm:p-4 md:p-5 lg:p-6">
-      <div className="relative mx-auto flex min-h-[min(78vh,680px)] w-full max-w-[1440px] flex-col overflow-hidden rounded-[20px] sm:min-h-[min(85vh,820px)] sm:rounded-[40px] md:rounded-[48px]">
-        <HeroKenyaGallery />
-        {/* Light overlays — keep photos bright, darken only where text sits */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/5 to-transparent" />
-        <div className="absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-black/30 to-transparent sm:h-32" />
+    <div className="relative flex min-h-[min(78vh,680px)] min-h-[min(78dvh,680px)] w-full flex-col overflow-hidden sm:min-h-[min(85vh,820px)] sm:min-h-[min(85dvh,820px)]">
+      <HeroKenyaGallery />
+      {/* Light overlays — keep photos bright, darken only where text sits */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/5 to-transparent" />
+      <div className="absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-black/30 to-transparent sm:h-32" />
 
-        <PublicHeader variant="overlay" homeTab={homeTab} onHomeTabChange={onHomeTabChange} />
+      <PublicHeader variant="overlay" homeTab={homeTab} onHomeTabChange={onHomeTabChange} />
 
-        <div className="relative z-10 mt-auto px-4 pb-4 sm:px-8 sm:pb-6 lg:px-10 lg:pb-8">
-          <div className="max-w-2xl">
-            <h1 className="min-h-[2.4em] text-2xl font-bold leading-[1.1] tracking-tight text-white drop-shadow-md sm:min-h-[1.3em] sm:text-5xl md:text-6xl lg:text-[3.5rem]">
-              <FadePhrases key={homeTab} phrases={phrases} />
-            </h1>
-            <p className="mt-2 max-w-md text-[13px] leading-relaxed text-white/90 drop-shadow sm:mt-4 sm:text-base">
-              {subtitle}
-            </p>
+      <div className="relative z-10 mt-auto px-4 pb-4 sm:px-8 sm:pb-6 lg:px-10 lg:pb-8">
+        <div className="max-w-2xl">
+          <h1 className="min-h-[2.4em] text-[clamp(1.5rem,5vw,3.5rem)] font-bold leading-[1.1] tracking-tight text-white drop-shadow-md sm:min-h-[1.3em]">
+            <FadePhrases key={homeTab} phrases={phrases} />
+          </h1>
+          <p className="mt-2 max-w-md text-sm leading-relaxed text-white/90 drop-shadow sm:mt-4 sm:text-base">
+            {subtitle}
+          </p>
+        </div>
+
+        <div className="mt-4 space-y-2 sm:mt-6 sm:ml-auto sm:max-w-[720px] sm:space-y-3">
+          <AiSearchField variant="hero" />
+          <div className="flex items-center justify-end gap-2">
+            <Link to="/map">
+              <Button
+                variant="secondary"
+                size="sm"
+                className="h-11 gap-2 rounded-full border-white/40 bg-white/90 px-4 text-neutral-900 shadow-sm backdrop-blur hover:bg-white"
+              >
+                <Map className="h-4 w-4 shrink-0" />
+                View map
+              </Button>
+            </Link>
           </div>
-
-          <div className="mt-4 space-y-2 sm:mt-6 sm:ml-auto sm:max-w-[720px] sm:space-y-3">
-            <AiSearchField variant="hero" />
-            <div className="flex items-center justify-end gap-2">
-              <Link to="/map">
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  className="h-11 gap-2 rounded-full border-white/40 bg-white/90 px-4 text-neutral-900 shadow-sm backdrop-blur hover:bg-white"
-                >
-                  <Map className="h-4 w-4 shrink-0" />
-                  View map
-                </Button>
-              </Link>
-            </div>
-            <HavenlySearch
-              listingType={homeTab === "rent" ? "rent" : homeTab === "buy" ? "sale" : undefined}
-            />
-          </div>
+          <HavenlySearch
+            listingType={homeTab === "rent" ? "rent" : homeTab === "buy" ? "sale" : undefined}
+          />
         </div>
       </div>
     </div>

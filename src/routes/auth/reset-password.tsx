@@ -54,7 +54,7 @@ function ResetPasswordPage() {
 
   if (!ready) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-3 px-4">
+      <div className="flex min-h-dvh-screen flex-col items-center justify-center gap-3 px-4">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         <p className="text-sm text-muted-foreground">Verifying reset link…</p>
         <Link to="/" className="text-sm underline">
@@ -65,7 +65,7 @@ function ResetPasswordPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
+    <div className="flex min-h-dvh-screen items-center justify-center bg-background px-4">
       <div className="w-full max-w-md space-y-6 rounded-2xl border border-border p-8 shadow-card">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Set a new password</h1>

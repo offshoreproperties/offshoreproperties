@@ -99,7 +99,9 @@ export function PublicHeader({
       className={cn(
         "relative z-20 flex items-center justify-between gap-2 sm:gap-4 lg:px-8",
         compact ? "px-3 py-2 sm:px-4 sm:py-2.5" : "px-3 py-3 sm:px-6 sm:py-5",
-        overlay ? "" : "sticky top-0 border-b border-neutral-200 bg-white/95 backdrop-blur-md",
+        overlay
+          ? "safe-top"
+          : "sticky top-0 border-b border-neutral-200 bg-white/95 backdrop-blur-md safe-top",
         className,
       )}
     >

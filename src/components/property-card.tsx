@@ -87,7 +87,7 @@ function ImageCarousel({ images, title }: { images: string[]; title: string }) {
   }
 
   const navBtn =
-    "absolute top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-black/60 text-white shadow-md backdrop-blur transition active:scale-95 sm:opacity-0 sm:group-hover:opacity-100";
+    "absolute top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-black/60 text-white shadow-md backdrop-blur transition active:scale-95 sm:h-9 sm:w-9 sm:opacity-0 sm:group-hover:opacity-100";
 
   return (
     <div className="relative">

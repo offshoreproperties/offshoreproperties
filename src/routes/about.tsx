@@ -16,9 +16,14 @@ export const Route = createFileRoute("/about")({
 function AboutPage() {
   return (
     <SiteLayout>
-      <section className="relative mx-2 overflow-hidden rounded-[20px] sm:mx-4 sm:rounded-[32px] md:mx-5 lg:mx-6">
-        <div className="relative flex min-h-[32vh] items-end sm:min-h-[38vh]">
-          <img src={HAVENLY_HERO_SALE} alt="" className="absolute inset-0 h-full w-full object-cover" />
+      <section className="relative overflow-hidden">
+        <div className="relative flex min-h-[min(32dvh,32vh)] items-end sm:min-h-[min(38dvh,38vh)]">
+          <img
+            src={HAVENLY_HERO_SALE}
+            alt=""
+            className="absolute inset-0 h-full w-full object-cover"
+            sizes="100vw"
+          />
           <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/15 to-transparent" />
           <div className="relative w-full px-4 pb-8 pt-16 sm:px-10 sm:pb-12 sm:pt-20">
             <SectionHeading
@@ -30,7 +35,7 @@ function AboutPage() {
         </div>
       </section>
 
-      <section className="page-panel mt-4 sm:mt-6">
+      <section className="page-panel mt-0 sm:mt-6">
         <div className="mx-auto max-w-3xl space-y-5 text-[15px] leading-relaxed text-neutral-600 sm:space-y-6 sm:text-base">
           <p>
             We represent a deliberately curated portfolio of villas, apartments, and land across

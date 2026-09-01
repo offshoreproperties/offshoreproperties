@@ -74,7 +74,7 @@ function AdminLeads() {
                 value={l.status}
                 onValueChange={(status) => patch.mutate({ id: l.id, status })}
               >
-                <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="w-full max-w-[180px]"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {STATUSES.map((s) => (
                     <SelectItem key={s} value={s}>{statusLabel(s)}</SelectItem>

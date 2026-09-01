@@ -95,6 +95,21 @@
 
   html {
     scroll-behavior: smooth;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
   }
 
   body {
@@ -102,7 +117,18 @@
     color: var(--color-foreground);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
-    overflow-x: hidden;
+    /* clip, not hidden — avoids creating a scroll-containing block that traps sticky */
+    overflow-x: clip;
+  }
+
+  img,
+  video {
+    max-width: 100%;
+    height: auto;
+  }
+
+  iframe {
+    max-width: 100%;
   }
 
   /* Hide scrollbar on mobile for a cleaner look */
@@ -115,11 +141,6 @@
     body::-webkit-scrollbar {
       display: none;
     }
-  }
-
-  html {
-    -webkit-tap-highlight-color: transparent;
-    -webkit-text-size-adjust: 100%;
   }
 
   /* Prevent iOS zoom on form focus — ensure inputs are >= 16px */
@@ -172,13 +193,29 @@
     background-color: var(--lime);
   }
   .page-panel {
-    @apply mx-auto max-w-7xl rounded-[24px] border border-neutral-200 bg-white px-4 py-8 shadow-sm sm:rounded-[40px] sm:px-8 sm:py-12 lg:rounded-[48px] lg:px-10;
+    @apply mx-auto w-full max-w-7xl border-y border-neutral-200 bg-white px-4 py-8 shadow-sm sm:rounded-2xl sm:border sm:px-8 sm:py-12 lg:px-10;
+  }
+  .safe-top {
+    padding-top: env(safe-area-inset-top);
   }
   .safe-bottom {
     padding-bottom: max(1rem, env(safe-area-inset-bottom));
   }
+  .safe-x {
+    padding-left: max(1rem, env(safe-area-inset-left));
+    padding-right: max(1rem, env(safe-area-inset-right));
+  }
   .fab-safe {
     bottom: max(1rem, env(safe-area-inset-bottom));
     right: max(1rem, env(safe-area-inset-right));
+  }
+  /* Dynamic viewport height — avoids mobile browser chrome cut-off */
+  .min-h-dvh-screen {
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+  .h-dvh-screen {
+    height: 100vh;
+    height: 100dvh;
   }
 }

@@ -14,7 +14,9 @@
     "format": "prettier --write .",
     "db:push": "node scripts/db-push.mjs",
     "db:push:linked": "node scripts/db-push.mjs --linked",
-    "db:push:dry": "npx supabase db push --dry-run --yes"
+    "db:push:dry": "npx supabase db push --dry-run --yes",
+    "db:migrate": "node scripts/migrate-supabase.mjs",
+    "db:migrate:all": "node scripts/migrate-all.mjs"
   },
   "dependencies": {
     "@cloudflare/vite-plugin": "^1.25.5",

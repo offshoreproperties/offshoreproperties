@@ -1,4 +1,4 @@
-# Render Blueprint — https://offshoreproperties.onrender.com
+# Render Blueprint — https://offshoreproperties.co.ke
 services:
   - type: web
     name: offshoreproperties
@@ -13,5 +13,5 @@ services:
       # Add the rest in the Render dashboard (same as .env.example):
       # SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, SUPABASE_SERVICE_ROLE_KEY,
       # VITE_SUPABASE_URL, VITE_SUPABASE_PUBLISHABLE_KEY, VITE_SUPABASE_PROJECT_ID,
-      # VITE_SITE_URL (https://offshoreproperties.onrender.com),
+      # VITE_SITE_URL (https://offshoreproperties.co.ke),
       # ADMIN_PASSWORD, VITE_GOOGLE_MAPS_API_KEY, VITE_GOOGLE_MAP_ID, LOVABLE_API_KEY

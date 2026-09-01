@@ -149,20 +149,20 @@ function PropertiesPage() {
               <p className="mt-6 text-sm text-black/50">
                 Showing {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, total)} of {total} properties
               </p>
-              <div className="mt-6 grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-3">
+              <div className="mt-6 grid grid-cols-1 gap-3 min-[400px]:grid-cols-2 sm:gap-4 lg:grid-cols-3">
                 {properties.map((p) => (
                   <PropertyCard key={p.id} p={p} />
                 ))}
               </div>
 
               {totalPages > 1 && (
-                <div className="mt-8 flex items-center justify-center gap-2">
+                <div className="mt-8 flex flex-wrap items-center justify-center gap-2">
                   <Button
                     variant="outline"
                     size="sm"
                     disabled={page <= 1}
                     onClick={() => goToPage(page - 1)}
-                    className="rounded-full border-black/15 text-[#0a0a0a] hover:bg-black/5 disabled:opacity-30"
+                    className="h-11 min-w-[6.5rem] rounded-full border-black/15 text-[#0a0a0a] hover:bg-black/5 disabled:opacity-30"
                   >
                     Previous
                   </Button>
@@ -174,7 +174,7 @@ function PropertiesPage() {
                     size="sm"
                     disabled={page >= totalPages}
                     onClick={() => goToPage(page + 1)}
-                    className="rounded-full border-black/15 text-[#0a0a0a] hover:bg-black/5 disabled:opacity-30"
+                    className="h-11 min-w-[6.5rem] rounded-full border-black/15 text-[#0a0a0a] hover:bg-black/5 disabled:opacity-30"
                   >
                     Next
                   </Button>

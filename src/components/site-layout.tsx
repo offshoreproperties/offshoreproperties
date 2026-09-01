@@ -15,10 +15,10 @@ export function SiteLayout({
   mainClassName?: string;
   overflowVisible?: boolean;
 }) {
-  const overflow = overflowVisible ? "overflow-visible" : "overflow-x-hidden";
+  const overflow = overflowVisible ? "overflow-visible" : "overflow-x-clip";
   return (
-    <div className={`flex min-h-screen flex-col ${overflow} bg-[#f8fafc] ${className}`}>
-      <div className={`flex min-h-screen flex-1 flex-col ${overflow} bg-white`}>
+    <div className={`flex min-h-dvh-screen flex-col ${overflow} bg-[#f8fafc] ${className}`}>
+      <div className={`flex min-h-dvh-screen flex-1 flex-col ${overflow} bg-white`}>
         <SiteHeader compact={compactHeader} />
         <main className={`flex-1 text-neutral-900 ${mainClassName || overflow}`}>{children}</main>
         {showFooter && <SiteFooter />}

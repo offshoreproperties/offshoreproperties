@@ -74,33 +74,33 @@ function Index() {
         : {};
 
   return (
-    <div className="min-h-screen bg-[#f8fafc]">
+    <div className="min-h-dvh-screen bg-[#f8fafc]">
       <HavenlyHero homeTab={homeTab} onHomeTabChange={setTab} />
 
       <HomeTabStrip active={homeTab} onChange={setTab} />
 
-      <section className="px-1.5 pb-4 safe-bottom sm:px-4 sm:pb-10 md:px-5 lg:px-6">
-        <div className="mx-auto max-w-[1440px] rounded-[20px] border border-neutral-200 bg-gradient-to-br from-neutral-50 via-white to-slate-50 px-3 py-4 shadow-sm sm:rounded-[40px] sm:px-8 sm:py-12 lg:rounded-[48px] lg:px-10">
-          <div className="flex items-end justify-between gap-2">
-            <div>
+      <section className="px-3 pb-8 safe-bottom sm:px-6 sm:pb-12 lg:px-8">
+        <div className="mx-auto max-w-[1440px]">
+          <div className="flex items-end justify-between gap-3">
+            <div className="min-w-0">
               <p className="text-[10px] font-semibold uppercase tracking-widest text-neutral-500 sm:text-xs">
                 {listings.length} {listings.length === 1 ? "property" : "properties"}
               </p>
-              <h2 className="mt-0.5 text-lg font-bold tracking-tight text-[#0a0a0a] sm:text-3xl">
+              <h2 className="mt-0.5 text-xl font-bold tracking-tight text-[#0a0a0a] sm:text-3xl">
                 {sectionTitle}
               </h2>
             </div>
             <Link
               to="/properties"
               search={collectionSearch}
-              className="inline-flex items-center text-xs font-semibold text-blue-600 transition hover:text-blue-700 sm:text-sm"
+              className="inline-flex min-h-[44px] shrink-0 items-center text-xs font-semibold text-blue-600 transition hover:text-blue-700 sm:text-sm"
             >
               View full collection →
             </Link>
           </div>
 
           {isLoading ? (
-            <div className="mt-3 grid grid-cols-2 gap-2 sm:mt-6 sm:gap-3 lg:grid-cols-3">
+            <div className="mt-4 grid grid-cols-1 gap-3 min-[400px]:grid-cols-2 sm:mt-6 sm:gap-4 lg:grid-cols-3">
               {Array.from({ length: 6 }).map((_, i) => (
                 <div key={i} className="aspect-[3/4] animate-pulse rounded-xl bg-black/5" />
               ))}
@@ -112,7 +112,7 @@ function Index() {
                 : `No ${homeTab === "buy" ? "sale" : "rent"} listings — try All or the other tab.`}
             </p>
           ) : (
-            <div className="mt-3 grid grid-cols-2 gap-2 sm:mt-6 sm:gap-3 lg:grid-cols-3">
+            <div className="mt-4 grid grid-cols-1 gap-3 min-[400px]:grid-cols-2 sm:mt-6 sm:gap-4 lg:grid-cols-3">
               {listings.map((p) => (
                 <PropertyCard
                   key={p.id}

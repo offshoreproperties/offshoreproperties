@@ -147,7 +147,7 @@ function PropertyDetailPage() {
         <div className="mx-auto max-w-7xl overflow-visible px-3 pt-4 pb-16 safe-bottom sm:px-4 sm:pt-5 sm:pb-20 lg:pt-6 lg:pb-24">
           <Link
             to="/properties"
-            className="mb-4 inline-flex items-center gap-1.5 py-1 text-xs font-medium uppercase tracking-wider text-neutral-500 hover:text-neutral-900 sm:mb-5"
+            className="mb-4 inline-flex min-h-11 items-center gap-1.5 py-2 text-xs font-medium uppercase tracking-wider text-neutral-500 hover:text-neutral-900 sm:mb-5"
           >
             <ArrowLeft className="h-3.5 w-3.5" /> Back
           </Link>
@@ -157,7 +157,7 @@ function PropertyDetailPage() {
               <PropertyImageGallery images={images} title={p.title} />
             </div>
 
-            <aside className="mt-3 lg:col-start-2 lg:row-start-1 lg:row-span-2 lg:mt-0 lg:sticky lg:top-14 lg:self-start">
+            <aside className="mt-3 lg:col-start-2 lg:row-start-1 lg:row-span-2 lg:mt-0 lg:sticky lg:top-[max(3.5rem,calc(3.5rem+env(safe-area-inset-top)))] lg:self-start">
               {contactPanel}
             </aside>
 

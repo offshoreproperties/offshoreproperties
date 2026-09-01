@@ -98,7 +98,7 @@ export function PropertyActions({ propertyId }: { propertyId: string }) {
         <button
           type="button"
           className={cn(
-            "flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium transition active:scale-95 sm:px-3 sm:py-1.5 sm:text-xs",
+            "inline-flex min-h-11 items-center gap-1.5 rounded-full px-3.5 text-xs font-medium transition active:scale-95 sm:min-h-9 sm:px-3 sm:text-xs",
             mine?.liked
               ? "bg-red-50 text-red-600"
               : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200 hover:text-neutral-900",
@@ -106,13 +106,13 @@ export function PropertyActions({ propertyId }: { propertyId: string }) {
           disabled={authLoading || likeMut.isPending}
           onClick={() => requireAuth(() => likeMut.mutate())}
         >
-          <Heart className={cn("h-3 w-3 sm:h-3.5 sm:w-3.5", mine?.liked && "fill-current")} />
+          <Heart className={cn("h-3.5 w-3.5", mine?.liked && "fill-current")} />
           {likeCount > 0 ? likeCount : "Like"}
         </button>
         <button
           type="button"
           className={cn(
-            "flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium transition active:scale-95 sm:px-3 sm:py-1.5 sm:text-xs",
+            "inline-flex min-h-11 items-center gap-1.5 rounded-full px-3.5 text-xs font-medium transition active:scale-95 sm:min-h-9 sm:px-3 sm:text-xs",
             mine?.saved
               ? "bg-blue-50 text-blue-600"
               : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200 hover:text-neutral-900",
@@ -120,7 +120,7 @@ export function PropertyActions({ propertyId }: { propertyId: string }) {
           disabled={authLoading || saveMut.isPending}
           onClick={() => requireAuth(() => saveMut.mutate())}
         >
-          <Bookmark className={cn("h-3 w-3 sm:h-3.5 sm:w-3.5", mine?.saved && "fill-current")} />
+          <Bookmark className={cn("h-3.5 w-3.5", mine?.saved && "fill-current")} />
           Save
         </button>
       </div>

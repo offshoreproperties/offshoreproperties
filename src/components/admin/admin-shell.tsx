@@ -30,7 +30,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           to={to}
           onClick={onNavigate}
           className={cn(
-            "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-smooth",
+            "flex min-h-11 items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-smooth",
             (exact ? pathname === to : pathname.startsWith(to))
               ? "bg-sidebar-accent text-sidebar-primary"
               : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground",
@@ -44,7 +44,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   );
 
   return (
-    <div className="flex min-h-screen bg-muted/30">
+    <div className="flex min-h-dvh-screen bg-muted/30">
       <aside className="hidden w-64 shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground lg:flex">
         <div className="border-b border-sidebar-border px-5 py-6">
           <Link to="/" className="font-display text-xl text-sidebar-foreground">
@@ -55,17 +55,17 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         <NavLinks />
         <div className="mt-auto border-t border-sidebar-border p-4">
           <p className="truncate text-xs text-sidebar-foreground/60">{user?.email}</p>
-          <Button variant="ghost" size="sm" className="mt-2 w-full justify-start gap-2 text-sidebar-foreground" onClick={signOut}>
+          <Button variant="ghost" size="sm" className="mt-2 h-11 w-full justify-start gap-2 text-sidebar-foreground" onClick={signOut}>
             <LogOut className="h-4 w-4" /> Sign out
           </Button>
         </div>
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex h-14 items-center justify-between border-b border-border bg-background px-4 lg:px-8">
+        <header className="safe-top flex h-14 items-center justify-between border-b border-border bg-background px-4 lg:px-8">
           <Sheet>
             <SheetTrigger asChild className="lg:hidden">
-              <Button size="icon" variant="ghost" aria-label="Menu"><Menu className="h-5 w-5" /></Button>
+              <Button size="icon" variant="ghost" className="h-11 w-11" aria-label="Menu"><Menu className="h-5 w-5" /></Button>
             </SheetTrigger>
             <SheetContent side="left" className="w-64 bg-sidebar p-0 text-sidebar-foreground">
               <div className="border-b border-sidebar-border px-5 py-5 font-display text-xl">Admin</div>

@@ -116,7 +116,7 @@ function AdminProperties() {
               <Plus className="h-4 w-4" /> Add property
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-h-[92vh] max-w-3xl overflow-y-auto">
+          <DialogContent className="max-h-[min(92dvh,92vh)] max-w-3xl overflow-y-auto">
             <DialogHeader>
               <DialogTitle>New property</DialogTitle>
             </DialogHeader>
@@ -126,7 +126,7 @@ function AdminProperties() {
       </div>
 
       <Dialog open={!!editId} onOpenChange={(o) => !o && setEditId(null)}>
-        <DialogContent className="max-h-[92vh] max-w-3xl overflow-y-auto">
+        <DialogContent className="max-h-[min(92dvh,92vh)] max-w-3xl overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit property</DialogTitle>
           </DialogHeader>

@@ -66,7 +66,7 @@ function AuthCallbackPage() {
   }, []);
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-background px-4">
+    <div className="flex min-h-dvh-screen flex-col items-center justify-center gap-4 bg-background px-4">
       {error ? (
         <>
           <p className="text-center text-sm text-destructive">{error}</p>

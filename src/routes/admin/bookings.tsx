@@ -80,7 +80,7 @@ function AdminBookings() {
                 value={b.status}
                 onValueChange={(status) => patch.mutate({ id: b.id, status })}
               >
-                <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="w-full max-w-[160px]"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {STATUSES.map((s) => (
                     <SelectItem key={s} value={s}>{statusLabel(s)}</SelectItem>

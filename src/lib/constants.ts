@@ -7,17 +7,25 @@ export const BRAND = {
   whatsapp: "+254702447447",
 } as const;
 
-/** Kenyan hero gallery — high-res Unsplash images (1920px) */
+/**
+ * Kenyan hero gallery — high-res landmark photos (GTC, Expressway, UNON,
+ * Mt Longonot, golf, tea & flower farms) plus scenic Unsplash slides.
+ */
 export const KENYA_GALLERY_IMAGES = [
-  "https://images.unsplash.com/photo-1741991110666-88115e724741?auto=format&fit=crop&w=1920&q=92",
-  "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1920&q=92",
-  "https://images.unsplash.com/photo-1624493176575-7a5a3b74460a?auto=format&fit=crop&w=1920&q=92",
-  "https://images.unsplash.com/photo-1489392191049-fc10c97e64b6?auto=format&fit=crop&w=1920&q=92",
-  "https://images.unsplash.com/photo-1520124442480-b5c60b0f80c2?auto=format&fit=crop&w=1920&q=92",
-  "https://images.unsplash.com/photo-1547471080-7cc2caa01a7e?auto=format&fit=crop&w=1920&q=92",
-  "https://images.unsplash.com/photo-1533645782036-997947a9d529?auto=format&fit=crop&w=1920&q=92",
-  "https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=1920&q=92",
-  "https://images.unsplash.com/photo-1535941339077-2dd1c7963098?auto=format&fit=crop&w=1920&q=92",
+  "/kenya/gtc-tower.jpg",
+  "/kenya/nairobi-expressway.png",
+  "/kenya/un-complex-nairobi.jpg",
+  "/kenya/mt-longonot.jpg",
+  "/kenya/mt-longonot-crater.jpg",
+  "/kenya/golf-course-nairobi.jpg",
+  "/kenya/tea-plantation-kiambu.jpg",
+  "/kenya/tea-farm-kenya.jpg",
+  "/kenya/rose-greenhouse.jpg",
+  "/kenya/flower-farm-roses.jpg",
+  "https://images.unsplash.com/photo-1741991110666-88115e724741?auto=format&fit=crop&w=2400&q=92",
+  "https://images.unsplash.com/photo-1489392191049-fc10c97e64b6?auto=format&fit=crop&w=2400&q=92",
+  "https://images.unsplash.com/photo-1547471080-7cc2caa01a7e?auto=format&fit=crop&w=2400&q=92",
+  "https://images.unsplash.com/photo-1535941339077-2dd1c7963098?auto=format&fit=crop&w=2400&q=92",
 ] as const;
 
 export const HERO_IMAGE =

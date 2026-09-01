@@ -111,16 +111,14 @@ export function AiSearchField({
             onBlur={() => setFocused(false)}
             placeholder={focused ? "Describe what you're looking for…" : undefined}
             className={cn(
-              "w-full bg-transparent text-neutral-900 placeholder:text-neutral-400 focus:outline-none",
-              isHero ? "text-[13px] sm:text-sm" : "text-[13px] sm:text-xs",
+              "w-full bg-transparent text-base text-neutral-900 placeholder:text-neutral-400 focus:outline-none sm:text-sm",
             )}
             aria-label="Describe your dream property"
           />
           {showFadePlaceholder && (
             <div
               className={cn(
-                "pointer-events-none absolute inset-0 flex items-center text-neutral-400",
-                isHero ? "text-[13px] sm:text-sm" : "text-[13px] sm:text-xs",
+                "pointer-events-none absolute inset-0 flex items-center text-base text-neutral-400 sm:text-sm",
               )}
               onClick={() => inputRef.current?.focus()}
             >
@@ -133,8 +131,7 @@ export function AiSearchField({
           size="icon"
           disabled={loading || !input.trim()}
           className={cn(
-            "shrink-0 rounded-full bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50",
-            isHero ? "h-9 w-9" : "h-9 w-9 sm:h-8 sm:w-8",
+            "h-11 w-11 shrink-0 rounded-full bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 sm:h-9 sm:w-9",
           )}
           aria-label="Search with AI"
         >

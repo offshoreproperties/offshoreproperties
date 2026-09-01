@@ -116,7 +116,7 @@ function MapPage() {
           </div>
         )}
 
-        <div className="h-[min(70vh,640px)] min-h-[360px]">
+        <div className="h-[min(70dvh,70vh,640px)] min-h-[280px] sm:min-h-[360px]">
           {isLoading ? (
             <div className="h-full animate-pulse rounded-xl bg-neutral-100" />
           ) : (

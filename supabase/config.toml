@@ -1,6 +1,6 @@
 # https://supabase.com/docs/guides/cli/config
 
-project_id = "gdoalzqtopkjttvktnhj"
+project_id = "jbjntqmamllyohvrbgcc"
 
 [db]
 major_version = 17

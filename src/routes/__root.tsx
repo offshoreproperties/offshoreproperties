@@ -16,9 +16,9 @@ import appCss from "../styles.css?url";
 
 function NotFoundComponent() {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-[#0a0a0a] px-4 text-white">
+    <div className="flex min-h-dvh-screen flex-col items-center justify-center bg-[#0a0a0a] px-4 text-white">
       <p className="text-xs uppercase tracking-[0.28em] text-[#2563eb]">404</p>
-      <h1 className="mt-4 text-5xl font-bold">Page not found</h1>
+      <h1 className="mt-4 text-balance text-3xl font-bold sm:text-5xl">Page not found</h1>
       <p className="mt-3 max-w-sm text-center text-sm text-white/50">
         The page you&apos;re looking for doesn&apos;t exist or has been moved.
       </p>
@@ -37,8 +37,8 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   const router = useRouter();
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-[#0a0a0a] px-4 text-white">
-      <h1 className="text-3xl font-bold">Something went wrong</h1>
+    <div className="flex min-h-dvh-screen flex-col items-center justify-center bg-[#0a0a0a] px-4 text-white">
+      <h1 className="text-balance text-2xl font-bold sm:text-3xl">Something went wrong</h1>
       <p className="mt-3 max-w-sm text-center text-sm text-white/50">
         We couldn&apos;t load this page. Please try again or return to the homepage.
       </p>
