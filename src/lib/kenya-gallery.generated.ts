@@ -5,8 +5,7 @@ export const KENYA_GALLERY_IMAGES = [
   "/kenya/tea-farm-kenya.jpg",
   "/kenya/mt-longonot.jpg",
   "/kenya/golf-course-nairobi.jpg",
-  "/kenya/gtc-tower.jpg",
   "/kenya/Lake-Victoria-Dhow.jpg",
   "/kenya/maasai-kenya.jpg"
 ] as const;
-export const KENYA_GALLERY_CACHE_KEY = "/kenya/nairobi-expressway.png|/kenya/flower-farm-roses.jpg|/kenya/tea-farm-kenya.jpg|/kenya/mt-longonot.jpg|/kenya/golf-course-nairobi.jpg|/kenya/gtc-tower.jpg|/kenya/Lake-Victoria-Dhow.jpg|/kenya/maasai-kenya.jpg";
+export const KENYA_GALLERY_CACHE_KEY = "/kenya/nairobi-expressway.png|/kenya/flower-farm-roses.jpg|/kenya/tea-farm-kenya.jpg|/kenya/mt-longonot.jpg|/kenya/golf-course-nairobi.jpg|/kenya/Lake-Victoria-Dhow.jpg|/kenya/maasai-kenya.jpg";

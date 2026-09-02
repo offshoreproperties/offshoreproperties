@@ -1,6 +1,7 @@
 /**
  * Regenerate hero slideshow from kenya-gallery.allowlist.json
- * ONLY files in public/kenya/ that are explicitly allowlisted appear on the homepage.
+ * ONLY files that exist in public/kenya/ AND are allowlisted appear on the homepage.
+ * Missing allowlist entries are pruned automatically.
  * Run: npm run sync:gallery
  */
 import { existsSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
@@ -24,7 +25,7 @@ if (!Array.isArray(allowlist)) {
 }
 
 const urls = [];
-const missing = [];
+const prunedAllowlist = [];
 const invalid = [];
 
 for (const raw of allowlist) {
@@ -35,9 +36,10 @@ for (const raw of allowlist) {
   }
   const filePath = join(dir, name);
   if (existsSync(filePath)) {
+    prunedAllowlist.push(name);
     urls.push(`/kenya/${name}`);
   } else {
-    missing.push(name);
+    console.warn(`Removed from allowlist (not on disk): ${name}`);
   }
 }
 
@@ -47,16 +49,16 @@ if (invalid.length) {
   process.exit(1);
 }
 
-if (missing.length) {
-  console.warn("Allowlisted but missing from public/kenya (skipped on homepage):");
-  missing.forEach((n) => console.warn(`  - ${n}`));
+if (prunedAllowlist.length !== allowlist.length) {
+  writeFileSync(allowlistPath, `${JSON.stringify(prunedAllowlist, null, 2)}\n`);
+  console.log(`Pruned allowlist → ${prunedAllowlist.length} file(s)`);
 }
 
 if (existsSync(dir)) {
   const onDisk = readdirSync(dir).filter((f) => !f.startsWith("."));
-  const notListed = onDisk.filter((f) => !allowlist.includes(f));
+  const notListed = onDisk.filter((f) => !prunedAllowlist.includes(f));
   if (notListed.length) {
-    console.warn("In public/kenya but NOT on homepage allowlist:");
+    console.warn("Still in public/kenya but NOT on homepage (delete these from the repo):");
     notListed.forEach((n) => console.warn(`  - ${n}`));
   }
 }
