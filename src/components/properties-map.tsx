@@ -123,12 +123,15 @@ export function PropertiesMap({
   className,
   showPricePins = false,
   interactive = true,
+  compactPreview = false,
 }: {
   properties: MapProperty[];
   className?: string;
   showPricePins?: boolean;
   /** When false, uses a static map + listing cards (no Maps JavaScript API — avoids Google error modals). */
   interactive?: boolean;
+  /** Tighter map + listing cards for the homepage block. */
+  compactPreview?: boolean;
 }) {
   const [ready, setReady] = useState(false);
   const [apiKey, setApiKey] = useState<string | undefined>(undefined);
@@ -188,7 +191,12 @@ export function PropertiesMap({
 
   if (!interactive || !apiKey) {
     return (
-      <ListingsMapPreview properties={properties} className={className} showPricePins={showPricePins} />
+      <ListingsMapPreview
+        properties={properties}
+        className={className}
+        showPricePins={showPricePins}
+        compact={compactPreview}
+      />
     );
   }
 
@@ -202,13 +210,23 @@ export function PropertiesMap({
 
   if (ready && !checkingMaps && !mapsInteractiveReady) {
     return (
-      <ListingsMapPreview properties={properties} className={className} showPricePins={showPricePins} />
+      <ListingsMapPreview
+        properties={properties}
+        className={className}
+        showPricePins={showPricePins}
+        compact={compactPreview}
+      />
     );
   }
 
   if (loadError) {
     return (
-      <ListingsMapPreview properties={properties} className={className} showPricePins={showPricePins} />
+      <ListingsMapPreview
+        properties={properties}
+        className={className}
+        showPricePins={showPricePins}
+        compact={compactPreview}
+      />
     );
   }
 
@@ -221,8 +239,8 @@ export function PropertiesMap({
       apiKey={apiKey}
       onError={() => setLoadError("failed")}
     >
-      <div className={cn("flex h-full min-h-[320px] flex-col", className)}>
-        <div className="min-h-0 flex-1 overflow-hidden rounded-xl border border-neutral-200 shadow-sm">
+      <div className={cn("relative flex h-full min-h-[320px] flex-col", className)}>
+        <div className="relative min-h-0 flex-1 overflow-hidden rounded-xl border border-neutral-200 shadow-sm">
           <Map
             defaultCenter={center}
             defaultZoom={zoom}
@@ -248,7 +266,7 @@ export function PropertiesMap({
                 position={{ lat: Number(selected.latitude), lng: Number(selected.longitude) }}
                 onCloseClick={() => setSelected(null)}
               >
-                <div className="max-w-[240px] p-1">
+                <div className="max-w-[260px] p-1">
                   {selected.hero_image && (
                     <img src={selected.hero_image} alt="" className="mb-2 h-24 w-full rounded object-cover" />
                   )}
@@ -291,33 +309,44 @@ export function PropertiesMap({
               </InfoWindow>
             )}
           </Map>
-        </div>
-        <div className="mt-3 flex flex-wrap items-center gap-4 text-xs text-neutral-600">
-          {showPricePins ? (
-            <span className="flex items-center gap-1.5">
-              <span className="rounded-full bg-[#2563eb] px-2 py-0.5 text-[10px] font-bold text-white">Kshs 12M</span>
-              Exact location
-            </span>
+
+          {compactPreview ? (
+            <div className="pointer-events-none absolute inset-x-0 top-0 p-2.5 sm:p-3">
+              <span className="pointer-events-auto inline-flex rounded-full bg-white/95 px-2.5 py-1 text-[10px] font-semibold text-slate-800 shadow-sm ring-1 ring-slate-200/80 sm:text-xs">
+                {withCoords.length} {withCoords.length === 1 ? "listing" : "listings"} on map
+              </span>
+            </div>
           ) : null}
-          {showPricePins ? (
-            <span className="flex items-center gap-1.5">
-              <span className="rounded-full bg-neutral-700 px-2 py-0.5 text-[10px] font-bold text-white">~Kshs 12M</span>
-              Approximate area
-            </span>
-          ) : null}
-          {Object.entries({
-            villa: "Villas",
-            apartment: "Apartments",
-            townhouse: "Townhouses",
-            land: "Land",
-            commercial: "Commercial",
-          }).map(([k, label]) => (
-            <span key={k} className="flex items-center gap-1.5">
-              <span className="h-3 w-3 rounded-full" style={{ background: pinColor(k) }} />
-              {label}
-            </span>
-          ))}
         </div>
+
+        {!compactPreview ? (
+          <div className="mt-3 flex flex-wrap items-center gap-4 text-xs text-neutral-600">
+            {showPricePins ? (
+              <span className="flex items-center gap-1.5">
+                <span className="rounded-full bg-[#2563eb] px-2 py-0.5 text-[10px] font-bold text-white">Kshs 12M</span>
+                Exact location
+              </span>
+            ) : null}
+            {showPricePins ? (
+              <span className="flex items-center gap-1.5">
+                <span className="rounded-full bg-neutral-700 px-2 py-0.5 text-[10px] font-bold text-white">~Kshs 12M</span>
+                Approximate area
+              </span>
+            ) : null}
+            {Object.entries({
+              villa: "Villas",
+              apartment: "Apartments",
+              townhouse: "Townhouses",
+              land: "Land",
+              commercial: "Commercial",
+            }).map(([k, label]) => (
+              <span key={k} className="flex items-center gap-1.5">
+                <span className="h-3 w-3 rounded-full" style={{ background: pinColor(k) }} />
+                {label}
+              </span>
+            ))}
+          </div>
+        ) : null}
       </div>
     </APIProvider>
   );

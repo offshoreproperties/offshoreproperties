@@ -12,6 +12,7 @@ import {
 import { Toaster } from "@/components/ui/sonner";
 import { FloatingWhatsApp } from "@/components/floating-whatsapp";
 import { SiteVisitTracker } from "@/components/site-visit-tracker";
+import { VisitorEngagementSync } from "@/components/visitor-engagement-sync";
 import { KenyaGalleryProvider } from "@/components/kenya-gallery-provider";
 import { BRAND, brandOgImageUrl } from "@/lib/constants";
 import appCss from "../styles.css?url";
@@ -129,6 +130,7 @@ function RootComponent() {
       <KenyaGalleryProvider>
         <ScrollToTop />
         <SiteVisitTracker />
+        <VisitorEngagementSync />
         <Outlet />
         <FloatingWhatsApp />
         <Toaster position="top-center" richColors closeButton />

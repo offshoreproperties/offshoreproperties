@@ -9,6 +9,8 @@ type SharePropertyButtonProps = {
   text?: string;
   className?: string;
   variant?: "default" | "outline";
+  /** Icon-only circle for tight map overlays */
+  compact?: boolean;
 };
 
 export function SharePropertyButton({
@@ -17,6 +19,7 @@ export function SharePropertyButton({
   text,
   className,
   variant = "outline",
+  compact = false,
 }: SharePropertyButtonProps) {
   const [copied, setCopied] = useState(false);
 
@@ -46,16 +49,22 @@ export function SharePropertyButton({
       type="button"
       onClick={handleShare}
       className={cn(
-        "inline-flex min-h-[40px] items-center justify-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition active:scale-[0.98]",
-        variant === "outline"
-          ? "border border-neutral-300 bg-white text-neutral-800 hover:bg-neutral-50"
-          : "bg-neutral-900 text-white hover:bg-neutral-800",
+        "inline-flex items-center justify-center font-medium transition active:scale-[0.98]",
+        compact
+          ? "h-8 w-8 rounded-full border border-neutral-200 bg-white text-neutral-700 hover:bg-neutral-50"
+          : cn(
+              "min-h-[40px] gap-2 rounded-full px-4 py-2 text-sm",
+              variant === "outline"
+                ? "border border-neutral-300 bg-white text-neutral-800 hover:bg-neutral-50"
+                : "bg-neutral-900 text-white hover:bg-neutral-800",
+            ),
         className,
       )}
-      aria-label={`Share ${title}`}
+      aria-label={compact ? (copied ? "Link copied" : `Share ${title}`) : undefined}
+      title={compact ? (copied ? "Link copied" : "Share") : undefined}
     >
-      <Icon className="h-4 w-4 shrink-0" aria-hidden />
-      {copied ? "Link copied" : "Share"}
+      <Icon className={cn("shrink-0", compact ? "h-3.5 w-3.5" : "h-4 w-4")} aria-hidden />
+      {!compact ? (copied ? "Link copied" : "Share") : null}
     </button>
   );
 }

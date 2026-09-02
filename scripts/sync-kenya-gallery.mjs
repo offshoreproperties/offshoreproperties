@@ -1,10 +1,10 @@
 /**
  * Regenerate hero slideshow from kenya-gallery.allowlist.json
- * Edit src/lib/kenya-gallery.allowlist.json — only listed files appear on the homepage.
+ * ONLY files in public/kenya/ that are explicitly allowlisted appear on the homepage.
  * Run: npm run sync:gallery
  */
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
-import { join, dirname } from "node:path";
+import { existsSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
+import { join, dirname, basename } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -25,8 +25,14 @@ if (!Array.isArray(allowlist)) {
 
 const urls = [];
 const missing = [];
+const invalid = [];
 
-for (const name of allowlist) {
+for (const raw of allowlist) {
+  const name = basename(String(raw).trim());
+  if (!name || name !== raw || name.includes("..")) {
+    invalid.push(String(raw));
+    continue;
+  }
   const filePath = join(dir, name);
   if (existsSync(filePath)) {
     urls.push(`/kenya/${name}`);
@@ -35,9 +41,24 @@ for (const name of allowlist) {
   }
 }
 
+if (invalid.length) {
+  console.error("Invalid allowlist entries (must be filenames inside public/kenya only):");
+  invalid.forEach((n) => console.error(`  - ${n}`));
+  process.exit(1);
+}
+
 if (missing.length) {
-  console.warn("Allowlisted but missing from public/kenya:");
+  console.warn("Allowlisted but missing from public/kenya (skipped on homepage):");
   missing.forEach((n) => console.warn(`  - ${n}`));
+}
+
+if (existsSync(dir)) {
+  const onDisk = readdirSync(dir).filter((f) => !f.startsWith("."));
+  const notListed = onDisk.filter((f) => !allowlist.includes(f));
+  if (notListed.length) {
+    console.warn("In public/kenya but NOT on homepage allowlist:");
+    notListed.forEach((n) => console.warn(`  - ${n}`));
+  }
 }
 
 writeFileSync(

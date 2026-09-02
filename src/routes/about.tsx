@@ -1,7 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { SiteLayout } from "@/components/site-layout";
 import { SectionHeading } from "@/components/section-heading";
-import { BRAND, HAVENLY_HERO_SALE } from "@/lib/constants";
+import { BRAND } from "@/lib/constants";
+import { getKenyaGallerySlides } from "@/lib/kenya-gallery";
+
+const ABOUT_HERO = getKenyaGallerySlides()[0] ?? "/kenya/golf-course-nairobi.jpg";
 
 export const Route = createFileRoute("/about")({
   head: () => ({
@@ -19,7 +22,7 @@ function AboutPage() {
       <section className="relative overflow-hidden">
         <div className="relative flex min-h-[min(32dvh,32vh)] items-end sm:min-h-[min(38dvh,38vh)]">
           <img
-            src={HAVENLY_HERO_SALE}
+            src={ABOUT_HERO}
             alt=""
             className="absolute inset-0 h-full w-full object-cover"
             sizes="100vw"

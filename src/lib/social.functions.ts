@@ -4,17 +4,131 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { supabaseAnonServer } from "@/integrations/supabase/client.anon-server";
 import { requireUserAuth } from "@/integrations/supabase/user-middleware";
 
+const visitorIdSchema = z.string().min(8).max(128);
+const propertyIdSchema = z.string().uuid();
+
+async function countEngagement(propertyId: string) {
+  const [authLikes, authSaves, guestLikes, guestSaves] = await Promise.all([
+    supabaseAnonServer.from("property_likes").select("*", { count: "exact", head: true }).eq("property_id", propertyId),
+    supabaseAnonServer.from("property_saves").select("*", { count: "exact", head: true }).eq("property_id", propertyId),
+    supabaseAdmin.from("guest_property_likes").select("*", { count: "exact", head: true }).eq("property_id", propertyId),
+    supabaseAdmin.from("guest_property_saves").select("*", { count: "exact", head: true }).eq("property_id", propertyId),
+  ]);
+  return {
+    likeCount: (authLikes.count ?? 0) + (guestLikes.count ?? 0),
+    saveCount: (authSaves.count ?? 0) + (guestSaves.count ?? 0),
+  };
+}
+
 export const getPropertyEngagement = createServerFn({ method: "POST" })
-  .inputValidator((input: unknown) => z.object({ propertyId: z.string().uuid() }).parse(input))
+  .inputValidator((input: unknown) => z.object({ propertyId: propertyIdSchema }).parse(input))
+  .handler(async ({ data }) => countEngagement(data.propertyId));
+
+export const toggleGuestLike = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        visitorId: visitorIdSchema,
+        propertyId: propertyIdSchema,
+        liked: z.boolean(),
+      })
+      .parse(input),
+  )
   .handler(async ({ data }) => {
-    const [likes, saves] = await Promise.all([
-      supabaseAnonServer.from("property_likes").select("*", { count: "exact", head: true }).eq("property_id", data.propertyId),
-      supabaseAnonServer.from("property_saves").select("*", { count: "exact", head: true }).eq("property_id", data.propertyId),
+    if (data.liked) {
+      const { error } = await supabaseAdmin.from("guest_property_likes").upsert(
+        { visitor_id: data.visitorId, property_id: data.propertyId },
+        { onConflict: "visitor_id,property_id" },
+      );
+      if (error) throw new Error(error.message);
+      return { liked: true };
+    }
+    await supabaseAdmin
+      .from("guest_property_likes")
+      .delete()
+      .eq("visitor_id", data.visitorId)
+      .eq("property_id", data.propertyId);
+    return { liked: false };
+  });
+
+export const toggleGuestSave = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        visitorId: visitorIdSchema,
+        propertyId: propertyIdSchema,
+        saved: z.boolean(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    if (data.saved) {
+      const { error } = await supabaseAdmin.from("guest_property_saves").upsert(
+        { visitor_id: data.visitorId, property_id: data.propertyId },
+        { onConflict: "visitor_id,property_id" },
+      );
+      if (error) throw new Error(error.message);
+      return { saved: true };
+    }
+    await supabaseAdmin
+      .from("guest_property_saves")
+      .delete()
+      .eq("visitor_id", data.visitorId)
+      .eq("property_id", data.propertyId);
+    return { saved: false };
+  });
+
+export const syncVisitorEngagement = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        visitorId: visitorIdSchema,
+        likes: z.array(propertyIdSchema),
+        saves: z.array(propertyIdSchema),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    await Promise.all([
+      supabaseAdmin.from("guest_property_likes").delete().eq("visitor_id", data.visitorId),
+      supabaseAdmin.from("guest_property_saves").delete().eq("visitor_id", data.visitorId),
     ]);
-    return {
-      likeCount: likes.count ?? 0,
-      saveCount: saves.count ?? 0,
-    };
+
+    if (data.likes.length) {
+      const { error } = await supabaseAdmin.from("guest_property_likes").insert(
+        data.likes.map((property_id) => ({ visitor_id: data.visitorId, property_id })),
+      );
+      if (error) throw new Error(error.message);
+    }
+    if (data.saves.length) {
+      const { error } = await supabaseAdmin.from("guest_property_saves").insert(
+        data.saves.map((property_id) => ({ visitor_id: data.visitorId, property_id })),
+      );
+      if (error) throw new Error(error.message);
+    }
+    return { ok: true };
+  });
+
+export const getGuestEngagement = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) =>
+    z.object({ visitorId: visitorIdSchema, propertyId: propertyIdSchema }).parse(input),
+  )
+  .handler(async ({ data }) => {
+    const [like, save] = await Promise.all([
+      supabaseAdmin
+        .from("guest_property_likes")
+        .select("property_id")
+        .eq("visitor_id", data.visitorId)
+        .eq("property_id", data.propertyId)
+        .maybeSingle(),
+      supabaseAdmin
+        .from("guest_property_saves")
+        .select("property_id")
+        .eq("visitor_id", data.visitorId)
+        .eq("property_id", data.propertyId)
+        .maybeSingle(),
+    ]);
+    return { liked: !!like.data, saved: !!save.data };
   });
 
 export const getMyEngagement = createServerFn({ method: "POST" })

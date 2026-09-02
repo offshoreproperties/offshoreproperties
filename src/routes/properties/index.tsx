@@ -21,6 +21,7 @@ const searchSchema = z.object({
   city: z.string().optional(),
   location: z.string().optional(),
   maxPrice: z.string().optional(),
+  bedrooms: z.string().optional(),
   ai: z.string().optional(),
   slugs: z.string().optional(),
   page: z.coerce.number().int().min(1).optional(),
@@ -52,6 +53,7 @@ function PropertiesPage() {
     city: search.city,
     location: search.location ?? search.city,
     maxPrice: search.maxPrice ? Number(search.maxPrice) : undefined,
+    bedrooms: search.bedrooms ? Number(search.bedrooms) : undefined,
     slugs: aiSlugs?.length ? aiSlugs : undefined,
   };
 
@@ -66,6 +68,7 @@ function PropertiesPage() {
           city: filters.city,
           location: filters.location,
           maxPrice: filters.maxPrice,
+          bedrooms: filters.bedrooms,
           slugs: filters.slugs,
           limit: PAGE_SIZE,
           offset: (page - 1) * PAGE_SIZE,

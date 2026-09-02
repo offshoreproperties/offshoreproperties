@@ -35,25 +35,25 @@ export const KES_PRICE_OPTIONS = [
   { label: "Kshs 100,000,000", value: "100000000" },
 ] as const;
 
+/** Monthly rent budgets for rental / short-let searches */
+export const KES_RENT_PRICE_OPTIONS = [
+  { label: "Any budget", value: "" },
+  { label: "Up to Kshs 50k / mo", value: "50000" },
+  { label: "Up to Kshs 80k / mo", value: "80000" },
+  { label: "Up to Kshs 120k / mo", value: "120000" },
+  { label: "Up to Kshs 200k / mo", value: "200000" },
+  { label: "Up to Kshs 350k / mo", value: "350000" },
+  { label: "Up to Kshs 500k / mo", value: "500000" },
+  { label: "Up to Kshs 1M / mo", value: "1000000" },
+] as const;
+
 /**
- * Homepage hero slideshow — ONLY files listed in kenya-gallery.allowlist.json appear.
- * To remove an image: delete its line from that file, then run npm run sync:gallery
- * Property listing photos live in Supabase (admin uploads), not here.
+ * Homepage hero slideshow — ONLY files listed in kenya-gallery.allowlist.json
+ * that exist under public/kenya/ appear on the homepage.
+ * Run: npm run sync:gallery
  */
 export { KENYA_GALLERY_IMAGES } from "@/lib/kenya-gallery.generated";
-
-export const HERO_IMAGE =
-  "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=1920&q=85";
-
-/** Havenly-style homepage — modern angular architecture */
-export const HAVENLY_HERO_IMAGE =
-  "https://images.unsplash.com/photo-1600607687644-c7171b42498f?auto=format&fit=crop&w=1920&q=85";
-
-export const HAVENLY_HERO_SALE =
-  "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=1920&q=85";
-
-export const HAVENLY_HERO_RENT =
-  "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=1920&q=85";
+export { getKenyaGallerySlides } from "@/lib/kenya-gallery";
 
 export const NAV = [
   { to: "/", label: "Home", exact: true },

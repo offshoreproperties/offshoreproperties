@@ -376,6 +376,58 @@ export type Database = {
           },
         ]
       }
+      guest_property_likes: {
+        Row: {
+          created_at: string
+          property_id: string
+          visitor_id: string
+        }
+        Insert: {
+          created_at?: string
+          property_id: string
+          visitor_id: string
+        }
+        Update: {
+          created_at?: string
+          property_id?: string
+          visitor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "guest_property_likes_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      guest_property_saves: {
+        Row: {
+          created_at: string
+          property_id: string
+          visitor_id: string
+        }
+        Insert: {
+          created_at?: string
+          property_id: string
+          visitor_id: string
+        }
+        Update: {
+          created_at?: string
+          property_id?: string
+          visitor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "guest_property_saves_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       property_likes: {
         Row: {
           created_at: string

@@ -10,6 +10,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { ListingBadgesDisplay } from "@/components/listing-badges-display";
+import { PropertyCardOverlayActions } from "@/components/property-card-overlay-actions";
 import {
   formatPrice,
   formatArea,
@@ -51,6 +52,8 @@ export type PropertyCardData = {
   images: string[] | null;
   is_featured?: boolean | null;
   listing_badges?: string[] | null;
+  latitude?: number | null;
+  longitude?: number | null;
 };
 
 function allImages(p: PropertyCardData): string[] {
@@ -161,34 +164,27 @@ export function PropertyCard({ p }: { p: PropertyCardData }) {
   }
 
   return (
-    <Link
-      to="/properties/$slug"
-      params={{ slug: p.slug ?? p.id }}
-      className="group flex flex-col overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-neutral-200 transition hover:-translate-y-0.5 hover:shadow-lg hover:ring-neutral-300"
-    >
-      {/* Image carousel */}
+    <article className="group flex flex-col overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-neutral-200 transition hover:-translate-y-0.5 hover:shadow-lg hover:ring-neutral-300">
       <div className="relative overflow-hidden">
-        <ImageCarousel images={imgs} title={p.title} />
-        <div className="absolute left-2 top-2 z-10 max-w-[70%]">
-          <ListingBadgesDisplay
-            badges={p.listing_badges}
-            isFeatured={p.is_featured}
-            limit={2}
-          />
+        <Link to="/properties/$slug" params={{ slug: p.slug ?? p.id }} className="block">
+          <ImageCarousel images={imgs} title={p.title} />
+        </Link>
+        <PropertyCardOverlayActions propertyId={p.id} slug={p.slug} title={p.title} />
+        <div className="pointer-events-none absolute left-2 top-2 z-10 max-w-[55%]">
+          <ListingBadgesDisplay badges={p.listing_badges} isFeatured={p.is_featured} limit={2} />
         </div>
-        {/* Type badges overlay */}
-        <div className="absolute right-2 top-2 flex flex-wrap justify-end gap-1">
+        <div className="pointer-events-none absolute bottom-2 left-2 z-10 flex flex-wrap gap-1">
           <span className="rounded-md bg-[#0a0a0a]/75 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white/90 backdrop-blur sm:text-[11px]">
             {propertyTypeLabel(p.property_type)}
           </span>
-          <span className="rounded-md bg-blue-50 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-blue-700 sm:text-[11px]">
+          <span className="rounded-md bg-blue-600/90 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white backdrop-blur sm:text-[11px]">
             {listingTypeShort(p.listing_type)}
           </span>
         </div>
         {status !== "available" && (
           <span
             className={cn(
-              "absolute left-2 bottom-2 rounded px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide backdrop-blur sm:text-[11px]",
+              "pointer-events-none absolute right-2 bottom-2 z-10 rounded px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide backdrop-blur sm:text-[11px]",
               statusTone(status),
             )}
           >
@@ -197,8 +193,7 @@ export function PropertyCard({ p }: { p: PropertyCardData }) {
         )}
       </div>
 
-      {/* Details below image */}
-      <div className="flex flex-1 flex-col gap-1.5 px-3 py-3 sm:px-4 sm:py-3.5">
+      <Link to="/properties/$slug" params={{ slug: p.slug ?? p.id }} className="flex flex-1 flex-col gap-1.5 px-3 py-3 sm:px-4 sm:py-3.5">
         <h3 className="line-clamp-1 text-sm font-semibold leading-snug text-neutral-900 sm:text-[15px]">
           {p.title}
         </h3>
@@ -227,7 +222,7 @@ export function PropertyCard({ p }: { p: PropertyCardData }) {
         </div>
 
         {features.length > 0 && <AmenitiesDisplay features={features} compact />}
-      </div>
-    </Link>
+      </Link>
+    </article>
   );
 }
