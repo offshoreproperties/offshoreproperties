@@ -4,6 +4,7 @@ import { ArrowUpRight, MapPin, Navigation } from "lucide-react";
 import { formatPrice, formatPriceCompact } from "@/lib/format";
 import type { MapProperty } from "@/components/properties-map";
 import { buildStaticMapImageUrl, getClientGoogleMapsApiKey } from "@/lib/google-maps";
+import { buildOsmEmbedUrl } from "@/lib/maps-fallback";
 import { googleMapsDirectionsUrl, openExternalMaps } from "@/lib/maps-url";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -32,6 +33,8 @@ export function ListingsMapPreview({
     apiKey && withCoords.length && !staticFailed
       ? buildStaticMapImageUrl(withCoords, apiKey)
       : null;
+
+  const osmEmbedUrl = !staticUrl && withCoords.length ? buildOsmEmbedUrl(withCoords) : null;
 
   if (!withCoords.length) {
     return (
@@ -63,6 +66,14 @@ export function ListingsMapPreview({
           alt="Map of listing locations in Kenya"
           className="absolute inset-0 h-full w-full object-cover"
           onError={() => setStaticFailed(true)}
+        />
+      ) : osmEmbedUrl ? (
+        <iframe
+          title="Map of listing locations"
+          src={osmEmbedUrl}
+          className="absolute inset-0 h-full w-full border-0 opacity-90"
+          loading="lazy"
+          referrerPolicy="no-referrer-when-downgrade"
         />
       ) : (
         <div

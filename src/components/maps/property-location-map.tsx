@@ -2,6 +2,7 @@ import { APIProvider, AdvancedMarker, Map, useMap } from "@vis.gl/react-google-m
 import { useEffect, useState } from "react";
 import { Navigation, MapPinned, Scan } from "lucide-react";
 import { buildStaticMapImageUrl, getClientGoogleMapsApiKey, getClientGoogleMapId } from "@/lib/google-maps";
+import { buildOsmEmbedUrl } from "@/lib/maps-fallback";
 import {
   buildLocationLabel,
   googleMapsDirectionsUrl,
@@ -97,6 +98,8 @@ export function PropertyLocationMap({
       ? buildStaticMapImageUrl([{ latitude, longitude }], apiKey, { zoom: 16, width: 800, height: 480 })
       : null;
 
+  const osmEmbedUrl = !staticUrl ? buildOsmEmbedUrl([{ latitude, longitude }]) : null;
+
   const showInteractiveMap = apiKey && !mapFailed;
 
   if (!ready) {
@@ -159,6 +162,14 @@ export function PropertyLocationMap({
               alt=""
               className="h-64 w-full object-cover opacity-90 sm:h-80"
               onError={() => setStaticFailed(true)}
+            />
+          ) : osmEmbedUrl ? (
+            <iframe
+              title="Property location map"
+              src={osmEmbedUrl}
+              className="h-64 w-full border-0 opacity-90 sm:h-80"
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
             />
           ) : (
             <div

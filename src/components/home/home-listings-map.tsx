@@ -69,7 +69,6 @@ export function HomeListingsMap({ homeTab }: HomeListingsMapProps) {
                   properties={filtered}
                   className="h-full"
                   showPricePins
-                  interactive={false}
                 />
               )}
             </div>

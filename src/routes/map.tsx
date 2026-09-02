@@ -59,7 +59,7 @@ function MapPage() {
           {isLoading ? (
             <div className="h-full animate-pulse rounded-2xl bg-slate-200" />
           ) : (
-            <PropertiesMap properties={properties} className="h-full" showPricePins interactive={false} />
+            <PropertiesMap properties={properties} className="h-full" showPricePins />
           )}
         </div>
       </section>

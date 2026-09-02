@@ -1,6 +1,7 @@
 import { APIProvider, AdvancedMarker, Map, useMap } from "@vis.gl/react-google-maps";
 import { useCallback, useEffect, useState } from "react";
 import { getClientGoogleMapsApiKey, getClientGoogleMapId } from "@/lib/google-maps";
+import { buildOsmEmbedUrl } from "@/lib/maps-fallback";
 import { cn } from "@/lib/utils";
 import { MapPin } from "lucide-react";
 
@@ -43,6 +44,7 @@ function MapRecenter({ position }: { position: { lat: number; lng: number } | nu
 
 export function LocationMapPicker({ latitude, longitude, onChange, className }: LocationMapPickerProps) {
   const [ready, setReady] = useState(false);
+  const [mapFailed, setMapFailed] = useState(false);
   const apiKey = ready ? getClientGoogleMapsApiKey() : undefined;
   const mapId = getClientGoogleMapId();
   const useMapId = mapId && mapId !== "DEMO_MAP_ID";
@@ -56,6 +58,14 @@ export function LocationMapPicker({ latitude, longitude, onChange, className }: 
     setReady(true);
   }, []);
 
+  useEffect(() => {
+    const previous = window.gm_authFailure;
+    window.gm_authFailure = () => setMapFailed(true);
+    return () => {
+      window.gm_authFailure = previous;
+    };
+  }, []);
+
   const handlePick = useCallback(
     (lat: number, lng: number) => {
       onChange({ latitude: lat, longitude: lng });
@@ -67,17 +77,39 @@ export function LocationMapPicker({ latitude, longitude, onChange, className }: 
     return <div className={cn("h-72 animate-pulse rounded-xl bg-muted", className)} />;
   }
 
-  if (!apiKey) {
+  if (!apiKey || mapFailed) {
+    const osmUrl =
+      latitude != null && longitude != null
+        ? buildOsmEmbedUrl([{ latitude, longitude }], { height: 288 })
+        : buildOsmEmbedUrl([{ latitude: DEFAULT_CENTER.lat, longitude: DEFAULT_CENTER.lng }], { height: 288 });
+
     return (
-      <div className={cn("rounded-xl border border-dashed border-border bg-muted/30 p-6 text-center text-sm text-muted-foreground", className)}>
-        <MapPin className="mx-auto mb-2 h-8 w-8 text-muted-foreground/60" />
-        Add <code className="rounded bg-muted px-1">VITE_GOOGLE_MAPS_API_KEY</code> to enable the interactive map picker.
+      <div className={cn("overflow-hidden rounded-xl border border-border", className)}>
+        {osmUrl ? (
+          <iframe
+            title="Location map"
+            src={osmUrl}
+            className="h-72 w-full border-0"
+            loading="lazy"
+            referrerPolicy="no-referrer-when-downgrade"
+          />
+        ) : (
+          <div className="rounded-xl border border-dashed border-border bg-muted/30 p-6 text-center text-sm text-muted-foreground">
+            <MapPin className="mx-auto mb-2 h-8 w-8 text-muted-foreground/60" />
+            Enter latitude and longitude manually, or configure Google Maps for the interactive picker.
+          </div>
+        )}
+        <p className="border-t border-border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+          {mapFailed
+            ? "Google Maps key needs fixing — using OpenStreetMap preview. You can still edit lat/lng fields above."
+            : "Add VITE_GOOGLE_MAPS_API_KEY for the interactive pin picker, or type coordinates manually."}
+        </p>
       </div>
     );
   }
 
   return (
-    <APIProvider apiKey={apiKey}>
+    <APIProvider apiKey={apiKey} onError={() => setMapFailed(true)}>
       <div className={cn("overflow-hidden rounded-xl border border-border", className)}>
         <Map
           defaultCenter={center}

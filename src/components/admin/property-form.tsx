@@ -3,7 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { uploadPropertyImage } from "@/lib/storage.functions";
 import { geocodeAddress, reverseGeocodeCoordinates } from "@/lib/geocode.functions";
-import { adminListAgents } from "@/lib/properties.functions";
+import { checkGoogleMapsApi } from "@/lib/maps.functions";
 import { slugify } from "@/lib/format";
 import { PROPERTY_TYPES, LISTING_TYPES, DEFAULT_CURRENCY } from "@/lib/constants";
 import { sortAmenities } from "@/lib/amenities";
@@ -89,10 +89,17 @@ export function PropertyForm({
   const geocode = useServerFn(geocodeAddress);
   const reverseGeocode = useServerFn(reverseGeocodeCoordinates);
   const fetchAgents = useServerFn(adminListAgents);
+  const checkMaps = useServerFn(checkGoogleMapsApi);
 
   const { data: agents = [] } = useQuery({
     queryKey: ["admin-agents"],
     queryFn: () => fetchAgents(),
+  });
+
+  const { data: mapsStatus } = useQuery({
+    queryKey: ["maps-api-status"],
+    queryFn: () => checkMaps(),
+    staleTime: 5 * 60_000,
   });
 
   const [title, setTitle] = useState(initial?.title ?? "");
@@ -182,6 +189,7 @@ export function PropertyForm({
   }
 
   const mapsConfigured = !!getGoogleMapsApiKey();
+  const mapsWorking = mapsStatus?.ok === true;
 
   async function runGeocode() {
     if (!mapsConfigured) {
@@ -465,9 +473,20 @@ export function PropertyForm({
         </div>
         {!mapsConfigured && (
           <p className="mt-2 rounded-lg bg-amber-500/10 px-3 py-2 text-xs text-amber-900 dark:text-amber-200">
-            Google Maps key missing: add <code className="rounded bg-muted px-1">VITE_GOOGLE_MAPS_API_KEY</code> to{" "}
-            <code className="rounded bg-muted px-1">.env</code> and restart <code className="rounded bg-muted px-1">npm run dev</code>.
+            Google Maps key missing: add <code className="rounded bg-muted px-1">VITE_GOOGLE_MAPS_API_KEY</code> and{" "}
+            <code className="rounded bg-muted px-1">GOOGLE_MAPS_API_KEY</code> to{" "}
+            <code className="rounded bg-muted px-1">.env</code> / Render, then redeploy.
             You can still type latitude and longitude manually.
+          </p>
+        )}
+        {mapsConfigured && mapsStatus && !mapsWorking && (
+          <p className="mt-2 rounded-lg bg-amber-500/10 px-3 py-2 text-xs text-amber-900 dark:text-amber-200">
+            {mapsStatus.message}
+            {mapsStatus.apis?.length ? (
+              <span className="mt-1 block text-amber-800/80 dark:text-amber-300/80">
+                Enable: {mapsStatus.apis.join(", ")}
+              </span>
+            ) : null}
           </p>
         )}
         <p className="mt-2 text-xs text-muted-foreground">
