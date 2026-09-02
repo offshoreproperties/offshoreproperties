@@ -318,6 +318,30 @@
     display: none;
   }
 
+  /* 44px minimum touch target (WCAG / iOS HIG) */
+  .touch-target {
+    min-height: 2.75rem;
+    min-width: 2.75rem;
+  }
+
+  /* Sticky bottom action bar — property detail, admin forms */
+  .mobile-action-bar {
+    @apply fixed inset-x-0 bottom-0 z-30 border-t border-neutral-200 bg-white/95 px-4 py-3 backdrop-blur-lg;
+    padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+  }
+
+  /* Show controls on touch devices; hover-only on desktop */
+  @media (hover: none), (pointer: coarse) {
+    .touch-show {
+      opacity: 1 !important;
+    }
+  }
+
+  /* Horizontal scroll fade hint */
+  .scroll-fade-x {
+    mask-image: linear-gradient(to right, transparent, #000 1rem, #000 calc(100% - 1rem), transparent);
+  }
+
   /* Dark scrollbar alias (admin panels — same dark theme, slightly stronger glow) */
   @media (min-width: 640px) {
     .scrollbar-dark {

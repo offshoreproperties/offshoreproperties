@@ -236,7 +236,7 @@ export function PropertyImageGallery({
             </button>
           </div>
 
-          <div className="relative flex min-h-0 flex-1 items-center justify-center px-14 sm:px-20">
+          <div className="relative flex min-h-0 flex-1 items-center justify-center px-3 sm:px-14 md:px-20">
             <MediaPreview
               key={images[active]}
               src={images[active]}

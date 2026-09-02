@@ -171,7 +171,7 @@ export function AiSearchField({
           className={cn(
             "shrink-0 rounded-full disabled:opacity-40",
             isHero
-              ? "h-7 w-7 bg-white/15 text-white ring-1 ring-white/25 hover:bg-white/25 sm:h-8 sm:w-8"
+              ? "h-10 w-10 bg-white/15 text-white ring-1 ring-white/25 hover:bg-white/25 sm:h-11 sm:w-11"
               : "bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50",
             !isHero && (isFloating ? "h-9 w-9" : "h-11 w-11 sm:h-9 sm:w-9"),
           )}

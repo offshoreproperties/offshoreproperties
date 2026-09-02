@@ -98,7 +98,9 @@ export function PublicHeader({
   function browseButtonClass(block = false) {
     return cn(
       "group inline-flex items-center justify-center gap-2 rounded-full font-semibold transition-all duration-300",
-      block ? "min-h-[48px] w-full px-5 py-3 text-sm" : "hidden min-h-10 min-[400px]:inline-flex px-4 py-2.5 text-sm sm:min-h-11 sm:px-5",
+      block
+        ? "min-h-[48px] w-full px-5 py-3 text-sm"
+        : "inline-flex min-h-10 px-3 py-2.5 text-sm max-[359px]:px-2.5 sm:min-h-11 sm:px-5",
       overlay
         ? "bg-white/95 text-blue-700 shadow-lg shadow-black/15 ring-1 ring-white/60 backdrop-blur-sm hover:bg-white hover:shadow-xl hover:shadow-black/20"
         : "relative overflow-hidden bg-gradient-to-r from-blue-600 via-blue-600 to-blue-700 text-white shadow-md shadow-blue-600/25 hover:from-blue-500 hover:via-blue-600 hover:to-blue-600 hover:shadow-lg hover:shadow-blue-600/35",
@@ -110,7 +112,8 @@ export function PublicHeader({
   function BrowseButton({ block = false, onNavigate }: { block?: boolean; onNavigate?: () => void }) {
     return (
       <Link to="/properties" onClick={onNavigate} className={browseButtonClass(block)}>
-        <span className="relative z-[1]">Browse listings</span>
+        <span className="relative z-[1] hidden min-[360px]:inline">Browse listings</span>
+        <span className="relative z-[1] min-[360px]:hidden">Browse</span>
         <ArrowUpRight
           className={cn(
             "relative z-[1] h-4 w-4 shrink-0 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5",
@@ -156,7 +159,7 @@ export function PublicHeader({
         className={cn(
           overlay
             ? "hidden justify-self-center md:flex lg:col-start-2"
-            : "hidden justify-self-center lg:col-start-2 lg:flex",
+            : "hidden justify-self-center md:col-start-2 md:flex",
         )}
       >
         <div
@@ -180,7 +183,7 @@ export function PublicHeader({
               size="icon"
               variant="ghost"
               className={cn(
-                "h-11 w-11 shrink-0 rounded-full lg:hidden",
+                "h-11 w-11 shrink-0 rounded-full md:hidden",
                 overlay ? "text-white" : "text-white hover:bg-white/10",
               )}
               aria-label="Open menu"

@@ -34,7 +34,7 @@ export function HomeListingsSection({
         <Link
           to="/properties"
           search={collectionSearch}
-          className="group inline-flex h-9 shrink-0 items-center gap-1 rounded-full border border-slate-200 bg-white px-3.5 text-xs font-semibold text-slate-800 transition hover:border-slate-300 hover:bg-slate-50 sm:text-sm"
+          className="group inline-flex h-11 shrink-0 items-center gap-1 rounded-full border border-slate-200 bg-white px-4 text-xs font-semibold text-slate-800 transition hover:border-slate-300 hover:bg-slate-50 sm:text-sm"
         >
           View all
           <ArrowUpRight className="h-3.5 w-3.5 transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />

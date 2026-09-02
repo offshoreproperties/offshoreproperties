@@ -23,13 +23,13 @@ export function FloatingWhatsApp() {
       rel="noopener noreferrer"
       aria-label="Chat with Offshore Properties on WhatsApp"
       className={cn(
-        "fixed z-40 flex h-10 w-10 items-center justify-center rounded-full sm:h-11 sm:w-11",
+        "fixed z-40 flex h-11 w-11 items-center justify-center rounded-full sm:h-12 sm:w-12",
         "bg-[#25D366] text-white shadow-lg shadow-[#25D366]/30 ring-2 ring-white/90",
         "transition hover:bg-[#20bd5a] hover:shadow-xl active:scale-95 motion-reduce:active:scale-100",
         "right-[max(0.875rem,env(safe-area-inset-right))]",
         isHome
-          ? "bottom-[max(6.5rem,env(safe-area-inset-bottom))] sm:bottom-[max(7rem,env(safe-area-inset-bottom))]"
-          : "bottom-[max(0.875rem,env(safe-area-inset-bottom))]",
+          ? "bottom-[max(5.5rem,env(safe-area-inset-bottom))] sm:bottom-[max(6.5rem,env(safe-area-inset-bottom))]"
+          : "bottom-[max(1rem,env(safe-area-inset-bottom))] max-lg:bottom-[max(5rem,env(safe-area-inset-bottom))]",
       )}
     >
       <WhatsAppIcon className="h-[1.125rem] w-[1.125rem] sm:h-5 sm:w-5" />

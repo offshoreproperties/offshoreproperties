@@ -45,7 +45,7 @@ export function HavenlyHero({ homeTab, onHomeTabChange }: HavenlyHeroProps) {
 
   return (
     <section className="relative w-full overflow-hidden">
-      <div className="relative flex min-h-[min(70vh,640px)] min-h-[min(70dvh,640px)] w-full flex-col sm:min-h-[min(76vh,700px)] sm:min-h-[min(76dvh,700px)] lg:min-h-[min(80vh,760px)]">
+      <div className="relative flex min-h-[min(58dvh,520px)] w-full flex-col sm:min-h-[min(68vh,620px)] sm:min-h-[min(68dvh,620px)] lg:min-h-[min(80vh,760px)] lg:min-h-[min(80dvh,760px)]">
         <HeroKenyaGallery />
 
         <PublicHeader
@@ -55,7 +55,7 @@ export function HavenlyHero({ homeTab, onHomeTabChange }: HavenlyHeroProps) {
           className="absolute inset-x-0 top-0"
         />
 
-        <div className="relative z-10 mt-auto w-full px-4 pb-8 pt-28 sm:px-8 sm:pb-10 sm:pt-32 lg:px-10 lg:pb-12 lg:pt-36">
+        <div className="relative z-10 mt-auto w-full px-4 pb-6 pt-24 sm:px-8 sm:pb-10 sm:pt-32 lg:px-10 lg:pb-12 lg:pt-36">
           <div className="max-w-2xl">
             <h1 className="min-h-[2.4em] text-[clamp(1.5rem,5vw,3.5rem)] font-bold leading-[1.1] tracking-tight text-white drop-shadow-md sm:min-h-[1.3em]">
               <FadePhrases key={homeTab} phrases={phrases} />
@@ -70,7 +70,7 @@ export function HavenlyHero({ homeTab, onHomeTabChange }: HavenlyHeroProps) {
               <Button
                 variant="secondary"
                 size="sm"
-                className="h-10 gap-2 rounded-full border-white/40 bg-white/90 px-4 text-neutral-900 shadow-sm backdrop-blur hover:bg-white"
+                className="h-10 gap-2 rounded-full border-white/40 bg-white/90 px-4 text-neutral-900 shadow-sm backdrop-blur hover:bg-white sm:h-11"
               >
                 <Map className="h-4 w-4 shrink-0" />
                 View map

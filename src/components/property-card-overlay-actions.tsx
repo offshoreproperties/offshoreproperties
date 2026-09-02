@@ -35,7 +35,7 @@ function OverlayBtn({
       disabled={disabled}
       onClick={onClick}
       className={cn(
-        "flex h-9 w-9 items-center justify-center rounded-full bg-white/95 text-neutral-700 shadow-md ring-1 ring-black/5 backdrop-blur-sm transition hover:scale-105 hover:bg-white active:scale-95 disabled:opacity-60",
+        "flex h-11 w-11 items-center justify-center rounded-full bg-white/95 text-neutral-700 shadow-md ring-1 ring-black/5 backdrop-blur-sm transition hover:scale-105 hover:bg-white active:scale-95 disabled:opacity-60",
         active && activeClass,
       )}
     >

@@ -7,6 +7,8 @@ import { HomeTabStrip } from "@/components/home/home-tab-strip";
 import { HomePropertyFilters } from "@/components/home/home-property-filters";
 import { HomeListingsMap } from "@/components/home/home-listings-map";
 import { HomeListingsSection } from "@/components/home/home-listings-section";
+import { HomeScrollHeader } from "@/components/home/home-scroll-header";
+import { SiteFooter } from "@/components/site-footer";
 import type { HomeTab } from "@/components/public-header";
 import { listProperties } from "@/lib/properties.functions";
 import { listPropertiesForMap } from "@/lib/maps.functions";
@@ -113,14 +115,15 @@ function Index() {
   );
 
   return (
-    <div className="min-h-dvh-screen bg-[#f8fafc]">
+    <div className="min-h-dvh-screen overflow-x-clip bg-[#f8fafc]">
       <HavenlyHero homeTab={homeTab} onHomeTabChange={setTab} />
+      <HomeScrollHeader homeTab={homeTab} onHomeTabChange={setTab} />
 
       <HomeTabStrip active={homeTab} onChange={setTab} />
 
       <HomePropertyFilters homeTab={homeTab} />
 
-      <section className="relative z-10 -mt-5 px-3 pb-8 safe-bottom pt-0 sm:-mt-6 sm:px-6 sm:pb-10 lg:px-8">
+      <section className="relative z-10 -mt-5 px-3 pb-4 safe-bottom pt-0 sm:-mt-6 sm:px-6 sm:pb-6 lg:px-8">
         <div className="mx-auto max-w-[1440px] overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-md">
           <HomeListingsMap
             homeTab={homeTab}
@@ -138,6 +141,8 @@ function Index() {
           />
         </div>
       </section>
+
+      <SiteFooter />
     </div>
   );
 }

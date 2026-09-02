@@ -123,14 +123,14 @@ export function AnalyticsDashboard() {
         title="Performance overview"
         description="Site traffic, property engagement, leads, and viewing requests in one place."
         actions={
-          <>
+          <div className="grid w-full grid-cols-3 gap-2 sm:flex sm:w-auto">
             {periodOptions.map((opt) => (
               <Button
                 key={opt.value}
                 size="sm"
                 variant={period === opt.value ? "default" : "outline"}
                 className={cn(
-                  "h-9 rounded-lg px-4 font-medium",
+                  "h-10 rounded-lg px-2 font-medium sm:h-9 sm:px-4",
                   period === opt.value
                     ? "bg-blue-600 text-white hover:bg-blue-700"
                     : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50",
@@ -141,9 +141,11 @@ export function AnalyticsDashboard() {
               </Button>
             ))}
             {isFetching && !isLoading ? (
-              <span className="text-xs text-slate-500">Updating…</span>
+              <span className="col-span-3 text-center text-xs text-slate-500 sm:col-span-1 sm:text-left">
+                Updating…
+              </span>
             ) : null}
-          </>
+          </div>
         }
       />
 
@@ -216,12 +218,12 @@ export function AnalyticsDashboard() {
 
           <div className="grid gap-6 xl:grid-cols-3">
             <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm xl:col-span-2">
-              <div className="mb-4 flex items-center justify-between gap-3">
+              <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-2">
                   <BarChart3 className="h-4 w-4 text-blue-600" />
                   <h3 className="text-base font-semibold text-slate-900">Traffic trend</h3>
                 </div>
-                <div className="flex gap-3 text-xs text-slate-500">
+                <div className="flex flex-wrap gap-3 text-xs text-slate-500">
                   <span className="flex items-center gap-1.5">
                     <span className="h-2 w-2 rounded-full bg-blue-600" /> Site visits
                   </span>
@@ -354,7 +356,7 @@ export function AnalyticsDashboard() {
                 Views, likes, and saves per listing for the last {period} days
               </p>
             </div>
-            <div className="scrollbar-offshore overflow-x-auto">
+            <div className="hidden scrollbar-offshore overflow-x-auto md:block">
               <table className="w-full min-w-[720px] text-left text-sm">
                 <thead>
                   <tr className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wider text-slate-500">
@@ -410,6 +412,55 @@ export function AnalyticsDashboard() {
                   ))}
                 </tbody>
               </table>
+            </div>
+            <div className="divide-y divide-slate-100 md:hidden">
+              {data.propertyStats.map((p) => (
+                <div key={p.id} className="flex gap-3 px-4 py-3">
+                  {p.heroImage ? (
+                    <img src={p.heroImage} alt="" className="h-14 w-16 shrink-0 rounded object-cover" />
+                  ) : (
+                    <div className="h-14 w-16 shrink-0 rounded bg-muted" />
+                  )}
+                  <div className="min-w-0 flex-1">
+                    {p.slug ? (
+                      <Link
+                        to="/properties/$slug"
+                        params={{ slug: p.slug }}
+                        className="line-clamp-2 font-medium text-slate-900 hover:text-blue-600"
+                        target="_blank"
+                      >
+                        {p.title}
+                      </Link>
+                    ) : (
+                      <p className="line-clamp-2 font-medium text-foreground">{p.title}</p>
+                    )}
+                    <div className="mt-1 flex flex-wrap items-center gap-2">
+                      <Badge variant={p.isPublished ? "default" : "secondary"} className="text-[10px]">
+                        {p.isPublished ? "Live" : "Draft"}
+                      </Badge>
+                      <span className="text-xs text-muted-foreground">{p.city ?? "—"}</span>
+                    </div>
+                    <div className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+                      <span>
+                        <span className="text-muted-foreground">Views ({period}d): </span>
+                        <span className="font-mono font-medium">{formatNumber(p.viewsInPeriod)}</span>
+                      </span>
+                      <span>
+                        <span className="text-muted-foreground">Likes: </span>
+                        <span className="font-mono font-medium">{formatNumber(p.likesInPeriod)}</span>
+                      </span>
+                      <span>
+                        <span className="text-muted-foreground">Saves: </span>
+                        <span className="font-mono font-medium">{formatNumber(p.savesInPeriod)}</span>
+                      </span>
+                      <span>
+                        <span className="text-muted-foreground">Score: </span>
+                        <span className="font-mono font-medium text-blue-600">{formatNumber(p.engagementScore)}</span>
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
 

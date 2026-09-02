@@ -44,7 +44,7 @@ function AdminLoginPage() {
   }
 
   return (
-    <div className="flex min-h-dvh-screen flex-col items-center justify-center bg-[#0a0a0a] px-4">
+    <div className="flex min-h-dvh-screen flex-col items-center justify-center safe-top bg-[#0a0a0a] px-4 pb-8">
       <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#141414] p-8 shadow-elevated sm:p-10">
         <Link to="/">
           <BrandLogo imgClassName="h-10" />

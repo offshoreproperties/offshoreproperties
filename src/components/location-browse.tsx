@@ -35,13 +35,13 @@ export function LocationBrowse({
         </div>
       ) : null}
 
-      <div className={cn("scrollbar-hide -mx-1 flex gap-1.5 overflow-x-auto pb-0.5 pt-0.5", compact && "gap-1.5")}>
+      <div className={cn("scrollbar-hide scroll-fade-x -mx-1 flex gap-1.5 overflow-x-auto pb-0.5 pt-0.5", compact && "gap-1.5")}>
         {KENYA_BROWSE_LOCATIONS.map((area) => {
           const chip = (
             <span
               className={cn(
                 "inline-flex shrink-0 items-center gap-2 rounded-full font-medium shadow-sm transition",
-                compact ? "px-3 py-1.5 text-xs" : "px-4 py-2.5 text-sm",
+                compact ? "min-h-10 px-3 py-2 text-xs" : "min-h-11 px-4 py-2.5 text-sm",
                 light
                   ? "border border-slate-200/80 bg-white text-slate-800 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 hover:shadow-md"
                   : "border border-white/15 bg-white/10 text-white hover:bg-white/15",

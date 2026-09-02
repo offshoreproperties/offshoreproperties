@@ -39,9 +39,23 @@ function ContactPage() {
                   {BRAND.email}
                 </a>
               </li>
-              <li className="flex min-h-[48px] items-center gap-3 px-1 text-neutral-600">
-                <Phone className="h-5 w-5 shrink-0 text-[#2563eb]" />
-                <span>{BRAND.phone}<br />{BRAND.phone2}</span>
+              <li>
+                <a
+                  href={`tel:${BRAND.phone.replace(/\s/g, "")}`}
+                  className="flex min-h-[48px] items-center gap-3 rounded-lg px-1 text-neutral-600 hover:text-neutral-900"
+                >
+                  <Phone className="h-5 w-5 shrink-0 text-[#2563eb]" />
+                  {BRAND.phone}
+                </a>
+              </li>
+              <li>
+                <a
+                  href={`tel:${BRAND.phone2.replace(/\s/g, "")}`}
+                  className="flex min-h-[48px] items-center gap-3 rounded-lg px-1 text-neutral-600 hover:text-neutral-900"
+                >
+                  <Phone className="h-5 w-5 shrink-0 text-[#2563eb]" />
+                  {BRAND.phone2}
+                </a>
               </li>
               <li className="px-1 pt-2">
                 <WhatsAppButton

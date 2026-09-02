@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { getPropertyBySlug, recordPropertyView } from "@/lib/properties.functions";
 import { buildPropertyHead, propertyOgDescription, propertyShareUrl } from "@/lib/property-share";
 import { SharePropertyButton, CopyPropertyLinkButton } from "@/components/share-property-button";
@@ -47,6 +47,40 @@ export const Route = createFileRoute("/properties/$slug")({
   component: PropertyDetailPage,
 });
 
+function PropertyMobileActionBar({
+  price,
+  currency,
+  listingType,
+  whatsappUrl,
+  onEnquire,
+}: {
+  price: number;
+  currency: string;
+  listingType: string;
+  whatsappUrl: string;
+  onEnquire: () => void;
+}) {
+  return (
+    <div className="mobile-action-bar lg:hidden">
+      <div className="mx-auto flex max-w-lg items-center gap-2 sm:gap-3">
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-base font-bold text-blue-600 sm:text-lg">
+            {formatPrice(price, currency, listingType)}
+          </p>
+        </div>
+        <WhatsAppButton href={whatsappUrl} label="WhatsApp" className="h-11 shrink-0 px-3 text-sm sm:px-4" />
+        <Button
+          type="button"
+          onClick={onEnquire}
+          className="h-11 shrink-0 rounded-full bg-neutral-900 px-4 text-sm hover:bg-neutral-800"
+        >
+          Enquire
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 function PropertyContactPanel({
   price,
   currency,
@@ -82,10 +116,10 @@ function PropertyContactPanel({
 
         <Tabs defaultValue="enquiry" className="mt-4">
           <TabsList className="grid h-auto w-full grid-cols-2 gap-1 bg-neutral-100 p-1">
-            <TabsTrigger value="enquiry" className="min-h-[40px] text-xs sm:text-sm">
+            <TabsTrigger value="enquiry" className="min-h-[44px] text-xs sm:text-sm">
               Enquire
             </TabsTrigger>
-            <TabsTrigger value="viewing" className="min-h-[40px] text-xs sm:text-sm">
+            <TabsTrigger value="viewing" className="min-h-[44px] text-xs sm:text-sm">
               Book viewing
             </TabsTrigger>
           </TabsList>
@@ -134,6 +168,7 @@ function PropertyDetailPage() {
   const { property: loaderProperty } = Route.useLoaderData();
   const fetch = useServerFn(getPropertyBySlug);
   const track = useServerFn(recordPropertyView);
+  const contactRef = useRef<HTMLDivElement>(null);
 
   const { data: p, isLoading, error } = useQuery({
     queryKey: ["property", slug],
@@ -243,6 +278,12 @@ function PropertyDetailPage() {
     />
   );
 
+  const whatsappUrl = propertyWhatsAppUrl(whatsappNumber, propertyContext);
+
+  function scrollToContact() {
+    contactRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
   return (
     <SiteLayout showFooter={false} compactHeader overflowVisible>
       <script
@@ -250,7 +291,7 @@ function PropertyDetailPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <article className="overflow-visible bg-white text-neutral-900">
-        <div className="mx-auto max-w-7xl overflow-visible px-3 pt-4 pb-16 safe-bottom sm:px-4 sm:pt-5 sm:pb-20 lg:pt-6 lg:pb-24">
+        <div className="mx-auto max-w-7xl overflow-visible px-3 pt-4 pb-24 safe-bottom sm:px-4 sm:pt-5 sm:pb-28 lg:pt-6 lg:pb-24">
           <Link
             to="/properties"
             className="mb-4 inline-flex min-h-11 items-center gap-1.5 py-2 text-xs font-medium uppercase tracking-wider text-neutral-500 hover:text-neutral-900 sm:mb-5"
@@ -263,11 +304,27 @@ function PropertyDetailPage() {
               <PropertyImageGallery images={images} title={p.title} />
             </div>
 
-            <aside className="mt-3 lg:col-start-2 lg:row-start-1 lg:row-span-2 lg:mt-0 lg:sticky lg:top-[max(3.5rem,calc(3.5rem+env(safe-area-inset-top)))] lg:self-start">
+            <aside className="hidden lg:col-start-2 lg:row-start-1 lg:row-span-2 lg:mt-0 lg:sticky lg:top-[max(3.5rem,calc(3.5rem+env(safe-area-inset-top)))] lg:block lg:self-start">
               {contactPanel}
             </aside>
 
             <div className="mt-3 min-w-0 sm:mt-4 lg:col-start-1 lg:row-start-2 lg:mt-0">
+              <div className="mb-3 rounded-xl border border-neutral-100 bg-neutral-50/80 p-3 lg:hidden">
+                <p className="text-xl font-bold text-blue-600">
+                  {formatPrice(Number(p.price), p.currency, p.listing_type)}
+                </p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <WhatsAppButton href={whatsappUrl} label="Chat on WhatsApp" className="flex-1 sm:flex-none" />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={scrollToContact}
+                    className="h-11 flex-1 rounded-full border-neutral-300 sm:flex-none"
+                  >
+                    Enquire
+                  </Button>
+                </div>
+              </div>
               <div className="flex flex-wrap items-center gap-2">
                   <Badge className="bg-neutral-900 text-white">{propertyTypeLabel(p.property_type)}</Badge>
                   <Badge variant="outline" className="border-neutral-300 text-neutral-700">
@@ -371,8 +428,23 @@ function PropertyDetailPage() {
                 )}
             </div>
           </div>
+
+          <div ref={contactRef} id="property-contact" className="mt-8 scroll-mt-20 lg:hidden">
+            <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-neutral-500">
+              Get in touch
+            </p>
+            {contactPanel}
+          </div>
         </div>
       </article>
+
+      <PropertyMobileActionBar
+        price={Number(p.price)}
+        currency={p.currency}
+        listingType={p.listing_type}
+        whatsappUrl={whatsappUrl}
+        onEnquire={scrollToContact}
+      />
     </SiteLayout>
   );
 }

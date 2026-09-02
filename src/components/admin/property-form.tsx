@@ -34,7 +34,7 @@ import {
   PROPERTY_MEDIA_ACCEPT,
   resolvePropertyUploadMime,
 } from "@/lib/media";
-import { Loader2, MapPin, Upload, X, GripVertical, Link2, Video, Mic, Cloud, CloudOff } from "lucide-react";
+import { Loader2, MapPin, Upload, X, GripVertical, Link2, Video, Mic, Cloud, CloudOff, ChevronUp, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { userFacingError } from "@/lib/user-facing-error";
 import { cn } from "@/lib/utils";
@@ -453,7 +453,7 @@ export function PropertyForm({
   }
 
   return (
-    <form onSubmit={handleSave} className="space-y-6">
+    <form onSubmit={handleSave} className="space-y-6 pb-24 sm:pb-0">
       {autosaveEnabled && (
         <div
           className={cn(
@@ -470,14 +470,17 @@ export function PropertyForm({
           ) : (
             <Cloud className="h-3.5 w-3.5" />
           )}
-          <span>
+          <span className="min-w-0 flex-1">
             {saveState === "saving" && "Saving draft…"}
             {saveState === "saved" &&
               (lastSavedAt
-                ? `Draft saved ${lastSavedAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} — safe to refresh`
-                : "Draft autosave on")}
-            {saveState === "idle" && "Draft autosave on — your work syncs to the server"}
-            {saveState === "error" && "Draft save failed — check connection and keep this tab open"}
+                ? `Saved ${lastSavedAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
+                : "Autosave on")}
+            {saveState === "idle" && "Autosave on"}
+            {saveState === "error" && "Save failed — check connection"}
+            <span className="hidden sm:inline">
+              {saveState === "saved" && lastSavedAt ? " — safe to refresh" : saveState === "idle" ? " — syncs to server" : ""}
+            </span>
           </span>
         </div>
       )}
@@ -799,7 +802,7 @@ export function PropertyForm({
         </div>
       </div>
 
-      <div className="flex gap-3">
+      <div className="hidden gap-3 sm:flex">
         {onCancel && (
           <Button type="button" variant="outline" className="flex-1" onClick={onCancel}>
             Cancel
@@ -809,6 +812,20 @@ export function PropertyForm({
           {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           {initial?.id ? "Update property" : "Create property"}
         </Button>
+      </div>
+
+      <div className="mobile-action-bar sm:hidden">
+        <div className="flex gap-2">
+          {onCancel && (
+            <Button type="button" variant="outline" className="h-11 flex-1 rounded-full" onClick={onCancel}>
+              Cancel
+            </Button>
+          )}
+          <Button type="submit" disabled={saving || uploading} className="h-11 flex-1 rounded-full">
+            {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {initial?.id ? "Update" : "Create"}
+          </Button>
+        </div>
       </div>
     </form>
   );
@@ -863,8 +880,20 @@ function DraggableImageGrid({
     setOverIdx(null);
   }, []);
 
+  const moveItem = useCallback(
+    (idx: number, direction: -1 | 1) => {
+      const toIdx = idx + direction;
+      if (toIdx < 0 || toIdx >= images.length) return;
+      const next = [...images];
+      const [moved] = next.splice(idx, 1);
+      next.splice(toIdx, 0, moved);
+      onReorder(next);
+    },
+    [images, onReorder],
+  );
+
   return (
-    <div className="mt-4 grid grid-cols-3 gap-2 sm:grid-cols-4">
+    <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
       {images.map((url, idx) => (
         <div
           key={url}
@@ -887,7 +916,27 @@ function DraggableImageGrid({
           ) : (
             <img src={url} alt="" className="h-full w-full object-cover pointer-events-none" />
           )}
-          <div className="absolute left-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-black/50 text-white/70 opacity-0 transition group-hover:opacity-100">
+          <div className="absolute left-1 top-1 flex flex-col gap-0.5">
+            <button
+              type="button"
+              disabled={idx === 0}
+              className="touch-show flex h-7 w-7 items-center justify-center rounded-full bg-black/50 text-white opacity-100 disabled:opacity-30 sm:opacity-0 sm:group-hover:opacity-100"
+              onClick={() => moveItem(idx, -1)}
+              aria-label="Move earlier"
+            >
+              <ChevronUp className="h-3.5 w-3.5" />
+            </button>
+            <button
+              type="button"
+              disabled={idx === images.length - 1}
+              className="touch-show flex h-7 w-7 items-center justify-center rounded-full bg-black/50 text-white opacity-100 disabled:opacity-30 sm:opacity-0 sm:group-hover:opacity-100"
+              onClick={() => moveItem(idx, 1)}
+              aria-label="Move later"
+            >
+              <ChevronDown className="h-3.5 w-3.5" />
+            </button>
+          </div>
+          <div className="absolute right-1 top-1 hidden h-6 w-6 items-center justify-center rounded-full bg-black/50 text-white/70 opacity-0 transition group-hover:opacity-100 sm:flex">
             <GripVertical className="h-3.5 w-3.5" />
           </div>
           <span className="absolute left-1/2 top-1 -translate-x-1/2 rounded bg-black/60 px-1.5 py-0.5 text-[9px] font-medium text-white/60">
@@ -895,14 +944,15 @@ function DraggableImageGrid({
           </span>
           <button
             type="button"
-            className="absolute right-1 top-1 rounded-full bg-black/60 p-1 text-white opacity-0 transition group-hover:opacity-100"
+            className="touch-show absolute right-1 top-1 flex h-8 w-8 items-center justify-center rounded-full bg-black/60 text-white opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
             onClick={() => onRemove(url)}
+            aria-label="Remove"
           >
-            <X className="h-3 w-3" />
+            <X className="h-3.5 w-3.5" />
           </button>
           <button
             type="button"
-            className={`absolute bottom-1 left-1 rounded px-1.5 text-[10px] ${heroImage === url ? "bg-neutral-900 text-black" : "bg-black/50 text-white"}`}
+            className={`touch-show absolute bottom-1 left-1 min-h-[28px] rounded px-2 text-[10px] opacity-100 sm:opacity-100 ${heroImage === url ? "bg-neutral-900 text-white" : "bg-black/50 text-white sm:opacity-0 sm:group-hover:opacity-100"}`}
             onClick={() => onSetHero(url)}
           >
             Hero

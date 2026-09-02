@@ -49,7 +49,7 @@ export function HomeListingsMap({
         </div>
         <Link
           to="/map"
-          className="group inline-flex h-8 shrink-0 items-center justify-center gap-1 rounded-full bg-slate-900 px-3.5 text-xs font-semibold text-white transition hover:bg-slate-800 sm:h-9 sm:px-4"
+          className="group inline-flex h-11 shrink-0 items-center justify-center gap-1 rounded-full bg-slate-900 px-4 text-xs font-semibold text-white transition hover:bg-slate-800 sm:px-4"
         >
           Full map
           <ArrowUpRight className="h-3 w-3 transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
