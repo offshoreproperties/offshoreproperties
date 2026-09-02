@@ -75,9 +75,13 @@ export function AiSearchField({
       setMatches(result.matches ?? []);
       setMatchSlugs(result.matchSlugs ?? []);
     } catch (err) {
-      setReply(err instanceof Error && !err.message.includes("not configured")
-        ? err.message
-        : "Our search assistant is taking a short break — browse listings below or message us on WhatsApp.");
+      setReply(
+        err instanceof Error &&
+          !err.message.includes("not configured") &&
+          !err.message.includes("API key")
+          ? err.message
+          : "Our search assistant is taking a short break — browse listings below or message us on WhatsApp.",
+      );
     } finally {
       setLoading(false);
     }

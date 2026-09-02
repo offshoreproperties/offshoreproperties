@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabaseAnonServer } from "@/integrations/supabase/client.anon-server";
 import { rateLimit } from "@/lib/rate-limit";
-import { aiConfigError, runAiChat } from "@/lib/ai-client";
+import { runAiChat } from "@/lib/ai-client";
 import { normalizeAiReply } from "@/lib/ai-format";
 import { buildPropertyAdvisorPrompt } from "@/lib/ai-prompts";
 import { areaContextForProperty, formatAreaBrief } from "@/lib/kenya-locations";
@@ -66,7 +66,9 @@ export const propertyAdvisor = createServerFn({ method: "POST" })
       ]);
     } catch (err) {
       if (err instanceof Error && err.message.includes("not configured")) {
-        throw new Error(aiConfigError());
+        throw new Error(
+          "We couldn't load that just now — message us on WhatsApp and we'll help directly.",
+        );
       }
       throw err;
     }

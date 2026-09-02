@@ -45,7 +45,13 @@ export function PropertyAiAdvisor({
       setAreaLabel(result.areaLabel ?? null);
       setQuestion("");
     } catch (err) {
-      setReply(err instanceof Error ? err.message : "We couldn't load that just now — message us on WhatsApp and we'll help directly.");
+      setReply(
+        err instanceof Error &&
+          !err.message.includes("not configured") &&
+          !err.message.includes("API key")
+          ? err.message
+          : "We couldn't load that just now — message us on WhatsApp and we'll help directly.",
+      );
     } finally {
       setLoading(false);
     }
