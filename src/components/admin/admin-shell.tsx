@@ -1,5 +1,5 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import { LayoutDashboard, Building2, Inbox, Calendar, LogOut, Menu } from "lucide-react";
+import { BarChart3, Building2, Inbox, Calendar, LogOut, Menu } from "lucide-react";
 import { useAdminAuth } from "@/hooks/use-admin-auth";
 import { clearAdminSession } from "@/lib/admin-session";
 import { Button } from "@/components/ui/button";
@@ -7,7 +7,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 
 const links = [
-  { to: "/admin", label: "Overview", icon: LayoutDashboard, exact: true },
+  { to: "/admin", label: "Analytics", icon: BarChart3, exact: true },
   { to: "/admin/properties", label: "Properties", icon: Building2 },
   { to: "/admin/leads", label: "Leads", icon: Inbox },
   { to: "/admin/bookings", label: "Bookings", icon: Calendar },

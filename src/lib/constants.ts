@@ -7,6 +7,22 @@ export const BRAND = {
   whatsapp: "+254702447447",
 } as const;
 
+/** Default listing currency for Kenya */
+export const DEFAULT_CURRENCY = "KES" as const;
+
+export const KES_PRICE_OPTIONS = [
+  { label: "Any price", value: "" },
+  { label: "Kshs 100,000", value: "100000" },
+  { label: "Kshs 200,000", value: "200000" },
+  { label: "Kshs 500,000", value: "500000" },
+  { label: "Kshs 1,000,000", value: "1000000" },
+  { label: "Kshs 5,000,000", value: "5000000" },
+  { label: "Kshs 10,000,000", value: "10000000" },
+  { label: "Kshs 25,000,000", value: "25000000" },
+  { label: "Kshs 50,000,000", value: "50000000" },
+  { label: "Kshs 100,000,000", value: "100000000" },
+] as const;
+
 /**
  * Kenyan hero gallery — high-res landmark photos (GTC, Expressway, UNON,
  * Mt Longonot, golf, tea & flower farms) plus scenic Unsplash slides.

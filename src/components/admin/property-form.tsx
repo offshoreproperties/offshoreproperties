@@ -2,11 +2,17 @@ import { useState, useRef, useCallback } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { uploadPropertyImage } from "@/lib/storage.functions";
-import { geocodeAddress } from "@/lib/geocode.functions";
+import { geocodeAddress, reverseGeocodeCoordinates } from "@/lib/geocode.functions";
 import { adminListAgents } from "@/lib/properties.functions";
 import { slugify } from "@/lib/format";
+import { PROPERTY_TYPES, LISTING_TYPES, DEFAULT_CURRENCY } from "@/lib/constants";
+import { sortAmenities } from "@/lib/amenities";
 import { getGoogleMapsApiKey, googleMapsConfigError } from "@/lib/google-maps";
-import { PROPERTY_TYPES, LISTING_TYPES } from "@/lib/constants";
+import { parseGoogleMapsUrl } from "@/lib/maps-url";
+import { ListingBadgePicker } from "@/components/listing-badge-picker";
+import { AmenitiesPicker } from "@/components/amenities-picker";
+import { LocationMapPicker } from "@/components/maps/location-map-picker";
+import { normalizeListingBadges, type ListingBadgeId } from "@/lib/listing-badges";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,8 +24,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  isPropertyUploadMime,
+  isVideoUrl,
+  MAX_IMAGE_UPLOAD_BYTES,
+  MAX_VIDEO_UPLOAD_BYTES,
+  PROPERTY_MEDIA_ACCEPT,
+} from "@/lib/media";
+import { Loader2, MapPin, Upload, X, GripVertical, Link2 } from "lucide-react";
 import { toast } from "sonner";
-import { Loader2, MapPin, Upload, X, GripVertical } from "lucide-react";
 
 export type PropertyFormValues = {
   id?: string;
@@ -49,6 +62,7 @@ export type PropertyFormValues = {
   hero_image: string | null;
   is_published: boolean;
   is_featured: boolean;
+  listing_badges: string[];
   agent_id: string | null;
   available_from: string | null;
 };
@@ -73,6 +87,7 @@ export function PropertyForm({
 }) {
   const upload = useServerFn(uploadPropertyImage);
   const geocode = useServerFn(geocodeAddress);
+  const reverseGeocode = useServerFn(reverseGeocodeCoordinates);
   const fetchAgents = useServerFn(adminListAgents);
 
   const { data: agents = [] } = useQuery({
@@ -86,7 +101,7 @@ export function PropertyForm({
   const [listingType, setListingType] = useState(initial?.listing_type ?? "sale");
   const [status, setStatus] = useState(initial?.status ?? "available");
   const [price, setPrice] = useState(String(initial?.price ?? ""));
-  const [currency, setCurrency] = useState(initial?.currency ?? "USD");
+  const [currency, setCurrency] = useState(initial?.currency ?? DEFAULT_CURRENCY);
   const [bedrooms, setBedrooms] = useState(String(initial?.bedrooms ?? ""));
   const [bathrooms, setBathrooms] = useState(String(initial?.bathrooms ?? ""));
   const sqmToAcres = (sqm: number) => sqm / 4046.86;
@@ -111,15 +126,19 @@ export function PropertyForm({
   const [lat, setLat] = useState(String(initial?.latitude ?? ""));
   const [lng, setLng] = useState(String(initial?.longitude ?? ""));
   const [description, setDescription] = useState(initial?.description ?? "");
-  const [featuresText, setFeaturesText] = useState((initial?.features ?? []).join(", "));
+  const [features, setFeatures] = useState<string[]>(initial?.features ?? []);
   const [images, setImages] = useState<string[]>(initial?.images?.length ? initial.images : initial?.hero_image ? [initial.hero_image] : []);
   const [heroImage, setHeroImage] = useState(initial?.hero_image ?? "");
   const [isPublished, setIsPublished] = useState(initial?.is_published ?? false);
   const [isFeatured, setIsFeatured] = useState(initial?.is_featured ?? false);
+  const [listingBadges, setListingBadges] = useState<ListingBadgeId[]>(
+    normalizeListingBadges(initial?.listing_badges),
+  );
   const [agentId, setAgentId] = useState(initial?.agent_id ?? "__none");
   const [availableFrom, setAvailableFrom] = useState(initial?.available_from ?? "");
   const [uploading, setUploading] = useState(false);
   const [geocoding, setGeocoding] = useState(false);
+  const [mapsLink, setMapsLink] = useState("");
   const [saving, setSaving] = useState(false);
 
   const showShortLet = listingType === "short_let";
@@ -130,19 +149,31 @@ export function PropertyForm({
     try {
       const urls: string[] = [];
       for (const file of Array.from(files)) {
-        if (file.size > 5 * 1024 * 1024) {
-          toast.error(`${file.name} is too large (max 5MB)`);
+        if (!isPropertyUploadMime(file.type)) {
+          toast.error(`${file.name}: unsupported file type`);
+          continue;
+        }
+        const isVideo = file.type.startsWith("video/");
+        const maxBytes = isVideo ? MAX_VIDEO_UPLOAD_BYTES : MAX_IMAGE_UPLOAD_BYTES;
+        if (file.size > maxBytes) {
+          toast.error(
+            `${file.name} is too large (max ${maxBytes / (1024 * 1024)}MB)`,
+          );
           continue;
         }
         const base64 = await fileToBase64(file);
         const { url } = await upload({
-          data: { fileName: file.name, contentType: file.type as "image/jpeg" | "image/png" | "image/webp" | "image/gif", dataBase64: base64 },
+          data: {
+            fileName: file.name,
+            contentType: file.type,
+            dataBase64: base64,
+          },
         });
         urls.push(url);
       }
       setImages((prev) => [...prev, ...urls]);
       if (!heroImage && urls[0]) setHeroImage(urls[0]);
-      toast.success(`Uploaded ${urls.length} image(s)`);
+      toast.success(`Uploaded ${urls.length} file(s) with Offshore watermark`);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Upload failed");
     } finally {
@@ -176,6 +207,37 @@ export function PropertyForm({
     }
   }
 
+  function applyMapsLink() {
+    const coords = parseGoogleMapsUrl(mapsLink);
+    if (!coords) {
+      toast.error("Paste a valid Google Maps link or coordinates (lat, lng)");
+      return;
+    }
+    setLat(String(coords.lat));
+    setLng(String(coords.lng));
+    setMapsLink("");
+    toast.success("Location imported from Google Maps link");
+    void syncAddressFromCoords(coords.lat, coords.lng);
+  }
+
+  async function syncAddressFromCoords(latitude: number, longitude: number) {
+    if (!mapsConfigured) return;
+    try {
+      const result = await reverseGeocode({ data: { latitude, longitude } });
+      if (result.formatted && !address) setAddress(result.formatted);
+      if (result.city && !city) setCity(result.city);
+      if (result.country && !country) setCountry(result.country);
+    } catch {
+      // Optional enrichment — ignore failures
+    }
+  }
+
+  function handleMapPick(coords: { latitude: number; longitude: number }) {
+    setLat(String(coords.latitude));
+    setLng(String(coords.longitude));
+    void syncAddressFromCoords(coords.latitude, coords.longitude);
+  }
+
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
@@ -204,11 +266,12 @@ export function PropertyForm({
         latitude: lat ? Number(lat) : null,
         longitude: lng ? Number(lng) : null,
         description: description || null,
-        features: featuresText.split(",").map((f) => f.trim()).filter(Boolean),
+        features: sortAmenities(features),
         images,
         hero_image: hero,
         is_published: isPublished,
         is_featured: isFeatured,
+        listing_badges: listingBadges,
         agent_id: agentId && agentId !== "__none" ? agentId : null,
         available_from: availableFrom || null,
       });
@@ -245,30 +308,12 @@ export function PropertyForm({
           </label>
         </div>
 
-        <div
-          className={`rounded-xl border p-4 ${
-            isFeatured
-              ? "border-amber-400/60 bg-amber-400/10"
-              : "border-border bg-muted/30"
-          }`}
-        >
-          <label className="flex cursor-pointer items-start gap-3">
-            <input
-              type="checkbox"
-              className="mt-1"
-              checked={isFeatured}
-              onChange={(e) => setIsFeatured(e.target.checked)}
-            />
-            <span>
-              <span className="font-medium text-foreground">Feature this property</span>
-              <span className="mt-0.5 block text-sm text-muted-foreground">
-                {isFeatured
-                  ? "Shows a star badge and appears first in listings."
-                  : "Standard listing — not highlighted on the homepage."}
-              </span>
-            </span>
-          </label>
-        </div>
+        <ListingBadgePicker
+          value={listingBadges}
+          onChange={setListingBadges}
+          isFeatured={isFeatured}
+          onFeaturedChange={setIsFeatured}
+        />
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
@@ -385,8 +430,8 @@ export function PropertyForm({
       </div>
 
       <div className="rounded-xl border border-border p-4">
-        <div className="flex items-center justify-between">
-          <Label className="text-base">Location (for map)</Label>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <Label className="text-base">Location (for map &amp; directions)</Label>
           <Button type="button" variant="outline" size="sm" onClick={runGeocode} disabled={geocoding}>
             {geocoding ? <Loader2 className="h-4 w-4 animate-spin" /> : <MapPin className="h-4 w-4" />}
             <span className="ml-2">Find on map</span>
@@ -399,39 +444,60 @@ export function PropertyForm({
           <Input placeholder="Latitude" value={lat} onChange={(e) => setLat(e.target.value)} />
           <Input placeholder="Longitude" value={lng} onChange={(e) => setLng(e.target.value)} />
         </div>
+        <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+          <Input
+            placeholder="Paste Google Maps link or lat, lng"
+            value={mapsLink}
+            onChange={(e) => setMapsLink(e.target.value)}
+            className="flex-1"
+          />
+          <Button type="button" variant="secondary" onClick={applyMapsLink} disabled={!mapsLink.trim()}>
+            <Link2 className="mr-2 h-4 w-4" />
+            Import link
+          </Button>
+        </div>
+        <div className="mt-4">
+          <LocationMapPicker
+            latitude={lat ? Number(lat) : null}
+            longitude={lng ? Number(lng) : null}
+            onChange={handleMapPick}
+          />
+        </div>
         {!mapsConfigured && (
           <p className="mt-2 rounded-lg bg-amber-500/10 px-3 py-2 text-xs text-amber-900 dark:text-amber-200">
             Google Maps key missing: add <code className="rounded bg-muted px-1">VITE_GOOGLE_MAPS_API_KEY</code> to{" "}
             <code className="rounded bg-muted px-1">.env</code> and restart <code className="rounded bg-muted px-1">npm run dev</code>.
-            You can still type latitude and longitude manually below.
+            You can still type latitude and longitude manually.
           </p>
         )}
-        <p className="mt-2 text-xs text-muted-foreground">Properties need latitude & longitude to appear on the map.</p>
+        <p className="mt-2 text-xs text-muted-foreground">
+          Set the pin on the map so visitors can explore the area in 3D and open directions in Google Maps.
+        </p>
       </div>
 
       <div className="space-y-1.5">
         <Label>Description</Label>
         <Textarea rows={5} value={description} onChange={(e) => setDescription(e.target.value)} />
       </div>
-      <div className="space-y-1.5">
-        <Label>Features (comma-separated)</Label>
-        <Input value={featuresText} onChange={(e) => setFeaturesText(e.target.value)} placeholder="Pool, Sea view, Garage" />
-      </div>
+      <AmenitiesPicker value={features} onChange={setFeatures} />
 
       <div className="rounded-xl border border-border p-4">
-        <Label className="text-base">Images</Label>
-        <p className="mt-1 text-xs text-muted-foreground">Upload to Supabase storage (max 5MB each, JPEG/PNG/WebP/GIF). Drag images to reorder. First image is used as hero unless set below.</p>
+        <Label className="text-base">Photos &amp; videos</Label>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Uploads are automatically watermarked with the Offshore logo (glassy centre mark).
+          Images up to 5MB (JPEG/PNG/WebP/GIF), videos up to 80MB (MP4/WebM/MOV).
+        </p>
         <label className="mt-3 flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-border py-8 transition hover:bg-muted/50">
           <input
             type="file"
-            accept="image/jpeg,image/png,image/webp,image/gif"
+            accept={PROPERTY_MEDIA_ACCEPT}
             multiple
             className="hidden"
             onChange={(e) => handleFiles(e.target.files)}
             disabled={uploading}
           />
           {uploading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Upload className="h-5 w-5" />}
-          <span className="text-sm">{uploading ? "Uploading…" : "Upload images"}</span>
+          <span className="text-sm">{uploading ? "Uploading…" : "Upload photos or videos"}</span>
         </label>
         {images.length > 0 && (
           <DraggableImageGrid
@@ -529,7 +595,11 @@ function DraggableImageGrid({
             overIdx === idx ? "scale-95 ring-2 ring-[#2563eb]" : ""
           } ${dragIdx.current === idx ? "opacity-40" : "opacity-100"}`}
         >
-          <img src={url} alt="" className="h-full w-full object-cover pointer-events-none" />
+          {isVideoUrl(url) ? (
+            <video src={url} className="h-full w-full object-cover pointer-events-none" muted playsInline preload="metadata" />
+          ) : (
+            <img src={url} alt="" className="h-full w-full object-cover pointer-events-none" />
+          )}
           <div className="absolute left-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-black/50 text-white/70 opacity-0 transition group-hover:opacity-100">
             <GripVertical className="h-3.5 w-3.5" />
           </div>

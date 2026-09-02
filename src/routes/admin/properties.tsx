@@ -12,7 +12,7 @@ import {
 import { useAdminAuth } from "@/hooks/use-admin-auth";
 import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { SectionHeading } from "@/components/section-heading";
+import { ListingBadgesDisplay } from "@/components/listing-badges-display";
 import { PropertyForm, type PropertyFormValues } from "@/components/admin/property-form";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/dialog";
 import { formatPrice, propertyTypeLabel } from "@/lib/format";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, ExternalLink, Star } from "lucide-react";
+import { Plus, Pencil, Trash2, ExternalLink } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { BRAND } from "@/lib/constants";
 
@@ -136,6 +136,7 @@ function AdminProperties() {
                 ...editing,
                 images: editing.images ?? [],
                 features: editing.features ?? [],
+                listing_badges: editing.listing_badges ?? [],
               }}
               onSubmit={handleSave}
               onCancel={() => setEditId(null)}
@@ -152,7 +153,7 @@ function AdminProperties() {
               <th className="px-4 py-3">Type</th>
               <th className="px-4 py-3">Price</th>
               <th className="px-4 py-3">Map</th>
-              <th className="px-4 py-3">Featured</th>
+              <th className="px-4 py-3">Badges</th>
               <th className="px-4 py-3">Status</th>
               <th className="px-4 py-3 text-right">Actions</th>
             </tr>
@@ -178,14 +179,13 @@ function AdminProperties() {
                   </Badge>
                 </td>
                 <td className="px-4 py-3">
-                  <div className="flex flex-col items-start gap-1.5">
-                    <Badge
-                      variant={p.is_featured ? "default" : "secondary"}
-                      className={p.is_featured ? "gap-1 bg-amber-500 text-black hover:bg-amber-500" : "text-xs"}
-                    >
-                      {p.is_featured && <Star className="h-3 w-3 fill-current" />}
-                      {p.is_featured ? "Featured" : "Standard"}
-                    </Badge>
+                  <div className="flex max-w-[220px] flex-col items-start gap-1.5">
+                    <ListingBadgesDisplay
+                      badges={p.listing_badges}
+                      isFeatured={p.is_featured}
+                      limit={3}
+                      size="sm"
+                    />
                     <Button
                       size="sm"
                       variant="outline"

@@ -75,6 +75,11 @@
   --border: #e2e8f0;
   --input: #e2e8f0;
   --ring: #2563eb;
+  --chart-1: 221 83% 53%;
+  --chart-2: 173 58% 39%;
+  --chart-3: 43 74% 66%;
+  --chart-4: 262 52% 47%;
+  --chart-5: 12 76% 61%;
   --shadow-card: 0 1px 3px rgb(0 0 0 / 8%), 0 4px 16px rgb(0 0 0 / 4%);
   --shadow-elevated: 0 4px 24px rgb(0 0 0 / 10%);
   --transition-smooth: 300ms cubic-bezier(0.4, 0, 0.2, 1);

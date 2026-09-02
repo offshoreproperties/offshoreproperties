@@ -3,7 +3,9 @@ import { SiteLayout } from "@/components/site-layout";
 import { SectionHeading } from "@/components/section-heading";
 import { EnquiryForm } from "@/components/enquiry-form";
 import { BRAND } from "@/lib/constants";
+import { buildWhatsAppUrl } from "@/lib/whatsapp";
 import { Mail, Phone, MapPin } from "lucide-react";
+import { WhatsAppButton } from "@/components/whatsapp-button";
 
 export const Route = createFileRoute("/contact")({
   head: () => ({
@@ -40,6 +42,17 @@ function ContactPage() {
               <li className="flex min-h-[48px] items-center gap-3 px-1 text-neutral-600">
                 <Phone className="h-5 w-5 shrink-0 text-[#2563eb]" />
                 <span>{BRAND.phone}<br />{BRAND.phone2}</span>
+              </li>
+              <li className="px-1 pt-2">
+                <WhatsAppButton
+                  href={buildWhatsAppUrl(BRAND.whatsapp, [
+                    `Hello! I'd like to enquire via ${BRAND.name}.`,
+                    "",
+                    "Please share what's available — thank you!",
+                  ])}
+                  label="Chat on WhatsApp"
+                  className="max-w-xs"
+                />
               </li>
               <li className="flex min-h-[48px] items-start gap-3 px-1 pt-3 text-neutral-600">
                 <MapPin className="h-5 w-5 shrink-0 text-[#2563eb]" />

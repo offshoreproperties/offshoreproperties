@@ -1,6 +1,34 @@
 import { useCallback, useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight, X, Expand } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { isVideoUrl } from "@/lib/media";
+
+function MediaPreview({
+  src,
+  alt,
+  className,
+  loading,
+}: {
+  src: string;
+  alt: string;
+  className?: string;
+  loading?: "lazy" | "eager";
+}) {
+  if (isVideoUrl(src)) {
+    return (
+      <video
+        src={src}
+        className={className}
+        muted
+        playsInline
+        loop
+        preload="metadata"
+        aria-label={alt}
+      />
+    );
+  }
+  return <img src={src} alt={alt} className={className} loading={loading} />;
+}
 
 export function collectPropertyImages(
   hero: string | null | undefined,
@@ -115,7 +143,7 @@ export function PropertyImageGallery({
         i === active ? "ring-blue-600" : "ring-transparent opacity-75 hover:opacity-100",
       )}
     >
-      <img src={src} alt="" className="h-full w-full object-cover" loading="lazy" />
+      <MediaPreview src={src} alt="" className="h-full w-full object-cover" loading="lazy" />
     </button>
   );
 
@@ -131,12 +159,11 @@ export function PropertyImageGallery({
             aria-label={`View ${title} photos full screen`}
           >
             <div className="aspect-[4/3] w-full max-h-[min(52dvh,52vh,480px)] sm:max-h-[min(58dvh,58vh,520px)]">
-              <img
+              <MediaPreview
                 key={images[active]}
                 src={images[active]}
                 alt={`${title} — photo ${active + 1}`}
                 className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.01]"
-                sizes="(max-width: 1024px) 100vw, 70vw"
               />
             </div>
 
@@ -198,7 +225,7 @@ export function PropertyImageGallery({
           </div>
 
           <div className="relative flex min-h-0 flex-1 items-center justify-center px-14 sm:px-20">
-            <img
+            <MediaPreview
               key={images[active]}
               src={images[active]}
               alt={`${title} — photo ${active + 1}`}
@@ -235,7 +262,7 @@ export function PropertyImageGallery({
                       i === active ? "ring-blue-500" : "ring-transparent opacity-60 hover:opacity-100",
                     )}
                   >
-                    <img src={src} alt="" className="h-full w-full object-cover" loading="lazy" />
+                    <MediaPreview src={src} alt="" className="h-full w-full object-cover" loading="lazy" />
                   </button>
                 ))}
               </div>

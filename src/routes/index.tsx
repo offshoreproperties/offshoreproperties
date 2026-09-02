@@ -4,6 +4,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
 import { HavenlyHero } from "@/components/home/havenly-hero";
 import { HomeTabStrip } from "@/components/home/home-tab-strip";
+import { HomeListingsMap } from "@/components/home/home-listings-map";
+import { LocationBrowse } from "@/components/location-browse";
 import { PropertyCard } from "@/components/property-card";
 import { listProperties } from "@/lib/properties.functions";
 import { BRAND } from "@/lib/constants";
@@ -78,6 +80,14 @@ function Index() {
       <HavenlyHero homeTab={homeTab} onHomeTabChange={setTab} />
 
       <HomeTabStrip active={homeTab} onChange={setTab} />
+
+      <section className="border-b border-black/5 bg-white px-3 py-6 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-[1440px]">
+          <LocationBrowse />
+        </div>
+      </section>
+
+      <HomeListingsMap homeTab={homeTab} />
 
       <section className="px-3 pb-8 safe-bottom sm:px-6 sm:pb-12 lg:px-8">
         <div className="mx-auto max-w-[1440px]">

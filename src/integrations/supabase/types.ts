@@ -248,6 +248,7 @@ export type Database = {
           images: string[]
           is_featured: boolean
           is_published: boolean
+          listing_badges: string[]
           latitude: number | null
           listing_type: string
           longitude: number | null
@@ -282,6 +283,7 @@ export type Database = {
           images?: string[]
           is_featured?: boolean
           is_published?: boolean
+          listing_badges?: string[]
           latitude?: number | null
           listing_type?: string
           longitude?: number | null
@@ -316,6 +318,7 @@ export type Database = {
           images?: string[]
           is_featured?: boolean
           is_published?: boolean
+          listing_badges?: string[]
           latitude?: number | null
           listing_type?: string
           longitude?: number | null
@@ -372,6 +375,79 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      property_likes: {
+        Row: {
+          created_at: string
+          property_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          property_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          property_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "property_likes_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      property_saves: {
+        Row: {
+          created_at: string
+          property_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          property_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          property_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "property_saves_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      site_visits: {
+        Row: {
+          created_at: string
+          id: string
+          path: string
+          referrer: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          path: string
+          referrer?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          path?: string
+          referrer?: string | null
+        }
+        Relationships: []
       }
       oauth_admin_emails: {
         Row: {

@@ -7,17 +7,23 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
-import { BRAND } from "@/lib/constants";
-import { buildWhatsAppUrl } from "@/lib/whatsapp";
+import {
+  buildGeneralEnquiryLines,
+  buildPropertyEnquiryLines,
+  buildWhatsAppUrl,
+  type PropertyWhatsAppContext,
+} from "@/lib/whatsapp";
 
 export function EnquiryForm({
   propertyId,
   propertyTitle,
+  propertyContext,
   whatsapp,
   source = "enquiry",
 }: {
   propertyId?: string;
   propertyTitle?: string;
+  propertyContext?: PropertyWhatsAppContext;
   whatsapp?: string | null;
   source?: "enquiry" | "contact";
 }) {
@@ -47,17 +53,13 @@ export function EnquiryForm({
         },
       });
 
-      const lines = [
-        `Hello, I'd like to enquire about a property on ${BRAND.name}.`,
-        "",
-        propertyTitle ? `*Property:* ${propertyTitle}` : null,
-        `*Name:* ${name}`,
-        `*Email:* ${email}`,
-        phone ? `*Phone:* ${phone}` : null,
-        message ? `\n*Message:*\n${message}` : null,
-        "",
-        "Looking forward to hearing from you!",
-      ];
+      const lines =
+        propertyContext || propertyTitle
+          ? buildPropertyEnquiryLines(
+              propertyContext ?? { title: propertyTitle! },
+              { name, email, phone, message },
+            )
+          : buildGeneralEnquiryLines({ name, email, phone, message });
 
       const wa = buildWhatsAppUrl(whatsapp, lines);
       window.open(wa, "_blank", "noopener");
@@ -96,7 +98,7 @@ export function EnquiryForm({
         className="w-full rounded-full bg-neutral-900 font-semibold uppercase tracking-wider text-white hover:bg-neutral-800"
       >
         {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-        Send enquiry
+        Send enquiry via WhatsApp
       </Button>
     </form>
   );

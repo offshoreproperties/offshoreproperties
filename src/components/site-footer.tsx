@@ -1,4 +1,7 @@
 import { Link } from "@tanstack/react-router";
+import { MessageCircle } from "lucide-react";
+import { BRAND } from "@/lib/constants";
+import { buildWhatsAppUrl } from "@/lib/whatsapp";
 
 export function SiteFooter() {
   return (
@@ -60,11 +63,21 @@ export function SiteFooter() {
                 hello@offshoreproperties.com
               </a>
             </li>
-            <li className="inline-flex min-h-[44px] items-center text-neutral-600">
-              +254 702 447 447
+            <li>
+              <a
+                href={buildWhatsAppUrl(BRAND.whatsapp, [
+                  `Hello! I'd like to enquire via ${BRAND.name}.`,
+                ])}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex min-h-[44px] items-center gap-2 text-[#128C7E] hover:text-[#25D366]"
+              >
+                <MessageCircle className="h-4 w-4 shrink-0" />
+                WhatsApp {BRAND.phone}
+              </a>
             </li>
             <li className="inline-flex min-h-[44px] items-center text-neutral-600">
-              +254 781 310 331
+              {BRAND.phone2}
             </li>
           </ul>
         </div>

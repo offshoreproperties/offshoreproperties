@@ -4,6 +4,7 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { supabaseAnonServer } from "@/integrations/supabase/client.anon-server";
 import { requireAdminAuth } from "@/integrations/supabase/admin-middleware";
 import { rateLimit } from "@/lib/rate-limit";
+import { LISTING_BADGE_OPTIONS } from "@/lib/listing-badges";
 
 /** Strip PostgREST filter operators from user input */
 function sanitizeFilter(value: string): string {
@@ -19,6 +20,7 @@ const FilterSchema = z.object({
   bedrooms: z.number().int().min(0).max(20).optional(),
   bathrooms: z.number().int().min(0).max(20).optional(),
   city: z.string().max(100).optional(),
+  location: z.string().max(100).optional(),
   limit: z.number().int().min(1).max(100).optional(),
   offset: z.number().int().min(0).optional(),
   featuredOnly: z.boolean().optional(),
@@ -36,7 +38,7 @@ export const listProperties = createServerFn({ method: "POST" })
     let q = supabaseAnonServer
       .from("properties")
       .select(
-        "id, title, slug, property_type, listing_type, status, price, currency, bedrooms, bathrooms, area_sqm, plot_size_sqm, address, city, country, description, features, hero_image, images, is_featured, latitude, longitude, created_at",
+        "id, title, slug, property_type, listing_type, status, price, currency, bedrooms, bathrooms, area_sqm, plot_size_sqm, address, city, country, description, features, hero_image, images, is_featured, listing_badges, latitude, longitude, created_at",
         { count: "exact" },
       )
       .eq("is_published", true)
@@ -56,6 +58,12 @@ export const listProperties = createServerFn({ method: "POST" })
     if (data.bedrooms != null) q = q.gte("bedrooms", data.bedrooms);
     if (data.bathrooms != null) q = q.gte("bathrooms", data.bathrooms);
     if (data.city) q = q.ilike("city", `%${sanitizeFilter(data.city)}%`);
+    if (data.location) {
+      const loc = sanitizeFilter(data.location);
+      q = q.or(
+        `city.ilike.%${loc}%,address.ilike.%${loc}%,title.ilike.%${loc}%,description.ilike.%${loc}%`,
+      );
+    }
     if (data.featuredOnly) q = q.eq("is_featured", true);
     if (data.slugs?.length) {
       const slugList = data.slugs.filter((s) => !UUID_RE.test(s));
@@ -149,7 +157,7 @@ export const adminListProperties = createServerFn({ method: "GET" })
   .handler(async () => {
     const { data, error } = await supabaseAdmin
       .from("properties")
-      .select("id, title, slug, property_type, listing_type, status, price, currency, city, hero_image, is_published, is_featured, view_count, latitude, longitude, created_at")
+      .select("id, title, slug, property_type, listing_type, status, price, currency, city, hero_image, is_published, is_featured, listing_badges, view_count, latitude, longitude, created_at")
       .order("created_at", { ascending: false });
     if (error) throw error;
     return data ?? [];
@@ -164,6 +172,10 @@ export const adminGetProperty = createServerFn({ method: "POST" })
     if (error) throw error;
     return row;
   });
+
+const ListingBadgeIdSchema = z.enum(
+  LISTING_BADGE_OPTIONS.map((b) => b.id) as [string, ...string[]],
+);
 
 const PropertyInputSchema = z.object({
   id: z.string().uuid().optional(),
@@ -193,6 +205,7 @@ const PropertyInputSchema = z.object({
   hero_image: z.string().max(2000).nullable().optional(),
   is_published: z.boolean().default(false),
   is_featured: z.boolean().default(false),
+  listing_badges: z.array(ListingBadgeIdSchema).max(3).default([]),
   agent_id: z.string().uuid().nullable().optional(),
   available_from: z.string().max(20).nullable().optional(),
 });

@@ -10,21 +10,23 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { Sparkles, Loader2, ArrowRight } from "lucide-react";
+import { Loader2, ArrowRight } from "lucide-react";
+import { AiAssistantIcon } from "@/components/icons/ai-assistant-icon";
 import { AiReplyText } from "@/components/ai-reply-text";
 import { formatPrice } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { FadeRotator } from "@/components/fade-phrases";
+import { LocationBrowse } from "@/components/location-browse";
 
 const AI_PROMPTS = [
-  "3-bed villa with a pool under $500k",
-  "family home with garden and parking",
-  "affordable 2-bed apartment for rent",
-  "luxury penthouse with rooftop terrace",
-  "land for investment under $100k",
-  "furnished rental near the city centre",
-  "short let apartment for 2 weeks",
-  "modern townhouse with 4 bedrooms",
+  "3-bed villa with a pool in Karen under Kshs 50M",
+  "family apartment in Kilimani near Yaya Centre",
+  "affordable 2-bed rental in Westlands",
+  "luxury home in Runda with garden and parking",
+  "land for investment in Kiambu or outskirts",
+  "furnished short let in Kilimani or Lavington",
+  "townhouse in Parklands for a growing family",
+  "what is it like living in Kilimani?",
 ];
 
 type Match = {
@@ -97,10 +99,15 @@ export function AiSearchField({
           className,
         )}
       >
-        <Sparkles
-          className={cn("shrink-0 text-blue-600", isHero ? "h-4 w-4" : "h-3.5 w-3.5")}
+        <span
+          className={cn(
+            "flex shrink-0 items-center justify-center rounded-full bg-blue-50 text-blue-600",
+            isHero ? "h-8 w-8" : "h-7 w-7",
+          )}
           aria-hidden
-        />
+        >
+          <AiAssistantIcon className={isHero ? "h-4 w-4" : "h-3.5 w-3.5"} />
+        </span>
         <div className="relative min-w-0 flex-1">
           <input
             ref={inputRef}
@@ -146,11 +153,13 @@ export function AiSearchField({
         >
           <SheetHeader>
             <SheetTitle className="flex items-center gap-2 text-left text-neutral-900">
-              <Sparkles className="h-5 w-5 text-blue-600" />
-              AI property assistant
+              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-50 text-blue-600">
+                <AiAssistantIcon className="h-4 w-4" />
+              </span>
+              Property advisor
             </SheetTitle>
-            <SheetDescription className="sr-only">
-              Natural language property search results and recommendations
+            <SheetDescription className="text-left text-neutral-500">
+              Location-aware recommendations from our Kenyan real estate team
             </SheetDescription>
           </SheetHeader>
           {query && (
@@ -212,14 +221,21 @@ export function AiSearchField({
               </div>
             )}
             {reply && !loading && matches.length === 0 && (
-              <Link
-                to="/properties"
-                search={{ q: query }}
-                onClick={() => setOpen(false)}
-                className="mt-4 block text-center text-sm text-blue-600 underline"
-              >
-                Browse all listings →
-              </Link>
+              <div className="mt-4 space-y-4">
+                <Link
+                  to="/properties"
+                  search={{ q: query }}
+                  onClick={() => setOpen(false)}
+                  className="block text-center text-sm text-blue-600 underline"
+                >
+                  Browse all listings →
+                </Link>
+              </div>
+            )}
+            {!loading && (
+              <div className="mt-6 border-t border-neutral-200 pt-4">
+                <LocationBrowse onSelect={(loc) => void runSearch(`Show me properties in ${loc}`)} />
+              </div>
             )}
           </div>
         </SheetContent>

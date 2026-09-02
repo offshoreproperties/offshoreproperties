@@ -1,4 +1,6 @@
 import { LISTING_TYPES, PROPERTY_TYPES } from "@/lib/constants";
+import { KENYA_BROWSE_LOCATIONS } from "@/lib/kenya-locations";
+import { LocationBrowse } from "@/components/location-browse";
 import { cn } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
 import {
@@ -16,6 +18,7 @@ export type PropertySearch = {
   propertyType?: string;
   listingType?: string;
   city?: string;
+  location?: string;
   minPrice?: string;
   maxPrice?: string;
   bedrooms?: string;
@@ -85,14 +88,22 @@ export function PropertyFilters({
           </SelectContent>
         </Select>
       </div>
-      <div className="space-y-1.5">
-        <Label className={cn("text-xs uppercase tracking-wider", label)}>City</Label>
+      <div className="space-y-1.5 sm:col-span-2">
+        <Label className={cn("text-xs uppercase tracking-wider", label)}>Location</Label>
         <Input
-          placeholder="Any city"
-          value={values.city ?? ""}
-          onChange={(e) => onChange({ city: e.target.value })}
+          placeholder="Neighbourhood or city — e.g. Kilimani, Karen"
+          value={values.location ?? values.city ?? ""}
+          onChange={(e) => onChange({ location: e.target.value, city: e.target.value })}
+          list="kenya-location-options"
           className={field}
         />
+        <datalist id="kenya-location-options">
+          {KENYA_BROWSE_LOCATIONS.map((area) => (
+            <option key={area.id} value={area.label}>
+              {area.city}
+            </option>
+          ))}
+        </datalist>
       </div>
       <div className="flex items-end gap-2 sm:col-span-2 lg:col-span-1">
         <Button
@@ -103,6 +114,12 @@ export function PropertyFilters({
         >
           Reset
         </Button>
+      </div>
+      <div className="sm:col-span-2 lg:col-span-6">
+        <LocationBrowse
+          variant={light ? "light" : "dark"}
+          onSelect={(loc) => onChange({ location: loc, city: loc })}
+        />
       </div>
     </div>
   );

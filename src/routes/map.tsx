@@ -3,10 +3,11 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { SiteLayout } from "@/components/site-layout";
 import { PropertiesMap } from "@/components/properties-map";
-import { listPropertiesForMap } from "@/lib/social.functions";
+import { listPropertiesForMap } from "@/lib/maps.functions";
 import { checkGoogleMapsApi } from "@/lib/maps.functions";
 import { BRAND } from "@/lib/constants";
-import { AiSearchField } from "@/components/ai-search-field";
+import { MapListingsFallback } from "@/components/map-listings-fallback";
+import { getClientGoogleMapsApiKey } from "@/lib/google-maps";
 import { Map, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -36,6 +37,8 @@ function MapPage() {
     staleTime: 5 * 60_000,
   });
 
+  const mapsKeyMissing = !getClientGoogleMapsApiKey();
+
   return (
     <SiteLayout>
       <section className="mx-auto max-w-7xl px-3 pb-8 safe-bottom sm:px-4 sm:pb-10">
@@ -47,7 +50,7 @@ function MapPage() {
               Property map
             </h1>
             <p className="mt-1 max-w-lg text-sm text-neutral-600">
-              Every pin is a published listing. Tap a pin for details.
+              Every pin shows price and property type. Exact pins use admin locations; others are placed from address or AI.
             </p>
           </div>
           <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
@@ -67,7 +70,10 @@ function MapPage() {
           <div className="mb-4 flex gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
             <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
             <div>
-              <p className="font-medium">Google Maps setup required</p>
+              <p className="font-medium">Interactive map needs Google Maps APIs enabled</p>
+              <p className="mt-1 text-amber-900/90">
+                Listing pins are ready, but the map tiles require Maps JavaScript API. Enable billing and the APIs below, then refresh this page.
+              </p>
               <p className="mt-1 text-amber-900/90">{mapsStatus.message}</p>
               {"detail" in mapsStatus && mapsStatus.detail && (
                 <p className="mt-1 text-xs text-amber-800/90">{mapsStatus.detail}</p>
@@ -120,9 +126,12 @@ function MapPage() {
           {isLoading ? (
             <div className="h-full animate-pulse rounded-xl bg-neutral-100" />
           ) : (
-            <PropertiesMap properties={properties} className="h-full" />
+            <PropertiesMap properties={properties} className="h-full" showPricePins />
           )}
         </div>
+        {(mapsKeyMissing || (mapsStatus && !mapsStatus.ok)) && properties.length > 0 ? (
+          <MapListingsFallback properties={properties} />
+        ) : null}
       </section>
     </SiteLayout>
   );

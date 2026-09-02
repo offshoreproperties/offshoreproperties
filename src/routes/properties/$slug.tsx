@@ -3,6 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect } from "react";
 import { getPropertyBySlug, recordPropertyView } from "@/lib/properties.functions";
+import { buildPropertyHead, propertyOgDescription, propertyShareUrl } from "@/lib/property-share";
+import { SharePropertyButton, CopyPropertyLinkButton } from "@/components/share-property-button";
 import { SiteLayout } from "@/components/site-layout";
 import {
   collectPropertyImages,
@@ -10,22 +12,37 @@ import {
 } from "@/components/property-image-gallery";
 import { formatPrice, formatArea, propertyTypeLabel, statusLabel } from "@/lib/format";
 import { BRAND } from "@/lib/constants";
-import { buildWhatsAppUrl } from "@/lib/whatsapp";
-import { Bed, Bath, Maximize, MapPin, ArrowLeft, Map, Phone, MessageCircle } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { propertyWhatsAppUrl, type PropertyWhatsAppContext } from "@/lib/whatsapp";
+import { WhatsAppButton } from "@/components/whatsapp-button";
+import { EnquiryForm } from "@/components/enquiry-form";
+import { ViewingForm } from "@/components/viewing-form";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Bed, Bath, Maximize, MapPin, ArrowLeft, Map, Phone } from "lucide-react";
+import { PropertyLocationMap } from "@/components/maps/property-location-map";
+import { PropertyAiAdvisor } from "@/components/property-ai-advisor";
+import { ListingBadgesDisplay } from "@/components/listing-badges-display";
+import { AmenitiesDisplay } from "@/components/amenities-display";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/properties/$slug")({
-  head: ({ params }) => {
-    const readable = params.slug
-      .replace(/-/g, " ")
-      .replace(/\b\w/g, (c) => c.toUpperCase());
-    return {
-      meta: [
-        { title: `${readable} | ${BRAND.name}` },
-        { name: "description", content: `${readable} — ${BRAND.tagline}` },
-      ],
-    };
+  loader: async ({ params }) => {
+    const property = await getPropertyBySlug({ data: { slug: params.slug } });
+    return { property };
+  },
+  head: ({ loaderData, params }) => {
+    if (!loaderData?.property) {
+      const readable = params.slug
+        .replace(/-/g, " ")
+        .replace(/\b\w/g, (c) => c.toUpperCase());
+      return {
+        meta: [
+          { title: `${readable} | ${BRAND.name}` },
+          { name: "description", content: `${readable} — ${BRAND.tagline}` },
+        ],
+      };
+    }
+    return buildPropertyHead(loaderData.property, params.slug);
   },
   component: PropertyDetailPage,
 });
@@ -34,18 +51,20 @@ function PropertyContactPanel({
   price,
   currency,
   listingType,
-  propertyTitle,
+  propertyContext,
   whatsapp,
+  propertyId,
   className,
 }: {
   price: number;
   currency: string;
   listingType: string;
-  propertyTitle: string;
+  propertyContext: PropertyWhatsAppContext;
   whatsapp: string | null;
+  propertyId: string;
   className?: string;
 }) {
-  const whatsappUrl = buildWhatsAppUrl(whatsapp, [`Hi, I'm interested in ${propertyTitle}.`]);
+  const whatsappUrl = propertyWhatsAppUrl(whatsapp, propertyContext);
 
   return (
     <div className={className}>
@@ -53,31 +72,57 @@ function PropertyContactPanel({
         <p className="text-xl font-bold text-blue-600 sm:text-2xl lg:text-2xl xl:text-3xl">
           {formatPrice(price, currency, listingType)}
         </p>
-        <div className="mt-3 border-t border-neutral-100 pt-3">
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-neutral-500">Contact</p>
+
+        <div className="mt-3 space-y-2">
+          <WhatsAppButton href={whatsappUrl} label="Chat on WhatsApp" />
+          <p className="text-center text-[11px] text-neutral-500">
+            Opens WhatsApp with this property&apos;s details pre-filled
+          </p>
+        </div>
+
+        <Tabs defaultValue="enquiry" className="mt-4">
+          <TabsList className="grid h-auto w-full grid-cols-2 gap-1 bg-neutral-100 p-1">
+            <TabsTrigger value="enquiry" className="min-h-[40px] text-xs sm:text-sm">
+              Enquire
+            </TabsTrigger>
+            <TabsTrigger value="viewing" className="min-h-[40px] text-xs sm:text-sm">
+              Book viewing
+            </TabsTrigger>
+          </TabsList>
+          <TabsContent value="enquiry" className="mt-4">
+            <EnquiryForm
+              propertyId={propertyId}
+              propertyTitle={propertyContext.title}
+              propertyContext={propertyContext}
+              whatsapp={whatsapp}
+            />
+          </TabsContent>
+          <TabsContent value="viewing" className="mt-4">
+            <ViewingForm
+              propertyId={propertyId}
+              propertyTitle={propertyContext.title}
+              propertyContext={propertyContext}
+              whatsapp={whatsapp}
+            />
+          </TabsContent>
+        </Tabs>
+
+        <div className="mt-4 border-t border-neutral-100 pt-3">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-neutral-500">Call us</p>
           <ul className="space-y-1 text-sm">
             <li>
-              <a href={`tel:${BRAND.phone.replace(/\s/g, "")}`} className="flex items-center gap-2 text-blue-600 hover:underline">
+              <a href={`tel:${BRAND.phone.replace(/\s/g, "")}`} className="flex min-h-[40px] items-center gap-2 text-blue-600 hover:underline">
                 <Phone className="h-3.5 w-3.5 shrink-0" />
                 {BRAND.phone}
               </a>
             </li>
             <li>
-              <a href={`tel:${BRAND.phone2.replace(/\s/g, "")}`} className="flex items-center gap-2 text-blue-600 hover:underline">
+              <a href={`tel:${BRAND.phone2.replace(/\s/g, "")}`} className="flex min-h-[40px] items-center gap-2 text-blue-600 hover:underline">
                 <Phone className="h-3.5 w-3.5 shrink-0" />
                 {BRAND.phone2}
               </a>
             </li>
           </ul>
-          <a
-            href={whatsappUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-4 flex min-h-[44px] items-center justify-center gap-2 rounded-full bg-neutral-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-neutral-800"
-          >
-            <MessageCircle className="h-4 w-4" />
-            WhatsApp us
-          </a>
         </div>
       </div>
     </div>
@@ -86,19 +131,21 @@ function PropertyContactPanel({
 
 function PropertyDetailPage() {
   const { slug } = Route.useParams();
+  const { property: loaderProperty } = Route.useLoaderData();
   const fetch = useServerFn(getPropertyBySlug);
   const track = useServerFn(recordPropertyView);
 
   const { data: p, isLoading, error } = useQuery({
     queryKey: ["property", slug],
     queryFn: () => fetch({ data: { slug } }),
+    initialData: loaderProperty ?? undefined,
   });
 
   useEffect(() => {
     if (p?.id) track({ data: { propertyId: p.id } }).catch(() => {});
   }, [p?.id, track]);
 
-  if (isLoading) {
+  if (isLoading && loaderProperty === undefined) {
     return (
       <SiteLayout showFooter={false} compactHeader>
         <div className="animate-pulse bg-white">
@@ -130,19 +177,78 @@ function PropertyDetailPage() {
   const images = collectPropertyImages(p.hero_image, p.images);
   const agent = p.agents as { whatsapp: string | null; phone: string | null } | null;
   const whatsappNumber = agent?.whatsapp ?? agent?.phone ?? BRAND.whatsapp;
+  const shareUrl = propertyShareUrl(p.slug ?? slug);
+  const shareText = propertyOgDescription({
+    title: p.title,
+    slug: p.slug,
+    price: Number(p.price),
+    currency: p.currency,
+    listing_type: p.listing_type,
+    property_type: p.property_type,
+    city: p.city,
+    country: p.country,
+    address: p.address,
+    bedrooms: p.bedrooms,
+    bathrooms: p.bathrooms,
+    description: p.description,
+    hero_image: p.hero_image,
+    images: p.images,
+  });
+
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "RealEstateListing",
+    name: p.title,
+    url: shareUrl,
+    image: images[0] ?? undefined,
+    description: p.description ?? shareText,
+    address: p.city
+      ? {
+          "@type": "PostalAddress",
+          addressLocality: p.city,
+          addressCountry: p.country ?? "Kenya",
+          streetAddress: p.address ?? undefined,
+        }
+      : undefined,
+    offers: {
+      "@type": "Offer",
+      price: Number(p.price),
+      priceCurrency: p.currency,
+      availability: "https://schema.org/InStock",
+    },
+  };
+
+  const propertyContext: PropertyWhatsAppContext = {
+    title: p.title,
+    slug: p.slug,
+    price: Number(p.price),
+    currency: p.currency,
+    listingType: p.listing_type,
+    propertyType: p.property_type,
+    city: p.city,
+    country: p.country,
+    bedrooms: p.bedrooms,
+    bathrooms: p.bathrooms,
+    address: p.address,
+  };
 
   const contactPanel = (
     <PropertyContactPanel
       price={Number(p.price)}
       currency={p.currency}
       listingType={p.listing_type}
-      propertyTitle={p.title}
+      propertyContext={propertyContext}
       whatsapp={whatsappNumber}
+      propertyId={p.id}
     />
   );
 
   return (
     <SiteLayout showFooter={false} compactHeader overflowVisible>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <article className="overflow-visible bg-white text-neutral-900">
         <div className="mx-auto max-w-7xl overflow-visible px-3 pt-4 pb-16 safe-bottom sm:px-4 sm:pt-5 sm:pb-20 lg:pt-6 lg:pb-24">
           <Link
@@ -168,6 +274,13 @@ function PropertyDetailPage() {
                     {statusLabel(p.status)}
                   </Badge>
                 </div>
+                <div className="mt-2">
+                  <ListingBadgesDisplay
+                    badges={p.listing_badges}
+                    isFeatured={p.is_featured}
+                    size="md"
+                  />
+                </div>
                 <h1 className="mt-2 text-xl font-bold tracking-tight text-neutral-900 text-balance sm:text-2xl lg:text-3xl">
                   {p.title}
                 </h1>
@@ -178,6 +291,10 @@ function PropertyDetailPage() {
                     {p.country ? `, ${p.country}` : ""}
                   </p>
                 )}
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <SharePropertyButton url={shareUrl} title={p.title} text={shareText} />
+                  <CopyPropertyLinkButton url={shareUrl} />
+                </div>
 
                 <div className="mt-3 flex flex-wrap gap-4 text-sm text-neutral-600">
                   {p.bedrooms != null && (
@@ -205,20 +322,17 @@ function PropertyDetailPage() {
                 </div>
 
                 {(p.features?.length ?? 0) > 0 && (
-                  <div className="mt-3">
-                    <p className="text-xs font-semibold uppercase tracking-wider text-neutral-500">Amenities</p>
-                    <ul className="mt-2 flex flex-wrap gap-1.5">
-                      {p.features.map((f: string) => (
-                        <li
-                          key={f}
-                          className="rounded-full border border-blue-100 bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700"
-                        >
-                          {f}
-                        </li>
-                      ))}
-                    </ul>
+                  <div className="mt-5 rounded-xl border border-neutral-100 bg-neutral-50/50 p-4 sm:p-5">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-neutral-500">
+                      Amenities &amp; features
+                    </p>
+                    <div className="mt-4">
+                      <AmenitiesDisplay features={p.features} />
+                    </div>
                   </div>
                 )}
+
+                <PropertyAiAdvisor propertyId={p.id} propertyTitle={p.title} className="mt-5" />
 
                 {p.description && (
                   <div className="mt-4">
@@ -231,25 +345,28 @@ function PropertyDetailPage() {
 
                 {p.latitude != null && p.longitude != null && (
                   <div className="mt-5">
-                    <Link to="/map">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-9 gap-2 rounded-full border-neutral-300 text-neutral-900 hover:bg-neutral-50"
-                      >
-                        <Map className="h-3.5 w-3.5" />
-                        View on map
-                      </Button>
-                    </Link>
-                    <div className="mt-3 overflow-hidden rounded-lg border border-neutral-200">
-                      <iframe
-                        title="Location"
-                        className="h-40 w-full sm:h-48"
-                        loading="lazy"
-                        referrerPolicy="no-referrer-when-downgrade"
-                        src={`https://www.google.com/maps/embed/v1/place?key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY || ""}&q=${p.latitude},${p.longitude}&zoom=14`}
-                      />
+                    <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+                      <p className="text-xs font-semibold uppercase tracking-wider text-neutral-500">Location</p>
+                      <Link to="/map">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-9 gap-2 rounded-full border-neutral-300 text-neutral-900 hover:bg-neutral-50"
+                        >
+                          <Map className="h-3.5 w-3.5" />
+                          All on map
+                        </Button>
+                      </Link>
                     </div>
+                    <PropertyLocationMap
+                      latitude={Number(p.latitude)}
+                      longitude={Number(p.longitude)}
+                      title={p.title}
+                      address={p.address}
+                      city={p.city}
+                      country={p.country}
+                      heroImage={p.hero_image}
+                    />
                   </div>
                 )}
             </div>

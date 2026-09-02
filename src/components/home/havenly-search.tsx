@@ -1,30 +1,21 @@
 import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { Search, ChevronDown } from "lucide-react";
-import { PROPERTY_TYPES } from "@/lib/constants";
-
-const PRICE_OPTIONS = [
-  { label: "Any price", value: "" },
-  { label: "$5,000", value: "5000" },
-  { label: "$10,000", value: "10000" },
-  { label: "$25,000", value: "25000" },
-  { label: "$50,000", value: "50000" },
-  { label: "$100,000", value: "100000" },
-  { label: "$500,000", value: "500000" },
-  { label: "$1,000,000", value: "1000000" },
-];
+import { PROPERTY_TYPES, KES_PRICE_OPTIONS } from "@/lib/constants";
+import { KENYA_BROWSE_LOCATIONS } from "@/lib/kenya-locations";
 
 export function HavenlySearch({ listingType }: { listingType?: "sale" | "rent" }) {
   const navigate = useNavigate();
   const [location, setLocation] = useState("");
   const [propertyType, setPropertyType] = useState("apartment");
-  const [maxPrice, setMaxPrice] = useState("5000");
+  const [maxPrice, setMaxPrice] = useState("5000000");
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
     navigate({
       to: "/properties",
       search: {
+        location: location || undefined,
         city: location || undefined,
         propertyType: propertyType === "any" ? undefined : propertyType,
         listingType: listingType || undefined,
@@ -45,9 +36,17 @@ export function HavenlySearch({ listingType }: { listingType?: "sale" | "rent" }
             <input
               value={location}
               onChange={(e) => setLocation(e.target.value)}
-              placeholder="Enter your location"
+              placeholder="Kilimani, Karen, Westlands…"
+              list="hero-location-options"
               className="w-full bg-transparent text-neutral-900 placeholder:text-neutral-400 focus:outline-none"
             />
+            <datalist id="hero-location-options">
+              {KENYA_BROWSE_LOCATIONS.map((area) => (
+                <option key={area.id} value={area.label}>
+                  {area.city}
+                </option>
+              ))}
+            </datalist>
           </div>
         </label>
 
@@ -76,9 +75,9 @@ export function HavenlySearch({ listingType }: { listingType?: "sale" | "rent" }
             <select
               value={maxPrice}
               onChange={(e) => setMaxPrice(e.target.value)}
-              className="w-full appearance-none bg-transparent text-blue-600 font-medium focus:outline-none"
+              className="w-full appearance-none bg-transparent font-medium text-blue-600 focus:outline-none"
             >
-              {PRICE_OPTIONS.map((p) => (
+              {KES_PRICE_OPTIONS.map((p) => (
                 <option key={p.value} value={p.value} className="bg-white text-neutral-900">
                   {p.label === "Any price" ? "No max" : p.label}
                 </option>

@@ -5,11 +5,11 @@ import {
   Bath,
   Maximize,
   MapPin,
-  Star,
   LandPlot,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
+import { ListingBadgesDisplay } from "@/components/listing-badges-display";
 import {
   formatPrice,
   formatArea,
@@ -18,7 +18,16 @@ import {
   listingTypeShort,
   propertyLocationLine,
 } from "@/lib/format";
+import { AmenitiesDisplay } from "@/components/amenities-display";
 import { cn } from "@/lib/utils";
+import { isVideoUrl } from "@/lib/media";
+
+function CardMedia({ src, alt, className }: { src: string; alt: string; className?: string }) {
+  if (isVideoUrl(src)) {
+    return <video src={src} className={className} muted playsInline loop preload="metadata" aria-label={alt} />;
+  }
+  return <img src={src} alt={alt} loading="lazy" className={className} />;
+}
 
 export type PropertyCardData = {
   id: string;
@@ -41,6 +50,7 @@ export type PropertyCardData = {
   hero_image: string | null;
   images: string[] | null;
   is_featured?: boolean | null;
+  listing_badges?: string[] | null;
 };
 
 function allImages(p: PropertyCardData): string[] {
@@ -81,7 +91,7 @@ function ImageCarousel({ images, title }: { images: string[]; title: string }) {
   if (images.length === 1) {
     return (
       <div className="relative aspect-[4/3] w-full overflow-hidden bg-neutral-100">
-        <img src={images[0]} alt={title} loading="lazy" className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
+        <CardMedia src={images[0]} alt={title} className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
       </div>
     );
   }
@@ -97,7 +107,7 @@ function ImageCarousel({ images, title }: { images: string[]; title: string }) {
       >
         {images.map((src, i) => (
           <div key={src} className="aspect-[4/3] w-full shrink-0 snap-center bg-neutral-100">
-            <img src={src} alt={`${title} ${i + 1}`} loading="lazy" className="h-full w-full object-cover" />
+            <CardMedia src={src} alt={`${title} ${i + 1}`} className="h-full w-full object-cover" />
           </div>
         ))}
       </div>
@@ -131,8 +141,7 @@ export function PropertyCard({ p }: { p: PropertyCardData }) {
   const area = formatArea(p.area_sqm, p.property_type);
   const plot = formatArea(p.plot_size_sqm, p.property_type);
   const isLand = p.property_type === "land";
-  const features = (p.features ?? []).filter(Boolean).slice(0, 3);
-  const extraFeatures = (p.features?.length ?? 0) - features.length;
+  const features = (p.features ?? []).filter(Boolean);
   const status = p.status ?? "available";
   const imgs = allImages(p);
 
@@ -160,12 +169,14 @@ export function PropertyCard({ p }: { p: PropertyCardData }) {
       {/* Image carousel */}
       <div className="relative overflow-hidden">
         <ImageCarousel images={imgs} title={p.title} />
-        {p.is_featured && (
-          <span className="absolute left-2 top-2 flex h-5 w-5 items-center justify-center rounded-full bg-neutral-900 text-white">
-            <Star className="h-3 w-3 fill-current" aria-hidden />
-          </span>
-        )}
-        {/* Badges overlay */}
+        <div className="absolute left-2 top-2 z-10 max-w-[70%]">
+          <ListingBadgesDisplay
+            badges={p.listing_badges}
+            isFeatured={p.is_featured}
+            limit={2}
+          />
+        </div>
+        {/* Type badges overlay */}
         <div className="absolute right-2 top-2 flex flex-wrap justify-end gap-1">
           <span className="rounded-md bg-[#0a0a0a]/75 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white/90 backdrop-blur sm:text-[11px]">
             {propertyTypeLabel(p.property_type)}
@@ -215,20 +226,7 @@ export function PropertyCard({ p }: { p: PropertyCardData }) {
           )}
         </div>
 
-        {features.length > 0 && (
-          <ul className="flex flex-wrap gap-1 pt-0.5">
-            {features.map((f) => (
-              <li key={f} className="rounded-md bg-blue-50 px-1.5 py-0.5 text-[10px] font-medium text-blue-700 sm:text-[11px]">
-                {f}
-              </li>
-            ))}
-            {extraFeatures > 0 && (
-              <li className="rounded-md bg-blue-50 px-1.5 py-0.5 text-[10px] font-medium text-blue-600 sm:text-[11px]">
-                +{extraFeatures}
-              </li>
-            )}
-          </ul>
-        )}
+        {features.length > 0 && <AmenitiesDisplay features={features} compact />}
       </div>
     </Link>
   );

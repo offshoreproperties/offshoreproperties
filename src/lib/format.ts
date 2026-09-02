@@ -1,4 +1,17 @@
-export function formatPrice(price: number, currency = "USD", listingType = "sale") {
+import { DEFAULT_CURRENCY } from "@/lib/constants";
+
+function formatKesAmount(price: number): string {
+  return new Intl.NumberFormat("en-KE", { maximumFractionDigits: 0 }).format(price);
+}
+
+export function formatPrice(price: number, currency = DEFAULT_CURRENCY, listingType = "sale") {
+  if (currency === "KES") {
+    const base = `Kshs ${formatKesAmount(price)}`;
+    if (listingType === "rent") return `${base}/mo`;
+    if (listingType === "short_let") return `${base}/night`;
+    return base;
+  }
+
   const n = new Intl.NumberFormat("en-US", {
     style: "currency",
     currency,
@@ -7,6 +20,19 @@ export function formatPrice(price: number, currency = "USD", listingType = "sale
   if (listingType === "rent") return `${n}/mo`;
   if (listingType === "short_let") return `${n}/night`;
   return n;
+}
+
+/** Short price label for map pins */
+export function formatPriceCompact(price: number, currency = DEFAULT_CURRENCY, listingType = "sale") {
+  const prefix = currency === "KES" ? "Kshs " : currency === "USD" ? "$" : `${currency} `;
+  let body: string;
+  if (price >= 1_000_000_000) body = `${(price / 1_000_000_000).toFixed(1).replace(/\.0$/, "")}B`;
+  else if (price >= 1_000_000) body = `${(price / 1_000_000).toFixed(1).replace(/\.0$/, "")}M`;
+  else if (price >= 1_000) body = `${Math.round(price / 1000)}k`;
+  else body = String(Math.round(price));
+
+  const suffix = listingType === "rent" ? "/mo" : listingType === "short_let" ? "/nt" : "";
+  return `${prefix}${body}${suffix}`;
 }
 
 export function slugify(s: string) {
@@ -58,8 +84,8 @@ export function formatArea(
 
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1).replace(/\.0$/, "")}M m²`;
   if (n >= 10_000) return `${Math.round(n / 1000)}k m²`;
-  if (n >= 1000) return `${(n / 1000).toFixed(1).replace(/\.0$/, "")}k m²`;
-  return `${n.toLocaleString()} m²`;
+  if (n >= 1_000) return `${(n / 1000).toFixed(1).replace(/\.0$/, "")}k m²`;
+  return `${Math.round(n).toLocaleString()} m²`;
 }
 
 export function propertyLocationLine(p: {

@@ -19,6 +19,7 @@ const searchSchema = z.object({
   propertyType: z.string().optional(),
   listingType: z.string().optional(),
   city: z.string().optional(),
+  location: z.string().optional(),
   maxPrice: z.string().optional(),
   ai: z.string().optional(),
   slugs: z.string().optional(),
@@ -49,6 +50,7 @@ function PropertiesPage() {
     propertyType: search.propertyType,
     listingType: search.listingType,
     city: search.city,
+    location: search.location ?? search.city,
     maxPrice: search.maxPrice ? Number(search.maxPrice) : undefined,
     slugs: aiSlugs?.length ? aiSlugs : undefined,
   };
@@ -62,6 +64,7 @@ function PropertiesPage() {
           propertyType: filters.propertyType,
           listingType: filters.listingType,
           city: filters.city,
+          location: filters.location,
           maxPrice: filters.maxPrice,
           slugs: filters.slugs,
           limit: PAGE_SIZE,
@@ -92,6 +95,7 @@ function PropertiesPage() {
     propertyType: search.propertyType,
     listingType: search.listingType,
     city: search.city,
+    location: search.location ?? search.city,
   };
 
   return (
@@ -122,6 +126,11 @@ function PropertiesPage() {
 
         <section className="mx-auto max-w-7xl px-4 py-6 safe-bottom sm:px-6 sm:py-14">
           <PropertyFilters values={values} onChange={setSearch} onReset={reset} variant="light" />
+          {search.location && (
+            <p className="mt-4 text-sm text-neutral-600">
+              Properties in <span className="font-medium text-neutral-900">{search.location}</span>
+            </p>
+          )}
           {search.ai && search.q && (
             <p className="mt-4 text-sm text-neutral-600">
               AI picks for &ldquo;{search.q}&rdquo;

@@ -4,20 +4,6 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { supabaseAnonServer } from "@/integrations/supabase/client.anon-server";
 import { requireUserAuth } from "@/integrations/supabase/user-middleware";
 
-export const listPropertiesForMap = createServerFn({ method: "GET" }).handler(async () => {
-  const { data, error } = await supabaseAnonServer
-    .from("properties")
-    .select(
-      "id, title, slug, property_type, listing_type, price, currency, city, hero_image, latitude, longitude, bedrooms, bathrooms",
-    )
-    .eq("is_published", true)
-    .not("latitude", "is", null)
-    .not("longitude", "is", null);
-
-  if (error) throw error;
-  return data ?? [];
-});
-
 export const getPropertyEngagement = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => z.object({ propertyId: z.string().uuid() }).parse(input))
   .handler(async ({ data }) => {

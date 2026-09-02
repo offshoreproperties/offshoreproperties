@@ -1,71 +1,31 @@
-import type { ReactNode } from "react";
+import { splitAiParagraphs } from "@/lib/ai-format";
 
-function parseInline(text: string): ReactNode[] {
-  const nodes: ReactNode[] = [];
-  const re = /\*\*([^*]+)\*\*|\*([^*]+)\*|`([^`]+)`/g;
-  let last = 0;
-  let key = 0;
-  let match: RegExpExecArray | null;
+function renderParagraph(text: string, key: number) {
+  const lines = text.split("\n").map((l) => l.trim()).filter(Boolean);
+  const isBulletList = lines.length > 1 && lines.every((l) => l.startsWith("•"));
 
-  while ((match = re.exec(text)) !== null) {
-    if (match.index > last) nodes.push(text.slice(last, match.index));
-    if (match[1]) {
-      nodes.push(
-        <strong key={key++} className="font-semibold text-neutral-900">
-          {match[1]}
-        </strong>,
-      );
-    } else if (match[2]) {
-      nodes.push(
-        <em key={key++} className="italic">
-          {match[2]}
-        </em>,
-      );
-    } else if (match[3]) {
-      nodes.push(
-        <code key={key++} className="rounded bg-neutral-200/80 px-1 py-0.5 text-[0.9em]">
-          {match[3]}
-        </code>,
-      );
-    }
-    last = match.index + match[0].length;
-  }
-
-  if (last < text.length) nodes.push(text.slice(last));
-  return nodes.length > 0 ? nodes : [text];
-}
-
-function renderBlock(block: string, key: number): ReactNode {
-  const trimmed = block.trim();
-  if (!trimmed) return null;
-
-  const lines = trimmed.split("\n");
-  const isList = lines.every((line) => /^[-*•]\s+/.test(line.trim()));
-
-  if (isList) {
+  if (isBulletList) {
     return (
-      <ul key={key} className="my-2 list-disc space-y-1 pl-5">
+      <ul key={key} className="my-3 list-none space-y-2 pl-0">
         {lines.map((line, i) => (
-          <li key={i}>{parseInline(line.replace(/^[-*•]\s+/, ""))}</li>
+          <li key={i} className="flex gap-2 text-[15px] leading-relaxed text-neutral-700">
+            <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-blue-500" aria-hidden />
+            <span>{line.replace(/^•\s*/, "")}</span>
+          </li>
         ))}
       </ul>
     );
   }
 
   return (
-    <p key={key} className="mb-3 last:mb-0">
-      {lines.map((line, i) => (
-        <span key={i}>
-          {i > 0 && <br />}
-          {parseInline(line)}
-        </span>
-      ))}
+    <p key={key} className="mb-3 text-[15px] leading-relaxed text-neutral-700 last:mb-0">
+      {text}
     </p>
   );
 }
 
-/** Renders common AI markdown (bold, italic, lists) as styled HTML. */
+/** Polished AI prose — no raw markdown asterisks. */
 export function AiReplyText({ text }: { text: string }) {
-  const blocks = text.split(/\n{2,}/);
-  return <div className="space-y-0">{blocks.map((block, i) => renderBlock(block, i))}</div>;
+  const paragraphs = splitAiParagraphs(text);
+  return <div className="space-y-0">{paragraphs.map((block, i) => renderParagraph(block, i))}</div>;
 }

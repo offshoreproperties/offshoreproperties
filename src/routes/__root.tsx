@@ -10,6 +10,8 @@ import {
   Scripts,
 } from "@tanstack/react-router";
 import { Toaster } from "@/components/ui/sonner";
+import { FloatingWhatsApp } from "@/components/floating-whatsapp";
+import { SiteVisitTracker } from "@/components/site-visit-tracker";
 import { KenyaGalleryProvider } from "@/components/kenya-gallery-provider";
 import { BRAND } from "@/lib/constants";
 import appCss from "../styles.css?url";
@@ -80,6 +82,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:title", content: BRAND.name },
       { property: "og:description", content: BRAND.tagline },
       { property: "og:type", content: "website" },
+      { property: "og:url", content: "https://offshoreproperties.co.ke" },
       { property: "og:image", content: OG_IMAGE },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:image", content: OG_IMAGE },
@@ -124,7 +127,9 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <KenyaGalleryProvider>
         <ScrollToTop />
+        <SiteVisitTracker />
         <Outlet />
+        <FloatingWhatsApp />
         <Toaster position="top-center" richColors closeButton />
       </KenyaGalleryProvider>
     </QueryClientProvider>

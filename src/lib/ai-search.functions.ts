@@ -3,6 +3,9 @@ import { z } from "zod";
 import { supabaseAnonServer } from "@/integrations/supabase/client.anon-server";
 import { rateLimit } from "@/lib/rate-limit";
 import { aiConfigError, runAiChat } from "@/lib/ai-client";
+import { normalizeAiReply } from "@/lib/ai-format";
+import { buildSearchAdvisorPrompt } from "@/lib/ai-prompts";
+import { areaContextForProperty, findKenyaArea } from "@/lib/kenya-locations";
 
 const Schema = z.object({
   query: z.string().min(1).max(500),
@@ -26,9 +29,13 @@ function stripMatchLine(content: string): string {
   return content.replace(/\n?MATCHES:\s*\[[^\]]*\]\s*/i, "").trim();
 }
 
+function detectLocationHint(query: string): string | undefined {
+  const area = findKenyaArea(query);
+  return area?.label ?? area?.city;
+}
+
 /**
- * AI-powered natural language property search.
- * Uses Anthropic, OpenAI, Gemini, or Lovable gateway (whichever key is in .env).
+ * AI-powered natural language property search with location-aware sales advisor tone.
  */
 export const aiSearch = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => Schema.parse(input))
@@ -38,32 +45,38 @@ export const aiSearch = createServerFn({ method: "POST" })
     const { data: rows, error } = await supabaseAnonServer
       .from("properties")
       .select(
-        "id, slug, title, property_type, listing_type, price, currency, bedrooms, bathrooms, area_sqm, city, country, features, description, hero_image",
+        "id, slug, title, property_type, listing_type, price, currency, bedrooms, bathrooms, area_sqm, address, city, country, features, description, hero_image",
       )
       .eq("is_published", true)
       .order("is_featured", { ascending: false })
       .limit(100);
     if (error) throw error;
 
-    const catalog = (rows ?? []).map((r) => ({
-      id: r.id,
-      slug: r.slug,
-      title: r.title,
-      type: r.property_type,
-      listing: r.listing_type,
-      price: `${r.price} ${r.currency}`,
-      beds: r.bedrooms,
-      baths: r.bathrooms,
-      area: r.area_sqm,
-      city: r.city,
-      country: r.country,
-      features: (r.features ?? []).slice(0, 12),
-      summary: (r.description ?? "").slice(0, 280),
-    }));
+    const catalog = (rows ?? []).map((r) => {
+      const area = areaContextForProperty(r);
+      return {
+        id: r.id,
+        slug: r.slug,
+        title: r.title,
+        type: r.property_type,
+        listing: r.listing_type,
+        price: `${r.price} ${r.currency}`,
+        beds: r.bedrooms,
+        baths: r.bathrooms,
+        area: r.area_sqm,
+        address: r.address,
+        city: r.city,
+        country: r.country,
+        areaHint: area ? `${area.label}, ${area.city}` : r.city,
+        amenities: (r.features ?? []).slice(0, 16),
+        summary: (r.description ?? "").slice(0, 320),
+      };
+    });
 
     if (catalog.length === 0) {
       return {
-        reply: "We don't have published listings yet. Check back soon or contact us for off-market options.",
+        reply:
+          "We do not have published listings on the site yet. Please check back soon, or contact our team for off-market options in your preferred area.",
         matches: [] as Array<{
           id: string;
           slug: string | null;
@@ -75,21 +88,11 @@ export const aiSearch = createServerFn({ method: "POST" })
           listing_type: string;
         }>,
         matchSlugs: [] as string[],
+        locationHint: undefined as string | undefined,
       };
     }
 
-    const sys = `You are the Offshore Properties concierge for Kenya real estate. The user describes what they want in natural language (any language).
-
-Rules:
-- Reply in the user's language, warmly and concisely (2-4 short paragraphs max).
-- Recommend 1-5 best matches from the JSON catalog and explain why each fits.
-- Only recommend properties that exist in the catalog.
-- On the LAST line only, output exactly: MATCHES:["slug-or-id",...]
-- Use each property's "slug" when present, otherwise its "id" (UUID).
-- Order MATCHES by best fit first.
-
-CATALOG:
-${JSON.stringify(catalog)}`;
+    const sys = buildSearchAdvisorPrompt(JSON.stringify(catalog));
 
     let content: string;
     try {
@@ -105,7 +108,9 @@ ${JSON.stringify(catalog)}`;
     }
 
     const ids = parseMatchIds(content);
-    const reply = stripMatchLine(content) || "Here are some properties that may suit you.";
+    const reply =
+      normalizeAiReply(stripMatchLine(content)) ||
+      "Here are some properties from our collection that may suit what you are looking for.";
 
     const slugRefs = ids.filter((id) => !UUID_RE.test(id));
     const uuidRefs = ids.filter((id) => UUID_RE.test(id));
@@ -143,7 +148,6 @@ ${JSON.stringify(catalog)}`;
       }
     }
 
-    // Preserve AI ranking order
     const order = new Map(ids.map((id, i) => [id, i]));
     matches.sort((a, b) => {
       const aKey = order.get(a.slug ?? "") ?? order.get(a.id) ?? 999;
@@ -152,6 +156,7 @@ ${JSON.stringify(catalog)}`;
     });
 
     const matchSlugs = matches.map((m) => m.slug ?? m.id);
+    const locationHint = detectLocationHint(data.query);
 
-    return { reply, matches, matchSlugs };
+    return { reply, matches, matchSlugs, locationHint };
   });
