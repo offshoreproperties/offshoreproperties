@@ -122,6 +122,51 @@ export function resolvePropertyUploadMime(file: File): PropertyUploadMime | null
   return EXT_TO_MIME[ext] ?? null;
 }
 
-export const MAX_IMAGE_UPLOAD_BYTES = 5 * 1024 * 1024;
+export const MAX_IMAGE_UPLOAD_BYTES = 10 * 1024 * 1024;
 export const MAX_VIDEO_UPLOAD_BYTES = 80 * 1024 * 1024;
 export const MAX_RECORDING_UPLOAD_BYTES = MAX_VIDEO_UPLOAD_BYTES;
+
+const COMPRESS_SKIP_BYTES = 1_500_000;
+const COMPRESS_MAX_EDGE = 2048;
+const COMPRESS_JPEG_QUALITY = 0.88;
+
+/** Shrink large photos before base64 upload — avoids server 500s and speeds uploads. */
+export async function prepareFileForUpload(file: File): Promise<File> {
+  const mime = resolvePropertyUploadMime(file);
+  if (!mime?.startsWith("image/") || mime === "image/gif") return file;
+  if (file.size <= COMPRESS_SKIP_BYTES) return file;
+
+  if (typeof createImageBitmap !== "function") return file;
+
+  try {
+    const bitmap = await createImageBitmap(file);
+    let { width, height } = bitmap;
+    const longest = Math.max(width, height);
+    if (longest > COMPRESS_MAX_EDGE) {
+      const scale = COMPRESS_MAX_EDGE / longest;
+      width = Math.round(width * scale);
+      height = Math.round(height * scale);
+    }
+
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) {
+      bitmap.close();
+      return file;
+    }
+    ctx.drawImage(bitmap, 0, 0, width, height);
+    bitmap.close();
+
+    const blob = await new Promise<Blob | null>((resolve) => {
+      canvas.toBlob((b) => resolve(b), "image/jpeg", COMPRESS_JPEG_QUALITY);
+    });
+    if (!blob || blob.size >= file.size) return file;
+
+    const baseName = file.name.replace(/\.[^.]+$/i, "") || "photo";
+    return new File([blob], `${baseName}.jpg`, { type: "image/jpeg", lastModified: Date.now() });
+  } catch {
+    return file;
+  }
+}

@@ -32,6 +32,7 @@ import {
   MAX_IMAGE_UPLOAD_BYTES,
   MAX_RECORDING_UPLOAD_BYTES,
   PROPERTY_MEDIA_ACCEPT,
+  prepareFileForUpload,
   resolvePropertyUploadMime,
 } from "@/lib/media";
 import { Loader2, MapPin, Upload, X, GripVertical, Link2, Video, Mic, Cloud, CloudOff, ChevronUp, ChevronDown } from "lucide-react";
@@ -41,7 +42,7 @@ import { cn } from "@/lib/utils";
 import { usePropertyDraftAutosave } from "@/hooks/use-property-draft-autosave";
 import type { PropertyFormDraftSnapshot } from "@/lib/property-draft";
 
-const UPLOAD_CONCURRENCY = 2;
+const UPLOAD_CONCURRENCY = 1;
 
 export type PropertyFormValues = {
   id?: string;
@@ -264,13 +265,14 @@ export function PropertyForm({
 
   const uploadOneFile = useCallback(
     async (file: File) => {
-      const contentType = resolvePropertyUploadMime(file);
-      if (!contentType) throw new Error("unsupported file type");
+      const prepared = await prepareFileForUpload(file);
+      const contentType = resolvePropertyUploadMime(prepared);
+      if (!contentType) throw new Error("Unsupported file type");
 
-      const base64 = await fileToBase64(file);
+      const base64 = await fileToBase64(prepared);
       const { url } = await upload({
         data: {
-          fileName: file.name,
+          fileName: prepared.name,
           contentType,
           dataBase64: base64,
         },
@@ -340,7 +342,7 @@ export function PropertyForm({
         if (autosaveEnabled) void flushSave();
       }
       if (failed > 0 && completed === 0) {
-        toast.error("No files uploaded — check sizes and try again.");
+        toast.error("Upload failed — try again or use JPG/PNG under 10MB.");
       }
     } finally {
       setUploading(false);
@@ -700,7 +702,7 @@ export function PropertyForm({
         <p className="mt-1 text-xs text-muted-foreground">
           Select or drag many files at once — photos, phone videos, and voice notes. Uploads run in
           parallel; images and videos get the Offshore watermark. Photos: JPG, JPEG, PNG, WebP, GIF, HEIC
-          (up to 5MB). Recordings up to 80MB.
+          (up to 10MB; large photos are compressed automatically). Recordings up to 80MB.
         </p>
         <label
           className={cn(

@@ -243,6 +243,11 @@ export async function applyMediaWatermark(
   fileName: string,
   contentType: string,
 ): Promise<{ buffer: Buffer; contentType: string; watermarked: boolean }> {
+  const normalized = contentType.toLowerCase();
+  if (normalized === "image/heic" || normalized === "image/heif") {
+    return { buffer: input, contentType, watermarked: false };
+  }
+
   try {
     if (isVideoFile(fileName, contentType)) {
       return applyVideoWatermark(input, fileName);
@@ -256,8 +261,12 @@ export async function applyMediaWatermark(
     if (isVideoFile(fileName, contentType) || isAudioFile(fileName, contentType)) {
       return { buffer: input, contentType, watermarked: false };
     }
-    const passthrough = await passthroughImage(input, contentType);
-    return { ...passthrough, watermarked: false };
+    try {
+      const passthrough = await passthroughImage(input, contentType);
+      return { ...passthrough, watermarked: false };
+    } catch {
+      return { buffer: input, contentType, watermarked: false };
+    }
   }
 }
 
