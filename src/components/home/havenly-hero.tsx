@@ -1,5 +1,4 @@
 import { Link } from "@tanstack/react-router";
-import { HavenlySearch } from "@/components/home/havenly-search";
 import { AiSearchField } from "@/components/ai-search-field";
 import { FadePhrases } from "@/components/fade-phrases";
 import { Map } from "lucide-react";
@@ -56,34 +55,31 @@ export function HavenlyHero({ homeTab, onHomeTabChange }: HavenlyHeroProps) {
           className="absolute inset-x-0 top-0"
         />
 
-        <div className="relative z-10 mt-auto w-full px-4 pb-3 pt-28 sm:px-8 sm:pb-4 sm:pt-32 lg:px-10 lg:pb-5 lg:pt-36">
-        <div className="max-w-2xl">
-          <h1 className="min-h-[2.4em] text-[clamp(1.5rem,5vw,3.5rem)] font-bold leading-[1.1] tracking-tight text-white drop-shadow-md sm:min-h-[1.3em]">
-            <FadePhrases key={homeTab} phrases={phrases} />
-          </h1>
-          <p className="mt-2 max-w-md text-sm leading-relaxed text-white/90 drop-shadow sm:mt-4 sm:text-base">
-            {subtitle}
-          </p>
-        </div>
+        <div className="relative z-10 mt-auto w-full px-4 pb-8 pt-28 sm:px-8 sm:pb-10 sm:pt-32 lg:px-10 lg:pb-12 lg:pt-36">
+          <div className="max-w-2xl">
+            <h1 className="min-h-[2.4em] text-[clamp(1.5rem,5vw,3.5rem)] font-bold leading-[1.1] tracking-tight text-white drop-shadow-md sm:min-h-[1.3em]">
+              <FadePhrases key={homeTab} phrases={phrases} />
+            </h1>
+            <p className="mt-2 max-w-md text-sm leading-relaxed text-white/90 drop-shadow sm:mt-4 sm:text-base">
+              {subtitle}
+            </p>
+          </div>
 
-        <div className="mt-3 space-y-1.5 sm:mt-4 sm:ml-auto sm:max-w-[720px]">
-          <AiSearchField variant="hero" />
-          <div className="flex items-center justify-end gap-2">
-            <Link to="/map">
+          <div className="mt-5 flex flex-col gap-4 sm:mt-6 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
+            <Link to="/map" className="shrink-0">
               <Button
                 variant="secondary"
                 size="sm"
-                className="h-11 gap-2 rounded-full border-white/40 bg-white/90 px-4 text-neutral-900 shadow-sm backdrop-blur hover:bg-white"
+                className="h-10 gap-2 rounded-full border-white/40 bg-white/90 px-4 text-neutral-900 shadow-sm backdrop-blur hover:bg-white"
               >
                 <Map className="h-4 w-4 shrink-0" />
                 View map
               </Button>
             </Link>
+            <div className="w-full sm:max-w-[17rem] md:max-w-xs sm:-translate-y-3 md:-translate-y-4">
+              <AiSearchField variant="hero" />
+            </div>
           </div>
-          <HavenlySearch
-            listingType={homeTab === "rent" ? "rent" : homeTab === "buy" ? "sale" : undefined}
-          />
-        </div>
         </div>
       </div>
     </section>

@@ -3,7 +3,6 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo } from "react";
 import { PropertiesMap } from "@/components/properties-map";
-import { LocationBrowse } from "@/components/location-browse";
 import { listPropertiesForMap } from "@/lib/maps.functions";
 import type { HomeTab } from "@/components/public-header";
 import { Map, ArrowUpRight } from "lucide-react";
@@ -29,7 +28,7 @@ export function HomeListingsMap({ homeTab }: HomeListingsMapProps) {
   }, [properties, homeTab]);
 
   return (
-    <section className="relative z-20 -mt-6 px-3 pb-4 pt-0 sm:-mt-8 sm:px-6 sm:pb-6 lg:px-8">
+    <section className="relative z-10 -mt-5 px-3 pb-4 pt-0 sm:-mt-6 sm:px-6 sm:pb-6 lg:px-8">
       <div className="mx-auto max-w-[1440px]">
         <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-lg shadow-slate-200/30">
           <div className="flex items-center justify-between gap-3 border-b border-slate-100 bg-white px-4 py-2.5 sm:px-5 sm:py-3">
@@ -52,7 +51,6 @@ export function HomeListingsMap({ homeTab }: HomeListingsMapProps) {
           </div>
 
           <div className="bg-slate-100 p-2 sm:p-3">
-            <LocationBrowse compact className="mb-2 px-0.5" />
             <div className="h-[min(40dvh,380px)] min-h-[260px] sm:min-h-[300px]">
               {isLoading ? (
                 <div className="h-full animate-pulse rounded-2xl bg-slate-200" />

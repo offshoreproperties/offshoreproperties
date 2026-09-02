@@ -44,7 +44,7 @@ export function AiSearchField({
   variant = "hero",
   className,
 }: {
-  variant?: "hero" | "compact";
+  variant?: "hero" | "compact" | "floating";
   className?: string;
 }) {
   const runAi = useServerFn(aiSearch);
@@ -93,26 +93,38 @@ export function AiSearchField({
   }
 
   const isHero = variant === "hero";
+  const isFloating = variant === "floating";
   const slugsParam = matchSlugs.length > 0 ? matchSlugs.join(",") : undefined;
+  const heroPlaceholder = "Use AI to refine your search";
 
   return (
     <>
       <form
         onSubmit={handleSubmit}
         className={cn(
-          "flex w-full items-center gap-2 overflow-hidden rounded-2xl bg-white/95 shadow-lg ring-1 ring-black/5 backdrop-blur-md",
-          isHero ? "px-3 py-2 sm:rounded-full sm:px-4 sm:py-2.5" : "rounded-full px-3 py-2",
+          "flex w-full items-center gap-1.5 overflow-hidden",
+          isHero
+            ? "rounded-full border border-white/30 bg-slate-950/45 px-2 py-1.5 shadow-lg shadow-black/25 backdrop-blur-md sm:gap-2 sm:px-2.5 sm:py-1.5"
+            : "bg-white/95 shadow-lg ring-1 ring-black/5 backdrop-blur-md",
+          isFloating
+            ? "rounded-full px-3 py-2 shadow-xl ring-black/10"
+            : !isHero && "rounded-full px-3 py-2",
           className,
         )}
       >
         <span
           className={cn(
-            "flex shrink-0 items-center justify-center rounded-full bg-blue-50 text-blue-600",
-            isHero ? "h-8 w-8" : "h-7 w-7",
+            "flex shrink-0 items-center justify-center rounded-full",
+            isHero
+              ? "h-6 w-6 bg-gradient-to-br from-cyan-400/90 to-blue-600/90 text-white shadow-sm sm:h-7 sm:w-7"
+              : "bg-blue-50 text-blue-600",
+            !isHero && (isFloating ? "h-8 w-8" : "h-7 w-7"),
           )}
           aria-hidden
         >
-          <AiAssistantIcon className={isHero ? "h-4 w-4" : "h-3.5 w-3.5"} />
+          <AiAssistantIcon
+            className={cn(isHero ? "h-3 w-3 sm:h-3.5 sm:w-3.5" : isFloating ? "h-4 w-4" : "h-3.5 w-3.5")}
+          />
         </span>
         <div className="relative min-w-0 flex-1">
           <input
@@ -122,16 +134,29 @@ export function AiSearchField({
             onChange={(e) => setInput(e.target.value)}
             onFocus={() => setFocused(true)}
             onBlur={() => setFocused(false)}
-            placeholder={focused ? "Area, budget, beds, lifestyle — whatever helps…" : undefined}
+            placeholder={
+              isHero
+                ? focused
+                  ? "Area, budget, beds…"
+                  : heroPlaceholder
+                : focused
+                  ? "Area, budget, beds…"
+                  : undefined
+            }
             className={cn(
-              "w-full bg-transparent text-base text-neutral-900 placeholder:text-neutral-400 focus:outline-none sm:text-sm",
+              "w-full bg-transparent focus:outline-none",
+              isHero
+                ? "text-xs text-white placeholder:text-white/55 sm:text-sm"
+                : "text-neutral-900 placeholder:text-neutral-400",
+              !isHero && (isFloating ? "text-sm" : "text-base sm:text-sm"),
             )}
             aria-label="Describe the property you want"
           />
-          {showFadePlaceholder && (
+          {showFadePlaceholder && !isHero && (
             <div
               className={cn(
-                "pointer-events-none absolute inset-0 flex items-center text-base text-neutral-400 sm:text-sm",
+                "pointer-events-none absolute inset-0 flex items-center text-neutral-400",
+                isFloating ? "text-sm" : "text-base sm:text-sm",
               )}
               onClick={() => inputRef.current?.focus()}
             >
@@ -144,11 +169,19 @@ export function AiSearchField({
           size="icon"
           disabled={loading || !input.trim()}
           className={cn(
-            "h-11 w-11 shrink-0 rounded-full bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 sm:h-9 sm:w-9",
+            "shrink-0 rounded-full disabled:opacity-40",
+            isHero
+              ? "h-7 w-7 bg-white/15 text-white ring-1 ring-white/25 hover:bg-white/25 sm:h-8 sm:w-8"
+              : "bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50",
+            !isHero && (isFloating ? "h-9 w-9" : "h-11 w-11 sm:h-9 sm:w-9"),
           )}
           aria-label="Search listings"
         >
-          {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ArrowRight className="h-3.5 w-3.5" />}
+          {loading ? (
+            <Loader2 className="h-3 w-3 animate-spin sm:h-3.5 sm:w-3.5" />
+          ) : (
+            <ArrowRight className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+          )}
         </Button>
       </form>
 
