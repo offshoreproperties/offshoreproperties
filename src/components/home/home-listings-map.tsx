@@ -29,7 +29,7 @@ export function HomeListingsMap({ homeTab }: HomeListingsMapProps) {
   }, [properties, homeTab]);
 
   return (
-    <section className="px-3 py-10 sm:px-6 sm:py-12 lg:px-8">
+    <section className="px-3 pb-6 pt-3 sm:px-6 sm:pb-8 sm:pt-4 lg:px-8">
       <div className="mx-auto max-w-[1440px]">
         <div className="overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-xl shadow-slate-200/40">
           <div className="border-b border-slate-100 bg-gradient-to-br from-slate-50 to-white px-5 py-6 sm:px-8 sm:py-8">

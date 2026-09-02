@@ -15,7 +15,7 @@ export function HomeTabStrip({
   onChange: (tab: HomeTab) => void;
 }) {
   return (
-    <div className="relative z-10 px-3 py-2 md:hidden">
+    <div className="relative z-10 px-3 py-1 md:hidden">
       <div
         className="flex gap-2 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         role="tablist"

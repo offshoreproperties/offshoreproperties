@@ -1,11 +1,11 @@
 import { Link } from "@tanstack/react-router";
 import { HavenlySearch } from "@/components/home/havenly-search";
 import { AiSearchField } from "@/components/ai-search-field";
-import { PublicHeader, type HomeTab } from "@/components/public-header";
 import { FadePhrases } from "@/components/fade-phrases";
 import { Map } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { HeroKenyaGallery } from "@/components/kenya-gallery-provider";
+import type { HomeTab } from "@/components/public-header";
 
 const HERO_PHRASES = [
   "Let's find you the right home",
@@ -30,13 +30,9 @@ const BUY_PHRASES = [
 
 type HavenlyHeroProps = {
   homeTab: HomeTab;
-  onHomeTabChange: (tab: HomeTab) => void;
 };
 
-export function HavenlyHero({
-  homeTab,
-  onHomeTabChange,
-}: HavenlyHeroProps) {
+export function HavenlyHero({ homeTab }: HavenlyHeroProps) {
   const phrases =
     homeTab === "rent" ? RENT_PHRASES : homeTab === "buy" ? BUY_PHRASES : HERO_PHRASES;
 
@@ -48,15 +44,12 @@ export function HavenlyHero({
         : "Same team behind every listing — search by area and budget, or just tell us what you're after.";
 
   return (
-    <div className="relative flex min-h-[min(78vh,680px)] min-h-[min(78dvh,680px)] w-full flex-col overflow-hidden sm:min-h-[min(85vh,820px)] sm:min-h-[min(85dvh,820px)]">
-      <HeroKenyaGallery />
-      {/* Light overlays — keep photos bright, darken only where text sits */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/5 to-transparent" />
-      <div className="absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-black/30 to-transparent sm:h-32" />
+    <section className="relative mb-0 w-full overflow-hidden rounded-b-2xl shadow-lg shadow-slate-900/15 sm:rounded-b-3xl">
+      <div className="relative flex min-h-[min(58vh,520px)] min-h-[min(58dvh,520px)] w-full flex-col sm:min-h-[min(64vh,580px)] sm:min-h-[min(64dvh,580px)] lg:min-h-[min(68vh,640px)]">
+        <HeroKenyaGallery />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-black/5" />
 
-      <PublicHeader variant="overlay" homeTab={homeTab} onHomeTabChange={onHomeTabChange} />
-
-      <div className="relative z-10 mt-auto px-4 pb-4 sm:px-8 sm:pb-6 lg:px-10 lg:pb-8">
+        <div className="relative z-10 mt-auto px-4 pb-4 sm:px-8 sm:pb-5 lg:px-10 lg:pb-6">
         <div className="max-w-2xl">
           <h1 className="min-h-[2.4em] text-[clamp(1.5rem,5vw,3.5rem)] font-bold leading-[1.1] tracking-tight text-white drop-shadow-md sm:min-h-[1.3em]">
             <FadePhrases key={homeTab} phrases={phrases} />
@@ -84,7 +77,8 @@ export function HavenlyHero({
             listingType={homeTab === "rent" ? "rent" : homeTab === "buy" ? "sale" : undefined}
           />
         </div>
+        </div>
       </div>
-    </div>
+    </section>
   );
 }

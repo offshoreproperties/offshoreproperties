@@ -1,3 +1,8 @@
+export const SITE_URL =
+  (typeof import.meta !== "undefined" &&
+    (import.meta.env.VITE_SITE_URL as string | undefined)?.replace(/\/$/, "")) ||
+  "https://offshoreproperties.co.ke";
+
 export const BRAND = {
   name: "Offshore Properties",
   tagline: "Kenyan property, explained properly — by people who know the market.",
@@ -5,7 +10,14 @@ export const BRAND = {
   phone: "+254 702 447 447",
   phone2: "+254 781 310 331",
   whatsapp: "+254702447447",
+  logoSrc: "/offshore-logo.png",
+  ogImageSrc: "/og-image.jpg",
 } as const;
+
+export function brandOgImageUrl(origin?: string): string {
+  const base = origin?.replace(/\/$/, "") || SITE_URL;
+  return `${base}${BRAND.ogImageSrc}`;
+}
 
 /** Default listing currency for Kenya */
 export const DEFAULT_CURRENCY = "KES" as const;
@@ -24,24 +36,20 @@ export const KES_PRICE_OPTIONS = [
 ] as const;
 
 /**
- * Kenyan hero gallery — high-res landmark photos (GTC, Expressway, UNON,
- * Mt Longonot, golf, tea & flower farms) plus scenic Unsplash slides.
+ * Homepage hero slideshow — controlled by THIS list, not the folder alone.
+ * Deleting files from public/kenya does not remove them until you update this array.
+ * Property listing photos live in Supabase (admin uploads), not here.
  */
 export const KENYA_GALLERY_IMAGES = [
   "/kenya/gtc-tower.jpg",
   "/kenya/nairobi-expressway.png",
-  "/kenya/un-complex-nairobi.jpg",
   "/kenya/mt-longonot.jpg",
   "/kenya/mt-longonot-crater.jpg",
   "/kenya/golf-course-nairobi.jpg",
-  "/kenya/tea-plantation-kiambu.jpg",
   "/kenya/tea-farm-kenya.jpg",
-  "/kenya/rose-greenhouse.jpg",
   "/kenya/flower-farm-roses.jpg",
-  "https://images.unsplash.com/photo-1741991110666-88115e724741?auto=format&fit=crop&w=2400&q=92",
-  "https://images.unsplash.com/photo-1489392191049-fc10c97e64b6?auto=format&fit=crop&w=2400&q=92",
-  "https://images.unsplash.com/photo-1547471080-7cc2caa01a7e?auto=format&fit=crop&w=2400&q=92",
-  "https://images.unsplash.com/photo-1535941339077-2dd1c7963098?auto=format&fit=crop&w=2400&q=92",
+  "/kenya/Lake-Victoria-Dhow.jpg",
+  "/kenya/nairobi-city-county-kenyas-capital-cityscapes-skyline-skyscrapers-highrise-buildings-architecture_257688-271.avif",
 ] as const;
 
 export const HERO_IMAGE =

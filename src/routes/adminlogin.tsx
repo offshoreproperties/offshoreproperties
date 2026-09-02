@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { BRAND } from "@/lib/constants";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
+import { BrandLogo } from "@/components/brand-logo";
 
 export const Route = createFileRoute("/adminlogin")({
   head: () => ({ meta: [{ title: `Admin — ${BRAND.name}` }] }),
@@ -45,8 +46,8 @@ function AdminLoginPage() {
   return (
     <div className="flex min-h-dvh-screen flex-col items-center justify-center bg-[#0a0a0a] px-4">
       <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#141414] p-8 shadow-elevated sm:p-10">
-        <Link to="/" className="text-xl font-bold text-white">
-          Offshore
+        <Link to="/">
+          <BrandLogo imgClassName="h-10" />
         </Link>
         <p className="mt-2 text-sm text-white/50">Administration</p>
         <h1 className="mt-8 text-2xl font-bold text-white">Admin access</h1>

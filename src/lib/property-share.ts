@@ -1,4 +1,4 @@
-import { BRAND } from "@/lib/constants";
+import { BRAND, brandOgImageUrl } from "@/lib/constants";
 import {
   formatPrice,
   listingTypeShort,
@@ -6,8 +6,7 @@ import {
   propertyTypeLabel,
 } from "@/lib/format";
 
-const DEFAULT_OG_IMAGE =
-  "https://images.unsplash.com/photo-1600607687644-c7171b42498f?auto=format&fit=crop&w=1200&h=630&q=80";
+const DEFAULT_OG_IMAGE = brandOgImageUrl();
 
 export type PropertyOgInput = {
   title: string;

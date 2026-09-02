@@ -4,6 +4,7 @@ import { Menu, ArrowUpRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
+import { BrandLogo } from "@/components/brand-logo";
 
 export type HomeTab = "all" | "buy" | "rent";
 
@@ -53,14 +54,14 @@ export function PublicHeader({
     const onOverlay = overlay && !block;
     return cn(
       block ? "w-full text-left" : "",
-      "rounded-full px-4 py-2.5 text-sm font-medium transition-all min-h-[44px] sm:min-h-0 sm:py-2 sm:px-5",
+        "rounded-full px-4 py-2 text-sm font-medium transition-all min-h-[40px] sm:min-h-0 sm:py-2 sm:px-5",
       active
         ? onOverlay
           ? "bg-white text-neutral-900 shadow-sm"
-          : "bg-neutral-900 text-white shadow-sm"
+          : "bg-white text-slate-900 shadow-sm"
         : onOverlay
           ? "text-white/90 hover:text-white"
-          : "text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900",
+          : "text-slate-300 hover:bg-white/10 hover:text-white",
     );
   }
 
@@ -127,41 +128,58 @@ export function PublicHeader({
         "relative z-20 w-full",
         overlay
           ? "safe-top"
-          : "sticky top-0 border-b border-neutral-200 bg-white/95 backdrop-blur-md safe-top",
+          : "sticky top-0 safe-top border-b border-cyan-500/25 bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 shadow-lg shadow-black/30",
         className,
       )}
     >
+      {overlay ? (
+        <Link
+          to="/"
+          className="absolute left-3 z-30 pl-[max(2px,env(safe-area-inset-left))] drop-shadow-lg brightness-110 contrast-105 top-[calc(50%+2rem)] -translate-y-1/2 sm:left-4 sm:top-[calc(50%+2.375rem)] md:left-5 md:top-[calc(50%+2.75rem)] lg:left-6 lg:top-[calc(50%+3.125rem)]"
+        >
+          <BrandLogo size="hero" />
+        </Link>
+      ) : null}
+
       <div
         className={cn(
-          "mx-auto flex w-full max-w-7xl items-center justify-between",
-          compact ? "gap-3 px-4 py-3 sm:px-6 sm:py-4" : "gap-4 px-4 py-4 sm:gap-6 sm:px-8 sm:py-5 lg:px-10 lg:py-6",
+          "mx-auto w-full",
+          overlay
+            ? "flex max-w-none items-center justify-end gap-3 py-3 pr-3 sm:gap-4 sm:py-4 sm:pr-5 lg:pr-6"
+            : compact
+              ? "grid h-[4.5rem] max-w-7xl grid-cols-[1fr_auto] items-center gap-3 px-4 sm:h-20 sm:px-6"
+              : "grid h-[4.75rem] max-w-7xl grid-cols-[1fr_auto] items-center gap-4 px-4 sm:h-20 sm:px-6 lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] lg:h-[5.25rem] lg:px-8",
         )}
       >
-      <Link
-        to="/"
-        className={cn(
-          "shrink-0 font-bold tracking-tight drop-shadow-md",
-          "text-xl sm:text-3xl lg:text-[2.125rem] lg:leading-none",
-          overlay ? "text-white" : "text-neutral-900",
-        )}
-      >
-        Offshore<span className="text-blue-600">.</span>
-      </Link>
+      {!overlay ? (
+        <Link
+          to="/"
+          className="flex items-center justify-self-start lg:col-start-1"
+        >
+          <BrandLogo size="header" />
+        </Link>
+      ) : null}
 
-      <nav className="absolute left-1/2 top-1/2 hidden -translate-x-1/2 -translate-y-1/2 lg:block">
+      <nav
+        className={cn(
+          overlay
+            ? "absolute left-1/2 top-1/2 hidden -translate-x-1/2 -translate-y-1/2 lg:block"
+            : "hidden justify-self-center lg:col-start-2 lg:flex",
+        )}
+      >
         <div
           className={cn(
             "flex max-w-[min(100vw-12rem,42rem)] items-center gap-1 overflow-x-auto rounded-full p-1.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
             overlay
               ? "bg-white/10 ring-1 ring-white/15 backdrop-blur-md"
-              : "bg-neutral-100 ring-1 ring-neutral-200",
+              : "bg-white/10 ring-1 ring-white/15 backdrop-blur-sm",
           )}
         >
           {PILLS.map((item) => renderPill(item))}
         </div>
       </nav>
 
-      <div className="flex items-center gap-2 sm:gap-3">
+      <div className="flex items-center justify-end justify-self-end gap-2 sm:gap-3 lg:col-start-3">
         <BrowseButton />
 
         <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
@@ -171,7 +189,7 @@ export function PublicHeader({
               variant="ghost"
               className={cn(
                 "h-11 w-11 shrink-0 rounded-full lg:hidden",
-                overlay ? "text-white" : "text-neutral-900",
+                overlay ? "text-white" : "text-white hover:bg-white/10",
               )}
               aria-label="Open menu"
             >

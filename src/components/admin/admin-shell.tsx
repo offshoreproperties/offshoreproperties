@@ -5,6 +5,7 @@ import { clearAdminSession } from "@/lib/admin-session";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
+import { BrandLogo } from "@/components/brand-logo";
 
 const links = [
   { to: "/admin", label: "Analytics", icon: BarChart3, exact: true },
@@ -64,8 +65,8 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     <div className="flex h-dvh overflow-hidden bg-slate-100">
       <aside className="hidden h-full w-[260px] shrink-0 flex-col bg-slate-950 text-white lg:flex">
         <div className="shrink-0 border-b border-slate-800 px-5 py-6">
-          <Link to="/" className="font-display text-xl text-white">
-            Offshore<span className="text-blue-400">.</span>
+          <Link to="/">
+            <BrandLogo imgClassName="h-10" />
           </Link>
           <p className="mt-1 text-xs font-medium uppercase tracking-wider text-slate-500">Administration</p>
         </div>
@@ -96,8 +97,8 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                 </Button>
               </SheetTrigger>
               <SheetContent side="left" className="scrollbar-dark w-[260px] overflow-y-auto border-slate-800 bg-slate-950 p-0 text-white">
-                <div className="border-b border-slate-800 px-5 py-5 font-display text-xl text-white">
-                  Offshore<span className="text-blue-400">.</span>
+                <div className="border-b border-slate-800 px-5 py-5">
+                  <BrandLogo imgClassName="h-10" />
                 </div>
                 <NavLinks onNavigate={() => {}} />
               </SheetContent>

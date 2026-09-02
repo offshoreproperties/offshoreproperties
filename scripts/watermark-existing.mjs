@@ -19,7 +19,7 @@ import ffmpegPath from "ffmpeg-static";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const BUCKET = "property-images";
-const WATERMARK_SVG = join(root, "src", "assets", "brand", "watermark.svg");
+const WATERMARK_PNG = join(root, "src", "assets", "brand", "offshore-logo.png");
 const dryRun = process.argv.includes("--dry-run");
 
 function loadEnv() {
@@ -49,8 +49,25 @@ const db = createClient(url, key, { auth: { persistSession: false } });
 const IMAGE_EXT = new Set(["jpg", "jpeg", "png", "webp", "gif"]);
 const VIDEO_EXT = new Set(["mp4", "webm", "mov", "m4v"]);
 
+const IMAGE_WM_SCALE = 0.32;
+const IMAGE_WM_OPACITY = 0.44;
+
 async function watermarkPng(width) {
-  return sharp(WATERMARK_SVG).resize(Math.max(120, width)).ensureAlpha().png().toBuffer();
+  const w = Math.max(120, width);
+  const alpha = Math.round(255 * IMAGE_WM_OPACITY);
+  return sharp(WATERMARK_PNG)
+    .resize(w)
+    .ensureAlpha()
+    .composite([
+      {
+        input: Buffer.from([255, 255, 255, alpha]),
+        raw: { width: 1, height: 1, channels: 4 },
+        tile: true,
+        blend: "dest-in",
+      },
+    ])
+    .png()
+    .toBuffer();
 }
 
 async function watermarkImage(buffer, ext) {
@@ -58,7 +75,7 @@ async function watermarkImage(buffer, ext) {
   const meta = await image.metadata();
   const w = meta.width ?? 1200;
   const h = meta.height ?? 800;
-  const wm = await watermarkPng(Math.round(Math.min(w, h) * 0.3));
+  const wm = await watermarkPng(Math.round(Math.min(w, h) * IMAGE_WM_SCALE));
   let pipeline = image.composite([{ input: wm, gravity: "center", blend: "over" }]);
   if (ext === "png") pipeline = pipeline.png();
   else if (ext === "webp") pipeline = pipeline.webp({ quality: 88 });

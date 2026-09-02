@@ -2,15 +2,14 @@ import { Link } from "@tanstack/react-router";
 import { MessageCircle } from "lucide-react";
 import { BRAND } from "@/lib/constants";
 import { buildWhatsAppUrl } from "@/lib/whatsapp";
+import { BrandLogo } from "@/components/brand-logo";
 
 export function SiteFooter() {
   return (
     <footer className="border-t border-neutral-200 bg-white text-neutral-900">
       <div className="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:grid-cols-2 sm:gap-10 sm:px-6 sm:py-16 md:grid-cols-4">
         <div>
-          <div className="text-3xl font-bold tracking-tight sm:text-[2rem]">
-            Offshore<span className="text-blue-600">.</span>
-          </div>
+          <BrandLogo imgClassName="h-12 sm:h-14" />
           <p className="mt-3 max-w-xs text-sm leading-relaxed text-neutral-600">
             {BRAND.tagline}
           </p>

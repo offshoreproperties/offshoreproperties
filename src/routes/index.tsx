@@ -9,7 +9,7 @@ import { HomeListingsMap } from "@/components/home/home-listings-map";
 import { PropertyCard } from "@/components/property-card";
 import { listProperties } from "@/lib/properties.functions";
 import { BRAND } from "@/lib/constants";
-import type { HomeTab } from "@/components/public-header";
+import { PublicHeader, type HomeTab } from "@/components/public-header";
 import { z } from "zod";
 
 const homeSearchSchema = z.object({
@@ -81,13 +81,17 @@ function Index() {
 
   return (
     <div className="min-h-dvh-screen bg-[#f8fafc]">
-      <HavenlyHero homeTab={homeTab} onHomeTabChange={setTab} />
+      <PublicHeader variant="bar" homeTab={homeTab} onHomeTabChange={setTab} />
+
+      <div className="px-3 pt-1 sm:px-4 lg:px-6">
+        <HavenlyHero homeTab={homeTab} />
+      </div>
 
       <HomeTabStrip active={homeTab} onChange={setTab} />
 
       <HomeListingsMap homeTab={homeTab} />
 
-      <section className="bg-[#f8fafc] px-3 pb-10 safe-bottom pt-2 sm:px-6 sm:pb-14 lg:px-8">
+      <section className="bg-[#f8fafc] px-3 pb-10 safe-bottom pt-1 sm:px-6 sm:pb-14 lg:px-8">
         <div className="mx-auto max-w-[1440px]">
           <div className="flex items-end justify-between gap-4 rounded-2xl border border-slate-200/60 bg-white px-5 py-5 shadow-sm sm:px-6">
             <div className="min-w-0">

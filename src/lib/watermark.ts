@@ -6,19 +6,34 @@ import { fileURLToPath } from "node:url";
 import ffmpegPath from "ffmpeg-static";
 import sharp from "sharp";
 
-const WATERMARK_SVG = fileURLToPath(
-  new URL("../assets/brand/watermark.svg", import.meta.url),
+const WATERMARK_PNG = fileURLToPath(
+  new URL("../assets/brand/offshore-logo.png", import.meta.url),
 );
 
 /** Fraction of the shorter image side used for watermark width */
-const IMAGE_WM_SCALE = 0.3;
+const IMAGE_WM_SCALE = 0.32;
+/** Overall watermark opacity (0–1) */
+const IMAGE_WM_OPACITY = 0.44;
 /** Center logo opacity for video overlay (0–1) */
 const VIDEO_WM_ALPHA = 0.36;
 const VIDEO_EXTENSIONS = new Set(["mp4", "webm", "mov", "m4v"]);
 
 async function getWatermarkPng(targetWidth: number): Promise<Buffer> {
   const width = Math.max(120, Math.round(targetWidth));
-  return sharp(WATERMARK_SVG).resize(width).ensureAlpha().png().toBuffer();
+  const alpha = Math.round(255 * IMAGE_WM_OPACITY);
+  return sharp(WATERMARK_PNG)
+    .resize(width)
+    .ensureAlpha()
+    .composite([
+      {
+        input: Buffer.from([255, 255, 255, alpha]),
+        raw: { width: 1, height: 1, channels: 4 },
+        tile: true,
+        blend: "dest-in",
+      },
+    ])
+    .png()
+    .toBuffer();
 }
 
 function isVideoFile(fileName: string, contentType: string): boolean {

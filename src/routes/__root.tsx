@@ -13,7 +13,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { FloatingWhatsApp } from "@/components/floating-whatsapp";
 import { SiteVisitTracker } from "@/components/site-visit-tracker";
 import { KenyaGalleryProvider } from "@/components/kenya-gallery-provider";
-import { BRAND } from "@/lib/constants";
+import { BRAND, brandOgImageUrl } from "@/lib/constants";
 import appCss from "../styles.css?url";
 
 function NotFoundComponent() {
@@ -70,7 +70,7 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   );
 }
 
-const OG_IMAGE = "https://images.unsplash.com/photo-1600607687644-c7171b42498f?auto=format&fit=crop&w=1200&h=630&q=80";
+const OG_IMAGE = brandOgImageUrl();
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   head: () => ({
@@ -89,7 +89,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     ],
     links: [
       { rel: "stylesheet", href: appCss },
-      { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },
+      { rel: "icon", type: "image/png", href: "/favicon.png" },
+      { rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
     ],
   }),
   shellComponent: RootShell,
