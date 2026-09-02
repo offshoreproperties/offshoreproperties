@@ -26,14 +26,19 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  isPropertyUploadMime,
+  isRecordingMime,
   isVideoUrl,
+  isAudioUrl,
   MAX_IMAGE_UPLOAD_BYTES,
-  MAX_VIDEO_UPLOAD_BYTES,
+  MAX_RECORDING_UPLOAD_BYTES,
   PROPERTY_MEDIA_ACCEPT,
+  resolvePropertyUploadMime,
 } from "@/lib/media";
-import { Loader2, MapPin, Upload, X, GripVertical, Link2 } from "lucide-react";
+import { Loader2, MapPin, Upload, X, GripVertical, Link2, Video, Mic } from "lucide-react";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
+
+const UPLOAD_CONCURRENCY = 2;
 
 export type PropertyFormValues = {
   id?: string;
@@ -145,47 +150,103 @@ export function PropertyForm({
   const [agentId, setAgentId] = useState(initial?.agent_id ?? "__none");
   const [availableFrom, setAvailableFrom] = useState(initial?.available_from ?? "");
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<{ done: number; total: number } | null>(null);
+  const [dragOver, setDragOver] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const recordVideoInputRef = useRef<HTMLInputElement>(null);
+  const recordAudioInputRef = useRef<HTMLInputElement>(null);
   const [geocoding, setGeocoding] = useState(false);
   const [mapsLink, setMapsLink] = useState("");
   const [saving, setSaving] = useState(false);
 
   const showShortLet = listingType === "short_let";
 
-  async function handleFiles(files: FileList | null) {
+  const uploadOneFile = useCallback(
+    async (file: File) => {
+      const contentType = resolvePropertyUploadMime(file);
+      if (!contentType) throw new Error("unsupported file type");
+
+      const base64 = await fileToBase64(file);
+      const { url } = await upload({
+        data: {
+          fileName: file.name,
+          contentType,
+          dataBase64: base64,
+        },
+      });
+      return url;
+    },
+    [upload],
+  );
+
+  async function handleFiles(files: FileList | File[] | null) {
     if (!files?.length) return;
-    setUploading(true);
-    try {
-      const urls: string[] = [];
-      for (const file of Array.from(files)) {
-        if (!isPropertyUploadMime(file.type)) {
-          toast.error(`${file.name}: unsupported file type`);
-          continue;
-        }
-        const isVideo = file.type.startsWith("video/");
-        const maxBytes = isVideo ? MAX_VIDEO_UPLOAD_BYTES : MAX_IMAGE_UPLOAD_BYTES;
-        if (file.size > maxBytes) {
-          toast.error(
-            `${file.name} is too large (max ${maxBytes / (1024 * 1024)}MB)`,
-          );
-          continue;
-        }
-        const base64 = await fileToBase64(file);
-        const { url } = await upload({
-          data: {
-            fileName: file.name,
-            contentType: file.type,
-            dataBase64: base64,
-          },
-        });
-        urls.push(url);
+
+    const queue = Array.from(files);
+    const valid: File[] = [];
+
+    for (const file of queue) {
+      const mime = resolvePropertyUploadMime(file);
+      if (!mime) {
+        toast.error(`${file.name}: unsupported file type`);
+        continue;
       }
-      setImages((prev) => [...prev, ...urls]);
-      if (!heroImage && urls[0]) setHeroImage(urls[0]);
-      toast.success(`Uploaded ${urls.length} file(s) with Offshore watermark`);
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Upload failed");
+      const maxBytes = isRecordingMime(mime)
+        ? MAX_RECORDING_UPLOAD_BYTES
+        : MAX_IMAGE_UPLOAD_BYTES;
+      if (file.size > maxBytes) {
+        toast.error(`${file.name} is too large (max ${maxBytes / (1024 * 1024)}MB)`);
+        continue;
+      }
+      valid.push(file);
+    }
+
+    if (!valid.length) return;
+
+    setUploading(true);
+    setUploadProgress({ done: 0, total: valid.length });
+
+    let completed = 0;
+    let failed = 0;
+    let firstUrl: string | undefined;
+    const pending = [...valid];
+
+    async function worker() {
+      while (pending.length) {
+        const file = pending.shift();
+        if (!file) break;
+        try {
+          const url = await uploadOneFile(file);
+          if (!firstUrl) firstUrl = url;
+          setImages((prev) => [...prev, url]);
+          completed += 1;
+        } catch (e) {
+          failed += 1;
+          toast.error(uploadErrorMessage(e, file.name));
+        } finally {
+          setUploadProgress({ done: completed + failed, total: valid.length });
+        }
+      }
+    }
+
+    try {
+      await Promise.all(
+        Array.from({ length: Math.min(UPLOAD_CONCURRENCY, valid.length) }, () => worker()),
+      );
+      if (completed > 0) {
+        setHeroImage((current) => current || firstUrl || "");
+        toast.success(`Uploaded ${completed} file${completed === 1 ? "" : "s"}`);
+      }
+      if (failed > 0 && completed === 0) {
+        toast.error("No files uploaded — check sizes and try again.");
+      }
     } finally {
       setUploading(false);
+      setUploadProgress(null);
+      setDragOver(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      if (recordVideoInputRef.current) recordVideoInputRef.current.value = "";
+      if (recordAudioInputRef.current) recordAudioInputRef.current.value = "";
     }
   }
 
@@ -502,23 +563,94 @@ export function PropertyForm({
       <AmenitiesPicker value={features} onChange={setFeatures} />
 
       <div className="rounded-xl border border-border p-4">
-        <Label className="text-base">Photos &amp; videos</Label>
+        <Label className="text-base">Photos, videos &amp; recordings</Label>
         <p className="mt-1 text-xs text-muted-foreground">
-          Uploads are automatically watermarked with the Offshore logo (glassy centre mark).
-          Images up to 5MB (JPEG/PNG/WebP/GIF), videos up to 80MB (MP4/WebM/MOV).
+          Select or drag many files at once — photos, phone videos, and voice notes. Uploads run in
+          parallel; images and videos get the Offshore watermark. Images up to 5MB, recordings up to
+          80MB (MP4, MOV, WebM, 3GP, M4A, MP3, and more).
         </p>
-        <label className="mt-3 flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-border py-8 transition hover:bg-muted/50">
+        <label
+          className={cn(
+            "mt-3 flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border border-dashed py-8 transition",
+            dragOver
+              ? "border-primary bg-primary/5"
+              : "border-border hover:bg-muted/50",
+            uploading && "pointer-events-none opacity-70",
+          )}
+          onDragOver={(e) => {
+            e.preventDefault();
+            if (!uploading) setDragOver(true);
+          }}
+          onDragLeave={(e) => {
+            e.preventDefault();
+            if (!e.currentTarget.contains(e.relatedTarget as Node)) setDragOver(false);
+          }}
+          onDrop={(e) => {
+            e.preventDefault();
+            if (!uploading) void handleFiles(e.dataTransfer.files);
+          }}
+        >
           <input
+            ref={fileInputRef}
             type="file"
             accept={PROPERTY_MEDIA_ACCEPT}
             multiple
             className="hidden"
-            onChange={(e) => handleFiles(e.target.files)}
+            onChange={(e) => void handleFiles(e.target.files)}
             disabled={uploading}
           />
           {uploading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Upload className="h-5 w-5" />}
-          <span className="text-sm">{uploading ? "Uploading…" : "Upload photos or videos"}</span>
+          <span className="text-sm font-medium">
+            {uploading && uploadProgress
+              ? `Uploading ${uploadProgress.done} of ${uploadProgress.total}…`
+              : "Choose photos, videos, or recordings"}
+          </span>
+          <span className="text-xs text-muted-foreground">
+            {uploading ? "You can keep editing other fields while uploads finish" : "or drag and drop here"}
+          </span>
         </label>
+        <div className="mt-3 flex flex-wrap justify-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="rounded-full"
+            disabled={uploading}
+            onClick={() => recordVideoInputRef.current?.click()}
+          >
+            <Video className="mr-2 h-4 w-4" />
+            Record video
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="rounded-full"
+            disabled={uploading}
+            onClick={() => recordAudioInputRef.current?.click()}
+          >
+            <Mic className="mr-2 h-4 w-4" />
+            Record audio
+          </Button>
+          <input
+            ref={recordVideoInputRef}
+            type="file"
+            accept="video/*"
+            capture="environment"
+            className="hidden"
+            onChange={(e) => void handleFiles(e.target.files)}
+            disabled={uploading}
+          />
+          <input
+            ref={recordAudioInputRef}
+            type="file"
+            accept="audio/*"
+            capture
+            className="hidden"
+            onChange={(e) => void handleFiles(e.target.files)}
+            disabled={uploading}
+          />
+        </div>
         {images.length > 0 && (
           <DraggableImageGrid
             images={images}
@@ -617,6 +749,11 @@ function DraggableImageGrid({
         >
           {isVideoUrl(url) ? (
             <video src={url} className="h-full w-full object-cover pointer-events-none" muted playsInline preload="metadata" />
+          ) : isAudioUrl(url) ? (
+            <div className="flex h-full w-full flex-col items-center justify-center gap-1 bg-slate-900 p-2 text-white">
+              <Mic className="h-6 w-6 opacity-80" />
+              <audio src={url} controls className="h-8 w-full max-w-full" preload="metadata" />
+            </div>
           ) : (
             <img src={url} alt="" className="h-full w-full object-cover pointer-events-none" />
           )}
@@ -657,4 +794,19 @@ function fileToBase64(file: File): Promise<string> {
     reader.onerror = reject;
     reader.readAsDataURL(file);
   });
+}
+
+function uploadErrorMessage(error: unknown, fileName: string): string {
+  const raw =
+    error instanceof Error ? error.message.trim() : typeof error === "string" ? error.trim() : "";
+  if (
+    raw.startsWith("<!doctype") ||
+    raw.startsWith("<!DOCTYPE") ||
+    raw.includes("<html") ||
+    raw.includes("This page didn't load")
+  ) {
+    return `${fileName}: server error while uploading — try one photo under 5MB, or refresh and try again.`;
+  }
+  if (raw) return `${fileName}: ${raw}`;
+  return `${fileName}: upload failed`;
 }

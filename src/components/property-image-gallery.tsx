@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
-import { ChevronLeft, ChevronRight, X, Expand } from "lucide-react";
+import { ChevronLeft, ChevronRight, X, Expand, Mic } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { isVideoUrl } from "@/lib/media";
+import { isVideoUrl, isAudioUrl } from "@/lib/media";
 
 function MediaPreview({
   src,
@@ -23,8 +23,20 @@ function MediaPreview({
         playsInline
         loop
         preload="metadata"
+        controls
         aria-label={alt}
       />
+    );
+  }
+  if (isAudioUrl(src)) {
+    return (
+      <div
+        className={cn(className, "flex flex-col items-center justify-center gap-4 bg-slate-950 p-6")}
+        aria-label={alt}
+      >
+        <Mic className="h-10 w-10 text-white/80" />
+        <audio src={src} controls className="w-full max-w-md" preload="metadata" />
+      </div>
     );
   }
   return <img src={src} alt={alt} className={className} loading={loading} />;

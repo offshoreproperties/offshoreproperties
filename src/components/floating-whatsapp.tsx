@@ -23,34 +23,16 @@ export function FloatingWhatsApp() {
       rel="noopener noreferrer"
       aria-label="Chat with Offshore Properties on WhatsApp"
       className={cn(
-        "group fixed z-40 flex items-center gap-1 rounded-full py-1 pl-1 pr-3.5 sm:pr-4",
-        "bg-[#25D366] text-white shadow-[0_10px_40px_-8px_rgba(37,211,102,0.65)]",
-        "ring-2 ring-white/90 transition-[transform,box-shadow,background-color] duration-200",
-        "hover:bg-[#20bd5a] hover:shadow-[0_14px_44px_-6px_rgba(37,211,102,0.7)]",
-        "active:scale-[0.98] motion-reduce:active:scale-100",
+        "fixed z-40 flex h-10 w-10 items-center justify-center rounded-full sm:h-11 sm:w-11",
+        "bg-[#25D366] text-white shadow-lg shadow-[#25D366]/30 ring-2 ring-white/90",
+        "transition hover:bg-[#20bd5a] hover:shadow-xl active:scale-95 motion-reduce:active:scale-100",
+        "right-[max(0.875rem,env(safe-area-inset-right))]",
         isHome
-          ? "bottom-[max(1rem,env(safe-area-inset-bottom))] left-[max(1rem,env(safe-area-inset-left))]"
-          : "bottom-[max(1rem,env(safe-area-inset-bottom))] right-[max(1rem,env(safe-area-inset-right))]",
+          ? "bottom-[max(6.5rem,env(safe-area-inset-bottom))] sm:bottom-[max(7rem,env(safe-area-inset-bottom))]"
+          : "bottom-[max(0.875rem,env(safe-area-inset-bottom))]",
       )}
     >
-      <span className="relative flex h-11 w-11 shrink-0 items-center justify-center sm:h-12 sm:w-12">
-        <span
-          aria-hidden
-          className="absolute inset-0 rounded-full bg-white/15 opacity-0 transition-opacity group-hover:opacity-100"
-        />
-        <WhatsAppIcon className="relative h-[1.35rem] w-[1.35rem] sm:h-6 sm:w-6" />
-        <span className="absolute top-1 right-1 flex h-2.5 w-2.5">
-          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-60 motion-reduce:animate-none" />
-          <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-white ring-2 ring-[#25D366]" />
-        </span>
-      </span>
-
-      <span className="flex min-w-0 flex-col items-start pr-0.5 leading-tight">
-        <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-white/80">
-          WhatsApp
-        </span>
-        <span className="text-sm font-semibold text-white sm:text-[0.9375rem]">Chat with us</span>
-      </span>
+      <WhatsAppIcon className="h-[1.125rem] w-[1.125rem] sm:h-5 sm:w-5" />
     </a>
   );
 }

@@ -1,4 +1,5 @@
 import { spawn } from "node:child_process";
+import { existsSync } from "node:fs";
 import { readFile, unlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -6,9 +7,24 @@ import { fileURLToPath } from "node:url";
 import ffmpegPath from "ffmpeg-static";
 import sharp from "sharp";
 
-const WATERMARK_PNG = fileURLToPath(
-  new URL("../assets/brand/offshore-logo.png", import.meta.url),
-);
+function resolveWatermarkPngPath(): string {
+  const bundled = fileURLToPath(
+    new URL("../assets/brand/offshore-logo.png", import.meta.url),
+  );
+  const candidates = [
+    bundled,
+    join(process.cwd(), "src", "assets", "brand", "offshore-logo.png"),
+    join(process.cwd(), "public", "offshore-logo.png"),
+  ];
+  for (const candidate of candidates) {
+    if (existsSync(candidate)) return candidate;
+  }
+  throw new Error(
+    "Offshore watermark logo not found (expected public/offshore-logo.png on the server)",
+  );
+}
+
+const WATERMARK_PNG = resolveWatermarkPngPath();
 
 /** Fraction of the shorter image side used for watermark width */
 const IMAGE_WM_SCALE = 0.32;
@@ -16,7 +32,8 @@ const IMAGE_WM_SCALE = 0.32;
 const IMAGE_WM_OPACITY = 0.44;
 /** Center logo opacity for video overlay (0–1) */
 const VIDEO_WM_ALPHA = 0.36;
-const VIDEO_EXTENSIONS = new Set(["mp4", "webm", "mov", "m4v"]);
+const VIDEO_EXTENSIONS = new Set(["mp4", "webm", "mov", "m4v", "3gp", "3g2", "avi", "mkv"]);
+const AUDIO_EXTENSIONS = new Set(["m4a", "mp3", "aac", "wav", "ogg"]);
 
 async function getWatermarkPng(targetWidth: number): Promise<Buffer> {
   const width = Math.max(120, Math.round(targetWidth));
@@ -40,6 +57,12 @@ function isVideoFile(fileName: string, contentType: string): boolean {
   if (contentType.startsWith("video/")) return true;
   const ext = fileName.split(".").pop()?.toLowerCase() ?? "";
   return VIDEO_EXTENSIONS.has(ext);
+}
+
+function isAudioFile(fileName: string, contentType: string): boolean {
+  if (contentType.startsWith("audio/")) return true;
+  const ext = fileName.split(".").pop()?.toLowerCase() ?? "";
+  return AUDIO_EXTENSIONS.has(ext);
 }
 
 function outputImageType(contentType: string): "jpeg" | "png" | "webp" | "gif" {
@@ -168,9 +191,16 @@ export async function applyMediaWatermark(
   if (isVideoFile(fileName, contentType)) {
     return applyVideoWatermark(input, fileName);
   }
+  if (isAudioFile(fileName, contentType)) {
+    return { buffer: input, contentType: contentType || "audio/mp4" };
+  }
   return applyImageWatermark(input, contentType);
 }
 
 export function isVideoMedia(fileName: string, contentType: string): boolean {
   return isVideoFile(fileName, contentType);
+}
+
+export function isAudioMedia(fileName: string, contentType: string): boolean {
+  return isAudioFile(fileName, contentType);
 }

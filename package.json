@@ -24,7 +24,8 @@
     "watermark:existing": "node scripts/watermark-existing.mjs",
     "watermark:existing:dry": "node scripts/watermark-existing.mjs --dry-run",
     "sync:gallery": "node scripts/sync-kenya-gallery.mjs",
-    "prebuild": "node scripts/sync-kenya-gallery.mjs"
+    "prebuild": "node scripts/sync-kenya-gallery.mjs",
+    "postbuild": "node scripts/copy-server-assets.mjs"
   },
   "dependencies": {
     "@cloudflare/vite-plugin": "^1.25.5",

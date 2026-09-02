@@ -8,6 +8,7 @@ import {
   LandPlot,
   ChevronLeft,
   ChevronRight,
+  Mic,
 } from "lucide-react";
 import { ListingBadgesDisplay } from "@/components/listing-badges-display";
 import { PropertyCardOverlayActions } from "@/components/property-card-overlay-actions";
@@ -21,11 +22,18 @@ import {
 } from "@/lib/format";
 import { AmenitiesDisplay } from "@/components/amenities-display";
 import { cn } from "@/lib/utils";
-import { isVideoUrl } from "@/lib/media";
+import { isVideoUrl, isAudioUrl } from "@/lib/media";
 
 function CardMedia({ src, alt, className }: { src: string; alt: string; className?: string }) {
   if (isVideoUrl(src)) {
     return <video src={src} className={className} muted playsInline loop preload="metadata" aria-label={alt} />;
+  }
+  if (isAudioUrl(src)) {
+    return (
+      <div className={cn(className, "flex items-center justify-center bg-slate-900 text-white")} aria-label={alt}>
+        <Mic className="h-8 w-8 opacity-80" />
+      </div>
+    );
   }
   return <img src={src} alt={alt} loading="lazy" className={className} />;
 }
