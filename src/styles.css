@@ -330,6 +330,24 @@
     padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
   }
 
+  /* Admin property form — sticks to bottom of scroll area */
+  .admin-form-actions {
+    @apply sticky bottom-0 z-20 border-t border-slate-200 bg-white/95 px-4 py-3 backdrop-blur-md;
+    padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+    margin-left: -1.25rem;
+    margin-right: -1.25rem;
+    margin-bottom: -1.25rem;
+  }
+  @media (min-width: 640px) {
+    .admin-form-actions {
+      margin-left: -1.5rem;
+      margin-right: -1.5rem;
+      margin-bottom: -1.5rem;
+      padding-left: 1.5rem;
+      padding-right: 1.5rem;
+    }
+  }
+
   /* Show controls on touch devices; hover-only on desktop */
   @media (hover: none), (pointer: coarse) {
     .touch-show {

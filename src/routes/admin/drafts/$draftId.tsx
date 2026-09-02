@@ -79,11 +79,12 @@ function EditDraftPage() {
   const initial = draftPayloadToFormInitial(draft.payload);
 
   return (
-    <div>
+    <div className="flex flex-col">
       <AdminPageHeader
         eyebrow="Autosaved draft"
         title={draft.label}
         description="Changes save automatically every few seconds — safe to refresh or switch devices."
+        className="mb-5 shrink-0 sm:mb-6"
         actions={
           <Link to="/admin/drafts">
             <Button variant="outline" className="gap-2 rounded-full">

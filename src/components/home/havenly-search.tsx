@@ -91,9 +91,9 @@ export function HavenlySearch({ listingType }: HavenlySearchProps) {
 
   return (
     <form onSubmit={handleSearch}>
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_0.7fr_auto] lg:items-end">
-        <div className="space-y-1.5 sm:col-span-2 lg:col-span-1">
-          <Label htmlFor="home-filter-area" className="text-xs font-medium text-slate-600">
+      <div className="grid gap-1 sm:grid-cols-2 sm:gap-3 lg:grid-cols-[1.4fr_1fr_1fr_0.7fr_auto] lg:items-end">
+        <div className="space-y-0.5 sm:col-span-2 sm:space-y-1.5 lg:col-span-1">
+          <Label htmlFor="home-filter-area" className="text-[11px] font-medium leading-none text-slate-600 sm:text-xs">
             Area
           </Label>
           <Select
@@ -108,7 +108,7 @@ export function HavenlySearch({ listingType }: HavenlySearchProps) {
               }
             }}
           >
-            <SelectTrigger id="home-filter-area" className="h-11 rounded-xl border-slate-200 bg-slate-50/80">
+            <SelectTrigger id="home-filter-area" className="h-9 rounded-lg border-slate-200 bg-slate-50/80 text-xs sm:h-11 sm:rounded-xl sm:text-sm">
               <SelectValue placeholder="Any area in Kenya" />
             </SelectTrigger>
             <SelectContent className="max-h-[min(60dvh,320px)]">
@@ -131,18 +131,18 @@ export function HavenlySearch({ listingType }: HavenlySearchProps) {
               value={customLocation}
               onChange={(e) => setCustomLocation(e.target.value)}
               placeholder="Neighbourhood or city"
-              className="mt-2 h-10 rounded-xl border-slate-200 bg-white"
+              className="mt-1.5 h-9 rounded-lg border-slate-200 bg-white text-xs sm:mt-2 sm:h-10 sm:rounded-xl sm:text-sm"
               autoFocus
             />
           ) : null}
         </div>
 
-        <div className="space-y-1.5">
-          <Label htmlFor="home-filter-type" className="text-xs font-medium text-slate-600">
+        <div className="space-y-0.5 sm:space-y-1.5">
+          <Label htmlFor="home-filter-type" className="text-[11px] font-medium leading-none text-slate-600 sm:text-xs">
             Property type
           </Label>
           <Select value={propertyType} onValueChange={setPropertyType}>
-            <SelectTrigger id="home-filter-type" className="h-11 rounded-xl border-slate-200 bg-slate-50/80">
+            <SelectTrigger id="home-filter-type" className="h-9 rounded-lg border-slate-200 bg-slate-50/80 text-xs sm:h-11 sm:rounded-xl sm:text-sm">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -155,12 +155,12 @@ export function HavenlySearch({ listingType }: HavenlySearchProps) {
           </Select>
         </div>
 
-        <div className="space-y-1.5">
-          <Label htmlFor="home-filter-price" className="text-xs font-medium text-slate-600">
+        <div className="space-y-0.5 sm:space-y-1.5">
+          <Label htmlFor="home-filter-price" className="text-[11px] font-medium leading-none text-slate-600 sm:text-xs">
             {isRent ? "Max rent" : "Max price"}
           </Label>
           <Select value={maxPrice || "any"} onValueChange={(v) => setMaxPrice(v === "any" ? "" : v)}>
-            <SelectTrigger id="home-filter-price" className="h-11 rounded-xl border-slate-200 bg-slate-50/80">
+            <SelectTrigger id="home-filter-price" className="h-9 rounded-lg border-slate-200 bg-slate-50/80 text-xs sm:h-11 sm:rounded-xl sm:text-sm">
               <SelectValue placeholder={isRent ? "Any budget" : "Any price"} />
             </SelectTrigger>
             <SelectContent>
@@ -176,47 +176,63 @@ export function HavenlySearch({ listingType }: HavenlySearchProps) {
           </Select>
         </div>
 
-        <div className="space-y-1.5">
-          <Label htmlFor="home-filter-beds" className="text-xs font-medium text-slate-600">
-            Bedrooms
-          </Label>
-          <Select value={bedrooms} onValueChange={setBedrooms}>
-            <SelectTrigger id="home-filter-beds" className="h-11 rounded-xl border-slate-200 bg-slate-50/80">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="any">Any</SelectItem>
-              <SelectItem value="1">1+</SelectItem>
-              <SelectItem value="2">2+</SelectItem>
-              <SelectItem value="3">3+</SelectItem>
-              <SelectItem value="4">4+</SelectItem>
-              <SelectItem value="5">5+</SelectItem>
-            </SelectContent>
-          </Select>
+        {/* Mobile: bedrooms + search on one row; tablet+ : normal grid cells */}
+        <div className="grid grid-cols-[1fr_auto] items-end gap-2 sm:contents">
+          <div className="space-y-0.5 sm:space-y-1.5">
+            <Label htmlFor="home-filter-beds" className="text-[11px] font-medium leading-none text-slate-600 sm:text-xs">
+              Bedrooms
+            </Label>
+            <Select value={bedrooms} onValueChange={setBedrooms}>
+              <SelectTrigger id="home-filter-beds" className="h-9 rounded-lg border-slate-200 bg-slate-50/80 text-xs sm:h-11 sm:rounded-xl sm:text-sm">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="any">Any</SelectItem>
+                <SelectItem value="1">1+</SelectItem>
+                <SelectItem value="2">2+</SelectItem>
+                <SelectItem value="3">3+</SelectItem>
+                <SelectItem value="4">4+</SelectItem>
+                <SelectItem value="5">5+</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex items-end gap-1.5 sm:col-span-2 sm:items-end lg:col-span-1">
+            <Button
+              type="submit"
+              size="icon"
+              aria-label="Search listings"
+              className="h-9 w-9 shrink-0 rounded-lg border border-blue-600/20 bg-blue-600 text-white shadow-sm hover:bg-blue-700 sm:h-11 sm:w-11 sm:rounded-xl"
+            >
+              <Search className="h-3.5 w-3.5 sm:h-4 sm:w-4" strokeWidth={2.25} />
+            </Button>
+            {hasFilters ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={resetFilters}
+                className="hidden h-9 rounded-lg px-2.5 text-xs text-slate-500 hover:bg-slate-100 hover:text-slate-800 sm:inline-flex sm:h-11 sm:rounded-xl sm:px-3 sm:text-sm"
+              >
+                <X className="mr-1 h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                Clear
+              </Button>
+            ) : null}
+          </div>
         </div>
 
-        <div className="flex items-end gap-2 sm:col-span-2 lg:col-span-1">
+        {hasFilters ? (
           <Button
-            type="submit"
-            size="icon"
-            aria-label="Search listings"
-            className="h-11 w-11 shrink-0 rounded-xl border border-blue-600/20 bg-blue-600 text-white shadow-sm hover:bg-blue-700"
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={resetFilters}
+            className="h-8 w-full justify-center rounded-lg text-xs text-slate-500 hover:bg-slate-100 hover:text-slate-800 sm:hidden"
           >
-            <Search className="h-4 w-4" strokeWidth={2.25} />
+            <X className="mr-1 h-3 w-3" />
+            Clear filters
           </Button>
-          {hasFilters ? (
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={resetFilters}
-              className="h-11 rounded-xl px-3 text-slate-500 hover:bg-slate-100 hover:text-slate-800"
-            >
-              <X className="mr-1 h-3.5 w-3.5" />
-              Clear
-            </Button>
-          ) : null}
-        </div>
+        ) : null}
       </div>
     </form>
   );

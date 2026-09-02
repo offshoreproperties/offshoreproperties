@@ -488,7 +488,8 @@ export function PropertyForm({
   }
 
   return (
-    <form onSubmit={handleSave} className="space-y-6 pb-24 sm:pb-0">
+    <form onSubmit={handleSave} className="relative">
+      <div className="space-y-6 pb-[calc(5rem+env(safe-area-inset-bottom))]">
       {autosaveEnabled && (
         <div
           className={cn(
@@ -836,29 +837,23 @@ export function PropertyForm({
           <Input value={heroImage} onChange={(e) => setHeroImage(e.target.value)} placeholder="https://…" />
         </div>
       </div>
-
-      <div className="hidden gap-3 sm:flex">
-        {onCancel && (
-          <Button type="button" variant="outline" className="flex-1" onClick={onCancel}>
-            Cancel
-          </Button>
-        )}
-        <Button type="submit" disabled={saving || uploading} className="flex-1 rounded-full">
-          {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          {initial?.id ? "Update property" : "Create property"}
-        </Button>
       </div>
 
-      <div className="mobile-action-bar sm:hidden">
-        <div className="flex gap-2">
+      <div className="admin-form-actions">
+        <div className="flex gap-2 sm:gap-3">
           {onCancel && (
-            <Button type="button" variant="outline" className="h-11 flex-1 rounded-full" onClick={onCancel}>
+            <Button type="button" variant="outline" className="h-11 flex-1 rounded-full sm:max-w-[200px]" onClick={onCancel}>
               Cancel
             </Button>
           )}
-          <Button type="submit" disabled={saving || uploading} className="h-11 flex-1 rounded-full">
+          <Button
+            type="submit"
+            disabled={saving || uploading}
+            className="h-11 flex-1 rounded-full bg-slate-900 hover:bg-slate-800 sm:max-w-none"
+          >
             {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {initial?.id ? "Update" : "Create"}
+            <span className="sm:hidden">{initial?.id ? "Update" : "Create"}</span>
+            <span className="hidden sm:inline">{initial?.id ? "Update property" : "Create property"}</span>
           </Button>
         </div>
       </div>
@@ -928,7 +923,7 @@ function DraggableImageGrid({
   );
 
   return (
-    <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
+    <div className="mt-4 flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:grid sm:grid-cols-3 sm:overflow-visible sm:pb-0 md:grid-cols-4">
       {images.map((url, idx) => (
         <div
           key={url}
@@ -937,7 +932,7 @@ function DraggableImageGrid({
           onDragOver={(e) => handleDragOver(e, idx)}
           onDrop={(e) => handleDrop(e, idx)}
           onDragEnd={handleDragEnd}
-          className={`group relative aspect-square cursor-grab overflow-hidden rounded-lg bg-muted transition-all duration-200 active:cursor-grabbing ${
+          className={`group relative aspect-square w-28 shrink-0 cursor-grab overflow-hidden rounded-lg bg-muted transition-all duration-200 active:cursor-grabbing sm:w-auto ${
             overIdx === idx ? "scale-95 ring-2 ring-[#2563eb]" : ""
           } ${dragIdx.current === idx ? "opacity-40" : "opacity-100"}`}
         >
