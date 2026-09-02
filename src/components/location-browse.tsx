@@ -5,6 +5,8 @@ import { cn } from "@/lib/utils";
 type LocationBrowseProps = {
   variant?: "light" | "dark";
   compact?: boolean;
+  /** Horizontal scroll row (default) or wrapped chips for narrow panels */
+  layout?: "scroll" | "wrap";
   className?: string;
   onSelect?: (location: string) => void;
 };
@@ -12,6 +14,7 @@ type LocationBrowseProps = {
 export function LocationBrowse({
   variant = "light",
   compact = false,
+  layout = "scroll",
   className,
   onSelect,
 }: LocationBrowseProps) {
@@ -35,7 +38,14 @@ export function LocationBrowse({
         </div>
       ) : null}
 
-      <div className={cn("scrollbar-hide scroll-fade-x -mx-1 flex gap-1.5 overflow-x-auto pb-0.5 pt-0.5", compact && "gap-1.5")}>
+      <div
+        className={cn(
+          layout === "wrap"
+            ? "flex flex-wrap gap-2"
+            : "scrollbar-hide scroll-fade-x -mx-1 flex gap-1.5 overflow-x-auto pb-0.5 pt-0.5",
+          compact && layout === "scroll" && "gap-1.5",
+        )}
+      >
         {KENYA_BROWSE_LOCATIONS.map((area) => {
           const chip = (
             <span

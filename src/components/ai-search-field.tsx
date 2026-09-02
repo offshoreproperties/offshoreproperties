@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Link } from "@tanstack/react-router";
 import { aiSearch } from "@/lib/ai-search.functions";
@@ -10,7 +10,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { Loader2, ArrowRight } from "lucide-react";
+import { Loader2, ArrowRight, Sparkles } from "lucide-react";
 import { AiAssistantIcon } from "@/components/icons/ai-assistant-icon";
 import { AiReplyText } from "@/components/ai-reply-text";
 import { formatPrice } from "@/lib/format";
@@ -29,6 +29,13 @@ const AI_PROMPTS = [
   "is Parklands good for young professionals?",
 ];
 
+const QUICK_PROMPTS = [
+  "2-bed rental in Kilimani",
+  "Homes for sale in Karen",
+  "Land in Kiambu",
+  "Furnished short stay",
+];
+
 type Match = {
   id: string;
   slug: string | null;
@@ -40,6 +47,18 @@ type Match = {
   listing_type: string;
 };
 
+type ChatTurn = {
+  id: string;
+  role: "user" | "assistant";
+  text: string;
+  matches?: Match[];
+  matchSlugs?: string[];
+};
+
+function newId() {
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
 export function AiSearchField({
   variant = "hero",
   className,
@@ -50,57 +69,89 @@ export function AiSearchField({
   const runAi = useServerFn(aiSearch);
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
+  const [chatInput, setChatInput] = useState("");
   const [focused, setFocused] = useState(false);
-  const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
-  const [reply, setReply] = useState<string | null>(null);
-  const [matches, setMatches] = useState<Match[]>([]);
-  const [matchSlugs, setMatchSlugs] = useState<string[]>([]);
+  const [turns, setTurns] = useState<ChatTurn[]>([]);
+  const [lastQuery, setLastQuery] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
+  const chatInputRef = useRef<HTMLInputElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const bottomRef = useRef<HTMLDivElement>(null);
 
-  const showFadePlaceholder = !focused && input === "";
+  const scrollToBottom = useCallback(() => {
+    requestAnimationFrame(() => {
+      bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+    });
+  }, []);
 
-  async function runSearch(q: string) {
+  useEffect(() => {
+    if (open) scrollToBottom();
+  }, [open, turns, loading, scrollToBottom]);
+
+  useEffect(() => {
+    if (open) {
+      const t = window.setTimeout(() => chatInputRef.current?.focus(), 300);
+      return () => window.clearTimeout(t);
+    }
+  }, [open]);
+
+  async function runSearch(q: string, fromChat = false) {
     const trimmed = q.trim();
-    if (!trimmed) return;
-    setQuery(trimmed);
+    if (!trimmed || loading) return;
+
     setOpen(true);
+    setLastQuery(trimmed);
+    if (!fromChat) setInput(trimmed);
+    setChatInput("");
+
+    const userTurn: ChatTurn = { id: newId(), role: "user", text: trimmed };
+    setTurns((prev) => [...prev, userTurn]);
     setLoading(true);
-    setReply(null);
-    setMatches([]);
-    setMatchSlugs([]);
+    scrollToBottom();
+
     try {
       const result = await runAi({ data: { query: trimmed } });
-      setReply(result.reply);
-      setMatches(result.matches ?? []);
-      setMatchSlugs(result.matchSlugs ?? []);
+      const assistantTurn: ChatTurn = {
+        id: newId(),
+        role: "assistant",
+        text: result.reply,
+        matches: result.matches ?? [],
+        matchSlugs: result.matchSlugs ?? [],
+      };
+      setTurns((prev) => [...prev, assistantTurn]);
     } catch (err) {
-      setReply(
+      const message =
         err instanceof Error &&
-          !err.message.includes("not configured") &&
-          !err.message.includes("API key")
+        !err.message.includes("not configured") &&
+        !err.message.includes("API key")
           ? err.message
-          : "Our search assistant is taking a short break — browse listings below or message us on WhatsApp.",
-      );
+          : "Our search assistant is taking a short break — browse listings below or message us on WhatsApp.";
+      setTurns((prev) => [...prev, { id: newId(), role: "assistant", text: message }]);
     } finally {
       setLoading(false);
     }
   }
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleHeroSubmit(e: React.FormEvent) {
     e.preventDefault();
     await runSearch(input);
   }
 
+  async function handleChatSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    await runSearch(chatInput, true);
+  }
+
   const isHero = variant === "hero";
   const isFloating = variant === "floating";
-  const slugsParam = matchSlugs.length > 0 ? matchSlugs.join(",") : undefined;
+  const showFadePlaceholder = !focused && input === "";
   const heroPlaceholder = "Use AI to refine your search";
 
   return (
     <>
       <form
-        onSubmit={handleSubmit}
+        onSubmit={handleHeroSubmit}
         className={cn(
           "flex w-full items-center gap-1.5 overflow-hidden",
           isHero
@@ -188,94 +239,177 @@ export function AiSearchField({
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetContent
           side="right"
-          className="flex h-full w-full flex-col border-neutral-200 bg-white text-neutral-900 sm:max-w-md"
+          className="flex h-dvh max-h-dvh w-full max-w-full flex-col gap-0 overflow-hidden border-neutral-200 bg-neutral-50 p-0 sm:max-w-md"
         >
-          <SheetHeader>
-            <SheetTitle className="flex items-center gap-2 text-left text-neutral-900">
-              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-50 text-blue-600">
-                <AiAssistantIcon className="h-4 w-4" />
+          {/* Header — fixed */}
+          <SheetHeader className="shrink-0 space-y-1 border-b border-neutral-200 bg-white px-4 pb-4 pt-[max(1rem,env(safe-area-inset-top))] pr-14 text-left">
+            <SheetTitle className="flex items-center gap-3 text-base font-bold text-neutral-900 sm:text-lg">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 to-cyan-500 text-white shadow-md shadow-blue-600/25">
+                <AiAssistantIcon className="h-5 w-5" />
               </span>
-              Let's find something that fits
+              Property assistant
             </SheetTitle>
-            <SheetDescription className="text-left text-neutral-500">
-              Tell us your budget, area, or how you live — we'll match listings and explain why they work.
+            <SheetDescription className="text-left text-sm leading-relaxed text-neutral-500">
+              Ask about areas, budget, or lifestyle — I&apos;ll match listings and explain why they fit.
             </SheetDescription>
           </SheetHeader>
-          {query && (
-            <p className="text-sm text-neutral-500">
-              &ldquo;{query}&rdquo;
-            </p>
-          )}
-          <div className="mt-4 flex-1 overflow-y-auto">
-            {loading && (
-              <div className="flex items-center gap-2 text-sm text-neutral-600">
-                <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
-                Checking our listings…
+
+          {/* Messages — scrollable */}
+          <div
+            ref={scrollRef}
+            className="scrollbar-offshore min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain px-4 py-4"
+          >
+            {turns.length === 0 && !loading && (
+              <div className="space-y-4">
+                <div className="rounded-2xl border border-dashed border-neutral-200 bg-white px-4 py-5 text-center">
+                  <Sparkles className="mx-auto h-6 w-6 text-blue-500" aria-hidden />
+                  <p className="mt-2 text-sm font-medium text-neutral-800">Try asking something like</p>
+                  <div className="mt-3 flex flex-wrap justify-center gap-2">
+                    {QUICK_PROMPTS.map((prompt) => (
+                      <button
+                        key={prompt}
+                        type="button"
+                        onClick={() => void runSearch(prompt, true)}
+                        className="rounded-full border border-neutral-200 bg-neutral-50 px-3 py-2 text-xs font-medium text-neutral-700 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700"
+                      >
+                        {prompt}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <LocationBrowse compact layout="wrap" onSelect={(loc) => void runSearch(`Show me properties in ${loc}`, true)} />
               </div>
             )}
-            {reply && !loading && (
-              <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-4 text-sm leading-relaxed text-neutral-700">
-                <AiReplyText text={reply} />
-              </div>
-            )}
-            {matches.length > 0 && !loading && (
-              <div className="mt-4 space-y-3">
-                <p className="text-xs font-semibold uppercase tracking-wider text-blue-600">Properties that fit</p>
-                {matches.map((m) => (
-                  <Link
-                    key={m.id}
-                    to="/properties/$slug"
-                    params={{ slug: m.slug ?? m.id }}
-                    onClick={() => setOpen(false)}
-                    className="flex gap-3 rounded-xl border border-neutral-200 bg-white p-3 transition hover:border-blue-200 hover:bg-blue-50/50"
-                  >
-                    {m.hero_image ? (
-                      <img src={m.hero_image} alt={m.title} loading="lazy" className="h-16 w-16 shrink-0 rounded-lg object-cover" />
-                    ) : (
-                      <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg bg-neutral-100 text-xs text-neutral-400">
-                        No photo
-                      </div>
-                    )}
-                    <div className="min-w-0">
-                      <p className="font-medium leading-snug text-neutral-900">{m.title}</p>
-                      <p className="text-sm font-medium text-blue-600">
-                        {formatPrice(Number(m.price), m.currency, m.listing_type)}
-                      </p>
-                      {m.city && <p className="text-xs text-neutral-500">{m.city}</p>}
+
+            <div className="space-y-4">
+              {turns.map((turn) =>
+                turn.role === "user" ? (
+                  <div key={turn.id} className="flex justify-end">
+                    <div className="max-w-[85%] rounded-2xl rounded-tr-md bg-blue-600 px-4 py-2.5 text-sm leading-relaxed text-white shadow-sm">
+                      {turn.text}
                     </div>
-                  </Link>
-                ))}
-                <Link
-                  to="/properties"
-                  search={{
-                    q: query,
-                    ai: "1",
-                    ...(slugsParam ? { slugs: slugsParam } : {}),
-                  }}
-                  onClick={() => setOpen(false)}
-                  className="block py-3 text-center text-sm font-medium text-blue-600 underline"
-                >
-                  See these in the collection →
-                </Link>
+                  </div>
+                ) : (
+                  <div key={turn.id} className="flex justify-start">
+                    <div className="max-w-[92%] space-y-3">
+                      <div className="rounded-2xl rounded-tl-md border border-neutral-200 bg-white px-4 py-3 text-sm shadow-sm">
+                        <AiReplyText text={turn.text} />
+                      </div>
+
+                      {turn.matches && turn.matches.length > 0 && (
+                        <div className="space-y-2">
+                          <p className="px-1 text-[11px] font-semibold uppercase tracking-wider text-blue-600">
+                            Matches ({turn.matches.length})
+                          </p>
+                          {turn.matches.map((m) => (
+                            <Link
+                              key={m.id}
+                              to="/properties/$slug"
+                              params={{ slug: m.slug ?? m.id }}
+                              onClick={() => setOpen(false)}
+                              className="flex gap-3 rounded-xl border border-neutral-200 bg-white p-3 shadow-sm transition hover:border-blue-200 hover:shadow-md active:scale-[0.99]"
+                            >
+                              {m.hero_image ? (
+                                <img
+                                  src={m.hero_image}
+                                  alt=""
+                                  loading="lazy"
+                                  className="h-16 w-16 shrink-0 rounded-lg object-cover"
+                                />
+                              ) : (
+                                <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg bg-neutral-100 text-[10px] text-neutral-400">
+                                  No photo
+                                </div>
+                              )}
+                              <div className="min-w-0 flex-1">
+                                <p className="font-semibold leading-snug text-neutral-900">{m.title}</p>
+                                <p className="mt-0.5 text-sm font-medium text-blue-600">
+                                  {formatPrice(Number(m.price), m.currency, m.listing_type)}
+                                </p>
+                                {m.city && <p className="text-xs text-neutral-500">{m.city}</p>}
+                              </div>
+                              <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-neutral-300" aria-hidden />
+                            </Link>
+                          ))}
+                          <Link
+                            to="/properties"
+                            search={{
+                              q: lastQuery,
+                              ai: "1",
+                              ...(turn.matchSlugs?.length ? { slugs: turn.matchSlugs.join(",") } : {}),
+                            }}
+                            onClick={() => setOpen(false)}
+                            className="flex min-h-11 items-center justify-center rounded-xl bg-neutral-900 px-4 text-sm font-semibold text-white transition hover:bg-neutral-800"
+                          >
+                            View all matches
+                          </Link>
+                        </div>
+                      )}
+
+                      {(!turn.matches || turn.matches.length === 0) && (
+                        <Link
+                          to="/properties"
+                          search={{ q: lastQuery }}
+                          onClick={() => setOpen(false)}
+                          className="flex min-h-11 items-center justify-center rounded-xl border border-neutral-200 bg-white px-4 text-sm font-medium text-blue-600 transition hover:bg-blue-50"
+                        >
+                          Browse all listings
+                        </Link>
+                      )}
+                    </div>
+                  </div>
+                ),
+              )}
+
+              {loading && (
+                <div className="flex justify-start">
+                  <div className="flex items-center gap-3 rounded-2xl rounded-tl-md border border-neutral-200 bg-white px-4 py-3 shadow-sm">
+                    <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+                    <span className="text-sm text-neutral-600">Checking our listings…</span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {turns.length > 0 && !loading && (
+              <div className="mt-6 border-t border-neutral-200 pt-5">
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-neutral-500">
+                  Explore by area
+                </p>
+                <LocationBrowse compact layout="wrap" onSelect={(loc) => void runSearch(`Show me properties in ${loc}`, true)} />
               </div>
             )}
-            {reply && !loading && matches.length === 0 && (
-              <div className="mt-4 space-y-4">
-                <Link
-                  to="/properties"
-                  search={{ q: query }}
-                  onClick={() => setOpen(false)}
-                  className="block text-center text-sm text-blue-600 underline"
-                >
-                  See everything we have →
-                </Link>
-              </div>
-            )}
-            {!loading && (
-              <div className="mt-6 border-t border-neutral-200 pt-4">
-                <LocationBrowse onSelect={(loc) => void runSearch(`Show me properties in ${loc}`)} />
-              </div>
-            )}
+
+            <div ref={bottomRef} className="h-1 shrink-0" aria-hidden />
+          </div>
+
+          {/* Input — fixed footer */}
+          <div className="shrink-0 border-t border-neutral-200 bg-white px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+            <form onSubmit={handleChatSubmit} className="flex items-center gap-2">
+              <input
+                ref={chatInputRef}
+                type="text"
+                value={chatInput}
+                onChange={(e) => setChatInput(e.target.value)}
+                placeholder="Ask a follow-up…"
+                disabled={loading}
+                className="min-h-11 flex-1 rounded-full border border-neutral-200 bg-neutral-50 px-4 text-base text-neutral-900 placeholder:text-neutral-400 focus:border-blue-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 disabled:opacity-60 sm:text-sm"
+                aria-label="Message property assistant"
+              />
+              <Button
+                type="submit"
+                size="icon"
+                disabled={loading || !chatInput.trim()}
+                className="h-11 w-11 shrink-0 rounded-full bg-blue-600 hover:bg-blue-700 disabled:opacity-40"
+                aria-label="Send message"
+              >
+                {loading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <ArrowRight className="h-4 w-4" />
+                )}
+              </Button>
+            </form>
           </div>
         </SheetContent>
       </Sheet>
