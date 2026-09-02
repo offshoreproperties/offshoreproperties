@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
-import { uploadPropertyImage } from "@/lib/storage.functions";
+import { createPropertyUploadUrl, finalizePropertyUpload } from "@/lib/storage.functions";
 import { geocodeAddress, reverseGeocodeCoordinates } from "@/lib/geocode.functions";
 import { checkGoogleMapsApi } from "@/lib/maps.functions";
 import { adminListAgents } from "@/lib/admin-agents.functions";
@@ -109,7 +109,8 @@ export function PropertyForm({
   onDraftIdChange?: (id: string) => void;
   autosaveEnabled?: boolean;
 }) {
-  const upload = useServerFn(uploadPropertyImage);
+  const createUploadUrl = useServerFn(createPropertyUploadUrl);
+  const finalizeUpload = useServerFn(finalizePropertyUpload);
   const geocode = useServerFn(geocodeAddress);
   const reverseGeocode = useServerFn(reverseGeocodeCoordinates);
   const fetchAgents = useServerFn(adminListAgents);
@@ -269,17 +270,47 @@ export function PropertyForm({
       const contentType = resolvePropertyUploadMime(prepared);
       if (!contentType) throw new Error("Unsupported file type");
 
-      const base64 = await fileToBase64(prepared);
-      const { url } = await upload({
+      // Direct-to-Supabase upload (avoids huge base64 server-fn payloads)
+      const slot = await createUploadUrl({
         data: {
           fileName: prepared.name,
           contentType,
-          dataBase64: base64,
+          fileSize: prepared.size,
         },
       });
-      return url;
+
+      const putRes = await fetch(slot.signedUrl, {
+        method: "PUT",
+        body: prepared,
+        headers: {
+          "Content-Type": contentType,
+          ...(slot.token ? { "x-upsert": "false" } : {}),
+        },
+      });
+
+      if (!putRes.ok) {
+        const detail = await putRes.text().catch(() => "");
+        throw new Error(
+          detail.includes("Payload too large")
+            ? "File too large for storage — try a smaller photo"
+            : `Storage rejected upload (${putRes.status})`,
+        );
+      }
+
+      try {
+        const { url } = await finalizeUpload({
+          data: {
+            path: slot.path,
+            fileName: prepared.name,
+            contentType,
+          },
+        });
+        return url;
+      } catch {
+        return slot.publicUrl;
+      }
     },
-    [upload],
+    [createUploadUrl, finalizeUpload],
   );
 
   async function handleFiles(files: FileList | File[] | null) {
@@ -311,6 +342,7 @@ export function PropertyForm({
 
     let completed = 0;
     let failed = 0;
+    let lastError = "";
     let firstUrl: string | undefined;
     const pending = [...valid];
 
@@ -325,7 +357,8 @@ export function PropertyForm({
           completed += 1;
         } catch (e) {
           failed += 1;
-          toast.error(`${file.name}: ${userFacingError(e, "upload failed")}`);
+          lastError = userFacingError(e, "upload failed");
+          toast.error(`${file.name}: ${lastError}`);
         } finally {
           setUploadProgress({ done: completed + failed, total: valid.length });
         }
@@ -342,7 +375,7 @@ export function PropertyForm({
         if (autosaveEnabled) void flushSave();
       }
       if (failed > 0 && completed === 0) {
-        toast.error("Upload failed — try again or use JPG/PNG under 10MB.");
+        toast.error(lastError || "Upload failed — check you're logged in as admin and try again.");
       }
     } finally {
       setUploading(false);
@@ -963,17 +996,4 @@ function DraggableImageGrid({
       ))}
     </div>
   );
-}
-
-function fileToBase64(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = reader.result as string;
-      const base64 = result.split(",")[1];
-      resolve(base64);
-    };
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
 }
