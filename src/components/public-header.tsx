@@ -1,6 +1,6 @@
 import { Link, useLocation } from "@tanstack/react-router";
 import { useState } from "react";
-import { Menu } from "lucide-react";
+import { Menu, ArrowUpRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
@@ -94,21 +94,54 @@ export function PublicHeader({
     );
   }
 
+  function browseButtonClass(block = false) {
+    return cn(
+      "group inline-flex items-center justify-center gap-2 rounded-full font-semibold transition-all duration-300",
+      block ? "min-h-[48px] w-full px-5 py-3 text-sm" : "hidden min-h-10 min-[400px]:inline-flex px-4 py-2.5 text-sm sm:min-h-11 sm:px-5",
+      overlay
+        ? "bg-white/95 text-blue-700 shadow-lg shadow-black/15 ring-1 ring-white/60 backdrop-blur-sm hover:bg-white hover:shadow-xl hover:shadow-black/20"
+        : "relative overflow-hidden bg-gradient-to-r from-blue-600 via-blue-600 to-blue-700 text-white shadow-md shadow-blue-600/25 hover:from-blue-500 hover:via-blue-600 hover:to-blue-600 hover:shadow-lg hover:shadow-blue-600/35",
+      !overlay &&
+        "before:pointer-events-none before:absolute before:inset-0 before:rounded-full before:bg-gradient-to-r before:from-white/0 before:via-white/15 before:to-white/0 before:opacity-0 before:transition-opacity group-hover:before:opacity-100",
+    );
+  }
+
+  function BrowseButton({ block = false, onNavigate }: { block?: boolean; onNavigate?: () => void }) {
+    return (
+      <Link to="/properties" onClick={onNavigate} className={browseButtonClass(block)}>
+        <span className="relative z-[1]">Browse listings</span>
+        <ArrowUpRight
+          className={cn(
+            "relative z-[1] h-4 w-4 shrink-0 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5",
+            overlay ? "text-blue-600" : "text-white/90",
+          )}
+          aria-hidden
+        />
+      </Link>
+    );
+  }
+
   return (
     <header
       className={cn(
-        "relative z-20 flex items-center justify-between gap-2 sm:gap-4 lg:px-8",
-        compact ? "px-3 py-2 sm:px-4 sm:py-2.5" : "px-3 py-3 sm:px-6 sm:py-5",
+        "relative z-20 w-full",
         overlay
           ? "safe-top"
           : "sticky top-0 border-b border-neutral-200 bg-white/95 backdrop-blur-md safe-top",
         className,
       )}
     >
+      <div
+        className={cn(
+          "mx-auto flex w-full max-w-7xl items-center justify-between",
+          compact ? "gap-3 px-4 py-3 sm:px-6 sm:py-4" : "gap-4 px-4 py-4 sm:gap-6 sm:px-8 sm:py-5 lg:px-10 lg:py-6",
+        )}
+      >
       <Link
         to="/"
         className={cn(
-          "shrink-0 text-lg font-bold tracking-tight drop-shadow-md sm:text-2xl",
+          "shrink-0 font-bold tracking-tight drop-shadow-md",
+          "text-xl sm:text-3xl lg:text-[2.125rem] lg:leading-none",
           overlay ? "text-white" : "text-neutral-900",
         )}
       >
@@ -118,7 +151,7 @@ export function PublicHeader({
       <nav className="absolute left-1/2 top-1/2 hidden -translate-x-1/2 -translate-y-1/2 lg:block">
         <div
           className={cn(
-            "flex max-w-[min(100vw-12rem,42rem)] items-center gap-0.5 overflow-x-auto rounded-full p-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
+            "flex max-w-[min(100vw-12rem,42rem)] items-center gap-1 overflow-x-auto rounded-full p-1.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
             overlay
               ? "bg-white/10 ring-1 ring-white/15 backdrop-blur-md"
               : "bg-neutral-100 ring-1 ring-neutral-200",
@@ -128,15 +161,8 @@ export function PublicHeader({
         </div>
       </nav>
 
-      <div className="flex items-center gap-1 sm:gap-2">
-        <Link to="/properties" className="hidden min-[400px]:inline-flex">
-          <Button
-            size="sm"
-            className="rounded-full bg-neutral-900 px-3 text-[10px] font-semibold uppercase tracking-[0.12em] text-white hover:bg-neutral-800 sm:px-5 sm:text-[11px]"
-          >
-            Browse
-          </Button>
-        </Link>
+      <div className="flex items-center gap-2 sm:gap-3">
+        <BrowseButton />
 
         <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
           <SheetTrigger asChild>
@@ -159,17 +185,12 @@ export function PublicHeader({
             </SheetHeader>
             <nav className="mt-6 flex flex-col gap-2">
               {PILLS.map((item) => renderPill(item, true))}
-              <div className="my-2 border-t border-neutral-200" />
-              <Link
-                to="/properties"
-                onClick={() => setMobileOpen(false)}
-                className="flex min-h-[44px] items-center justify-center rounded-full bg-neutral-900 px-4 py-3 text-sm font-semibold text-white"
-              >
-                Browse collection
-              </Link>
+              <div className="my-3 border-t border-neutral-200" />
+              <BrowseButton block onNavigate={() => setMobileOpen(false)} />
             </nav>
           </SheetContent>
         </Sheet>
+      </div>
       </div>
     </header>
   );

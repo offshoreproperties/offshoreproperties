@@ -1,6 +1,6 @@
 export const BRAND = {
   name: "Offshore Properties",
-  tagline: "Real estate made easy and transparent",
+  tagline: "Kenyan property, explained properly — by people who know the market.",
   email: "hello@offshoreproperties.com",
   phone: "+254 702 447 447",
   phone2: "+254 781 310 331",

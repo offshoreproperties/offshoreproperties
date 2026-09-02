@@ -90,7 +90,7 @@ export function EnquiryForm({
       </div>
       <div className="space-y-1.5">
         <Label htmlFor="message">Message</Label>
-        <Textarea id="message" name="message" rows={4} maxLength={5000} placeholder="Tell us what you're looking for…" />
+        <Textarea id="message" name="message" rows={4} maxLength={5000} placeholder="Budget, preferred areas, move-in date — whatever helps us point you the right way…" />
       </div>
       <Button
         type="submit"
@@ -98,7 +98,7 @@ export function EnquiryForm({
         className="w-full rounded-full bg-neutral-900 font-semibold uppercase tracking-wider text-white hover:bg-neutral-800"
       >
         {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-        Send enquiry via WhatsApp
+        Send via WhatsApp
       </Button>
     </form>
   );

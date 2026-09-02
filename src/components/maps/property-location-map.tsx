@@ -1,7 +1,7 @@
 import { APIProvider, AdvancedMarker, Map, useMap } from "@vis.gl/react-google-maps";
 import { useEffect, useState } from "react";
 import { Navigation, MapPinned, Scan } from "lucide-react";
-import { getClientGoogleMapsApiKey, getClientGoogleMapId } from "@/lib/google-maps";
+import { buildStaticMapImageUrl, getClientGoogleMapsApiKey, getClientGoogleMapId } from "@/lib/google-maps";
 import {
   buildLocationLabel,
   googleMapsDirectionsUrl,
@@ -71,6 +71,8 @@ export function PropertyLocationMap({
 }: PropertyLocationMapProps) {
   const [ready, setReady] = useState(false);
   const [viewMode, setViewMode] = useState<"3d" | "flat">("3d");
+  const [mapFailed, setMapFailed] = useState(false);
+  const [staticFailed, setStaticFailed] = useState(false);
   const apiKey = ready ? getClientGoogleMapsApiKey() : undefined;
   const mapId = getClientGoogleMapId();
   const useMapId = mapId && mapId !== "DEMO_MAP_ID";
@@ -82,50 +84,57 @@ export function PropertyLocationMap({
     setReady(true);
   }, []);
 
+  useEffect(() => {
+    const previous = window.gm_authFailure;
+    window.gm_authFailure = () => setMapFailed(true);
+    return () => {
+      window.gm_authFailure = previous;
+    };
+  }, []);
+
+  const staticUrl =
+    apiKey && !staticFailed
+      ? buildStaticMapImageUrl([{ latitude, longitude }], apiKey, { zoom: 16, width: 800, height: 480 })
+      : null;
+
+  const showInteractiveMap = apiKey && !mapFailed;
+
   if (!ready) {
     return <div className={cn("h-64 animate-pulse rounded-2xl bg-neutral-100 sm:h-80", className)} />;
   }
 
-  if (!apiKey) {
-    return (
-      <div className={cn("rounded-2xl border border-dashed border-neutral-300 bg-neutral-50 p-6 text-center text-sm text-neutral-600", className)}>
-        Map preview unavailable — Google Maps API key not configured.
-      </div>
-    );
-  }
-
-  return (
-    <div className={cn("space-y-3", className)}>
-      <div className="flex flex-wrap gap-2">
-        <Button
-          type="button"
-          size="sm"
-          className="h-9 gap-2 rounded-full bg-[#2563eb] text-white hover:bg-[#1d4ed8]"
-          onClick={() => openExternalMaps(googleMapsDirectionsUrl(latitude, longitude, { label }))}
-        >
-          <Navigation className="h-3.5 w-3.5" />
-          Get directions
-        </Button>
-        <Button
-          type="button"
-          size="sm"
-          variant="outline"
-          className="h-9 gap-2 rounded-full border-neutral-300"
-          onClick={() => openExternalMaps(googleMapsPlaceUrl(latitude, longitude, label))}
-        >
-          <MapPinned className="h-3.5 w-3.5" />
-          Open in Google Maps
-        </Button>
-        <Button
-          type="button"
-          size="sm"
-          variant="outline"
-          className="h-9 gap-2 rounded-full border-neutral-300"
-          onClick={() => openExternalMaps(googleMapsStreetViewUrl(latitude, longitude))}
-        >
-          <Scan className="h-3.5 w-3.5" />
-          Street View
-        </Button>
+  const actionButtons = (
+    <div className="flex flex-wrap gap-2">
+      <Button
+        type="button"
+        size="sm"
+        className="h-9 gap-2 rounded-full bg-[#2563eb] text-white hover:bg-[#1d4ed8]"
+        onClick={() => openExternalMaps(googleMapsDirectionsUrl(latitude, longitude, { label }))}
+      >
+        <Navigation className="h-3.5 w-3.5" />
+        Get directions
+      </Button>
+      <Button
+        type="button"
+        size="sm"
+        variant="outline"
+        className="h-9 gap-2 rounded-full border-neutral-300"
+        onClick={() => openExternalMaps(googleMapsPlaceUrl(latitude, longitude, label))}
+      >
+        <MapPinned className="h-3.5 w-3.5" />
+        Open in Google Maps
+      </Button>
+      <Button
+        type="button"
+        size="sm"
+        variant="outline"
+        className="h-9 gap-2 rounded-full border-neutral-300"
+        onClick={() => openExternalMaps(googleMapsStreetViewUrl(latitude, longitude))}
+      >
+        <Scan className="h-3.5 w-3.5" />
+        Street View
+      </Button>
+      {showInteractiveMap ? (
         <Button
           type="button"
           size="sm"
@@ -135,10 +144,48 @@ export function PropertyLocationMap({
         >
           {viewMode === "3d" ? "Flat map" : "3D view"}
         </Button>
+      ) : null}
+    </div>
+  );
+
+  if (!showInteractiveMap) {
+    return (
+      <div className={cn("space-y-3", className)}>
+        {actionButtons}
+        <div className="relative overflow-hidden rounded-2xl border border-neutral-200 bg-slate-900 shadow-sm">
+          {staticUrl ? (
+            <img
+              src={staticUrl}
+              alt=""
+              className="h-64 w-full object-cover opacity-90 sm:h-80"
+              onError={() => setStaticFailed(true)}
+            />
+          ) : (
+            <div
+              className="h-64 sm:h-80"
+              style={{
+                backgroundImage:
+                  "radial-gradient(circle at 1px 1px, rgb(148 163 184 / 25%) 1px, transparent 0)",
+                backgroundSize: "24px 24px",
+              }}
+            />
+          )}
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent" />
+          <div className="absolute bottom-0 left-0 right-0 p-4">
+            <p className="text-sm font-medium text-white">{label}</p>
+            <p className="text-xs text-white/70">Use the buttons above for directions in Google Maps</p>
+          </div>
+        </div>
       </div>
+    );
+  }
+
+  return (
+    <div className={cn("space-y-3", className)}>
+      {actionButtons}
 
       <div className="overflow-hidden rounded-2xl border border-neutral-200 shadow-sm">
-        <APIProvider apiKey={apiKey}>
+        <APIProvider apiKey={apiKey} onError={() => setMapFailed(true)}>
           <Map
             defaultCenter={position}
             defaultZoom={zoom}

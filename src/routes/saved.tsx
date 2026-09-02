@@ -34,8 +34,8 @@ function SavedPage() {
   return (
     <SiteLayout>
       <section className="page-panel">
-        <h1 className="text-2xl font-bold tracking-tight text-neutral-900 sm:text-3xl">Saved properties</h1>
-        <p className="mt-2 text-sm text-neutral-600">Your shortlist across all devices when signed in.</p>
+        <h1 className="text-2xl font-bold tracking-tight text-neutral-900 sm:text-3xl">Your shortlist</h1>
+        <p className="mt-2 text-sm text-neutral-600">Properties you've saved — synced when you're signed in.</p>
         {!user && !loading && (
           <div className="mt-8 rounded-2xl border border-dashed border-neutral-300 px-4 py-8 text-center sm:mt-12 sm:p-12">
             <p className="text-base font-medium text-neutral-900 sm:text-lg">Sign in to see saved listings</p>
@@ -50,11 +50,11 @@ function SavedPage() {
         {user && isLoading && <div className="mt-8 h-48 animate-pulse rounded-xl bg-neutral-100" />}
         {user && !isLoading && properties.length === 0 && (
           <div className="mt-8 rounded-2xl border border-dashed border-neutral-300 px-4 py-8 text-center text-neutral-600 sm:mt-12 sm:p-12">
-            No saved properties yet. Browse the{" "}
+            No saved homes yet. Have a look at what's{" "}
             <Link to="/properties" className="inline-flex min-h-[44px] items-center text-blue-600 underline">
-              collection
+              on the market
             </Link>{" "}
-            and tap Save.
+            and tap Save on anything you like.
           </div>
         )}
         {user && properties.length > 0 && (

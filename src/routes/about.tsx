@@ -7,7 +7,7 @@ export const Route = createFileRoute("/about")({
   head: () => ({
     meta: [
       { title: `About — ${BRAND.name}` },
-      { name: "description", content: "Our philosophy — real estate made easy and transparent." },
+      { name: "description", content: BRAND.tagline },
     ],
   }),
   component: AboutPage,
@@ -27,9 +27,9 @@ function AboutPage() {
           <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/15 to-transparent" />
           <div className="relative w-full px-4 pb-8 pt-16 sm:px-10 sm:pb-12 sm:pt-20">
             <SectionHeading
-              eyebrow="Our story"
-              title="Perspective over volume"
-              description="Offshore Properties was founded on a simple belief: the finest homes are discovered, not scrolled past."
+              eyebrow="Who we are"
+              title="We'd rather show you five right homes than fifty wrong ones"
+              description="Offshore started because too many buyers and renters waste weeks on listings that were never going to work. We keep the portfolio tight and the advice straight."
             />
           </div>
         </div>
@@ -38,26 +38,25 @@ function AboutPage() {
       <section className="page-panel mt-0 sm:mt-6">
         <div className="mx-auto max-w-3xl space-y-5 text-[15px] leading-relaxed text-neutral-600 sm:space-y-6 sm:text-base">
           <p>
-            We represent a deliberately curated portfolio of villas, apartments, and land across
-            prime locations. Each instruction is handled with discretion — from first enquiry through
-            completion.
+            We work across Nairobi and the coast with a focused set of villas, apartments, and land —
+            properties we would actually take a client to see. When you enquire, you speak to people who
+            know the neighbourhoods, not a call centre reading a script.
           </p>
           <p>
-            Our advisors combine local market knowledge with an international buyer network. Whether
-            you are acquiring a primary residence, a rental investment, or a short-let retreat, we
-            guide you with clarity and without pressure.
+            Some clients are buying their first home in Kenya. Others are adding a rental or a holiday
+            place. Either way, we start with how you live — commute, schools, budget, security — and
+            narrow down from there. No pressure to decide on the spot.
           </p>
           <p>
-            Every listing is vetted for location, title clarity, and long-term value. We focus on
-            fewer properties, presented properly — so you spend less time searching and more time
-            deciding.
+            Every listing is checked for location, title clarity, and whether the price makes sense in
+            that area. Fewer properties on the site, but each one is worth your time.
           </p>
         </div>
         <Link
           to="/contact"
           className="mt-8 inline-flex h-11 items-center rounded-full bg-neutral-900 px-8 text-xs font-semibold uppercase tracking-[0.16em] text-white transition hover:bg-neutral-800 sm:mt-10"
         >
-          Speak with us
+          Talk to the team
         </Link>
       </section>
     </SiteLayout>

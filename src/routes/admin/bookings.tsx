@@ -5,7 +5,7 @@ import { adminListBookings, adminUpdateBooking } from "@/lib/properties.function
 import { useAdminAuth } from "@/hooks/use-admin-auth";
 import { useEffect } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { SectionHeading } from "@/components/section-heading";
+import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { Badge } from "@/components/ui/badge";
 import {
   Select,
@@ -53,25 +53,29 @@ function AdminBookings() {
 
   return (
     <div>
-      <SectionHeading eyebrow="Calendar" title="Viewings" description="Scheduled property viewings and tours." />
-      <div className="mt-8 space-y-3">
+      <AdminPageHeader
+        eyebrow="Calendar"
+        title="Viewings"
+        description="Scheduled property viewings and tours."
+      />
+      <div className="space-y-3">
         {rows.length === 0 && (
-          <p className="rounded-xl border border-dashed border-border p-12 text-center text-muted-foreground">No bookings yet.</p>
+          <p className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-12 text-center text-slate-500">No bookings yet.</p>
         )}
         {rows.map((b) => (
-          <div key={b.id} className="rounded-xl border border-border bg-card p-5 shadow-card">
+          <div key={b.id} className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
-                <p className="font-medium">{b.client_name}</p>
-                <p className="text-sm text-muted-foreground">{b.client_email}</p>
-                <p className="mt-2 font-display text-lg">
+                <p className="font-medium text-slate-900">{b.client_name}</p>
+                <p className="text-sm text-slate-500">{b.client_email}</p>
+                <p className="mt-2 text-lg font-semibold text-slate-900">
                   {new Date(b.requested_at).toLocaleString(undefined, {
                     dateStyle: "medium",
                     timeStyle: "short",
                   })}
                 </p>
                 {b.properties && (
-                  <p className="mt-1 text-xs text-brass">
+                  <p className="mt-1 text-xs font-medium text-blue-600">
                     {(b.properties as { title: string }).title}
                   </p>
                 )}
@@ -88,7 +92,7 @@ function AdminBookings() {
                 </SelectContent>
               </Select>
             </div>
-            {b.notes && <p className="mt-3 text-sm text-muted-foreground">{b.notes}</p>}
+            {b.notes && <p className="mt-3 text-sm text-slate-600">{b.notes}</p>}
             <Badge variant="outline" className="mt-3">{b.duration_minutes} min</Badge>
           </div>
         ))}

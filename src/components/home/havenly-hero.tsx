@@ -8,24 +8,24 @@ import { Button } from "@/components/ui/button";
 import { HeroKenyaGallery } from "@/components/kenya-gallery-provider";
 
 const HERO_PHRASES = [
-  "Your Next Investment, Simplified",
-  "Find Your Dream Property",
-  "Smart Search, Handpicked Listings",
-  "Where Location Meets Opportunity",
-  "Real Estate Made Easy",
-  "Premium Properties, Curated for You",
+  "Let's find you the right home",
+  "Good properties in the right neighbourhoods",
+  "Tell us what you need — we'll point you the right way",
+  "From Kilimani to Karen, we know these areas",
+  "Homes worth actually going to see",
+  "Buying, renting, or investing — start here",
 ];
 
 const RENT_PHRASES = [
-  "Your Perfect Rental, Found",
-  "Quality Rentals, Handpicked",
-  "Move In, Live Well",
+  "Need a rental that fits your life?",
+  "Let's find somewhere you'll enjoy living",
+  "Westlands, Kilimani, Lavington — we'll narrow it down",
 ];
 
 const BUY_PHRASES = [
-  "Own Your Piece of Paradise",
-  "Invest in Prime Real Estate",
-  "Homes Worth Coming Home To",
+  "Ready to buy? Location comes first",
+  "Homes with real value behind them",
+  "Something you'll still love in five years",
 ];
 
 type HavenlyHeroProps = {
@@ -42,10 +42,10 @@ export function HavenlyHero({
 
   const subtitle =
     homeTab === "rent"
-      ? "Curated rentals vetted for quality and location."
+      ? "We'll show you rentals that match your budget, commute, and how you actually live — no endless scrolling."
       : homeTab === "buy"
-        ? "Handpicked homes ready for you to view."
-        : "Explore curated properties — search, filter, and discover.";
+        ? "These are homes we'd take a client to see in person. Location, title, and value checked first."
+        : "Same team behind every listing — search by area and budget, or just tell us what you're after.";
 
   return (
     <div className="relative flex min-h-[min(78vh,680px)] min-h-[min(78dvh,680px)] w-full flex-col overflow-hidden sm:min-h-[min(85vh,820px)] sm:min-h-[min(85dvh,820px)]">

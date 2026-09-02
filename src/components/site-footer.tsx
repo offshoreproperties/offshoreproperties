@@ -8,11 +8,11 @@ export function SiteFooter() {
     <footer className="border-t border-neutral-200 bg-white text-neutral-900">
       <div className="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:grid-cols-2 sm:gap-10 sm:px-6 sm:py-16 md:grid-cols-4">
         <div>
-          <div className="text-2xl font-bold">
+          <div className="text-3xl font-bold tracking-tight sm:text-[2rem]">
             Offshore<span className="text-blue-600">.</span>
           </div>
           <p className="mt-3 max-w-xs text-sm leading-relaxed text-neutral-600">
-            Real estate made easy and transparent — curated listings, trusted advisors.
+            {BRAND.tagline}
           </p>
         </div>
         <div>
@@ -66,7 +66,7 @@ export function SiteFooter() {
             <li>
               <a
                 href={buildWhatsAppUrl(BRAND.whatsapp, [
-                  `Hello! I'd like to enquire via ${BRAND.name}.`,
+                  `Hi — I found you on ${BRAND.name} and wanted to ask about what's available.`,
                 ])}
                 target="_blank"
                 rel="noopener noreferrer"
@@ -85,7 +85,7 @@ export function SiteFooter() {
       <div className="border-t border-neutral-200">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-2 px-4 py-5 text-xs text-neutral-500 sm:px-6">
           <span>© {new Date().getFullYear()} Offshore Properties</span>
-          <span>Clean · Bright · Professional</span>
+          <span>Nairobi · Kenya</span>
         </div>
       </div>
     </footer>

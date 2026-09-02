@@ -102,7 +102,9 @@ export const aiSearch = createServerFn({ method: "POST" })
       ]);
     } catch (err) {
       if (err instanceof Error && err.message.includes("not configured")) {
-        throw new Error(aiConfigError());
+        throw new Error(
+          "Our search assistant is taking a short break — browse listings below or message us on WhatsApp.",
+        );
       }
       throw err;
     }

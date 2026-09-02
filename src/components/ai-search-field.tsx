@@ -19,14 +19,14 @@ import { FadeRotator } from "@/components/fade-phrases";
 import { LocationBrowse } from "@/components/location-browse";
 
 const AI_PROMPTS = [
-  "3-bed villa with a pool in Karen under Kshs 50M",
-  "family apartment in Kilimani near Yaya Centre",
-  "affordable 2-bed rental in Westlands",
-  "luxury home in Runda with garden and parking",
-  "land for investment in Kiambu or outskirts",
-  "furnished short let in Kilimani or Lavington",
-  "townhouse in Parklands for a growing family",
-  "what is it like living in Kilimani?",
+  "3-bed in Karen with a pool, around Kshs 50M",
+  "family apartment in Kilimani, walking distance to Yaya",
+  "2-bed rental in Westlands under Kshs 120k",
+  "garden home in Runda for a family of four",
+  "what's available in Lavington for rent?",
+  "land around Kiambu for building",
+  "furnished short stay near Kilimani",
+  "is Parklands good for young professionals?",
 ];
 
 type Match = {
@@ -75,7 +75,9 @@ export function AiSearchField({
       setMatches(result.matches ?? []);
       setMatchSlugs(result.matchSlugs ?? []);
     } catch (err) {
-      setReply(err instanceof Error ? err.message : "Search unavailable. Try browsing the collection.");
+      setReply(err instanceof Error && !err.message.includes("not configured")
+        ? err.message
+        : "Our search assistant is taking a short break — browse listings below or message us on WhatsApp.");
     } finally {
       setLoading(false);
     }
@@ -116,11 +118,11 @@ export function AiSearchField({
             onChange={(e) => setInput(e.target.value)}
             onFocus={() => setFocused(true)}
             onBlur={() => setFocused(false)}
-            placeholder={focused ? "Describe what you're looking for…" : undefined}
+            placeholder={focused ? "Area, budget, beds, lifestyle — whatever helps…" : undefined}
             className={cn(
               "w-full bg-transparent text-base text-neutral-900 placeholder:text-neutral-400 focus:outline-none sm:text-sm",
             )}
-            aria-label="Describe your dream property"
+            aria-label="Describe the property you want"
           />
           {showFadePlaceholder && (
             <div
@@ -140,7 +142,7 @@ export function AiSearchField({
           className={cn(
             "h-11 w-11 shrink-0 rounded-full bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 sm:h-9 sm:w-9",
           )}
-          aria-label="Search with AI"
+          aria-label="Search listings"
         >
           {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ArrowRight className="h-3.5 w-3.5" />}
         </Button>
@@ -156,10 +158,10 @@ export function AiSearchField({
               <span className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-50 text-blue-600">
                 <AiAssistantIcon className="h-4 w-4" />
               </span>
-              Property advisor
+              Let's find something that fits
             </SheetTitle>
             <SheetDescription className="text-left text-neutral-500">
-              Location-aware recommendations from our Kenyan real estate team
+              Tell us your budget, area, or how you live — we'll match listings and explain why they work.
             </SheetDescription>
           </SheetHeader>
           {query && (
@@ -171,7 +173,7 @@ export function AiSearchField({
             {loading && (
               <div className="flex items-center gap-2 text-sm text-neutral-600">
                 <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
-                Searching our listings…
+                Checking our listings…
               </div>
             )}
             {reply && !loading && (
@@ -181,7 +183,7 @@ export function AiSearchField({
             )}
             {matches.length > 0 && !loading && (
               <div className="mt-4 space-y-3">
-                <p className="text-xs font-semibold uppercase tracking-wider text-blue-600">Top matches</p>
+                <p className="text-xs font-semibold uppercase tracking-wider text-blue-600">Properties that fit</p>
                 {matches.map((m) => (
                   <Link
                     key={m.id}
@@ -216,7 +218,7 @@ export function AiSearchField({
                   onClick={() => setOpen(false)}
                   className="block py-3 text-center text-sm font-medium text-blue-600 underline"
                 >
-                  View all AI matches in collection →
+                  See these in the collection →
                 </Link>
               </div>
             )}
@@ -228,7 +230,7 @@ export function AiSearchField({
                   onClick={() => setOpen(false)}
                   className="block text-center text-sm text-blue-600 underline"
                 >
-                  Browse all listings →
+                  See everything we have →
                 </Link>
               </div>
             )}

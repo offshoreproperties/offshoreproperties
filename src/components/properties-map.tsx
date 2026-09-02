@@ -1,5 +1,7 @@
 import { APIProvider, AdvancedMarker, Map, InfoWindow, useMap } from "@vis.gl/react-google-maps";
 import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { Link } from "@tanstack/react-router";
 import { formatPrice, formatPriceCompact, propertyTypeLabel } from "@/lib/format";
 import { pinColor } from "@/lib/map-styles";
@@ -13,6 +15,14 @@ import {
 import { cn } from "@/lib/utils";
 import { MapPin, Navigation } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ListingsMapPreview } from "@/components/listings-map-preview";
+import { checkGoogleMapsApi } from "@/lib/maps.functions";
+
+declare global {
+  interface Window {
+    gm_authFailure?: () => void;
+  }
+}
 
 export type MapProperty = {
   id: string;
@@ -112,19 +122,40 @@ export function PropertiesMap({
   properties,
   className,
   showPricePins = false,
+  interactive = true,
 }: {
   properties: MapProperty[];
   className?: string;
   showPricePins?: boolean;
+  /** When false, uses a static map + listing cards (no Maps JavaScript API — avoids Google error modals). */
+  interactive?: boolean;
 }) {
   const [ready, setReady] = useState(false);
   const [apiKey, setApiKey] = useState<string | undefined>(undefined);
   const [selected, setSelected] = useState<MapProperty | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const checkMaps = useServerFn(checkGoogleMapsApi);
+
+  const { data: mapsStatus, isLoading: checkingMaps } = useQuery({
+    queryKey: ["maps-api-status"],
+    queryFn: () => checkMaps(),
+    staleTime: 5 * 60_000,
+    enabled: ready && interactive && !!apiKey,
+  });
 
   useEffect(() => {
     setApiKey(getClientGoogleMapsApiKey());
     setReady(true);
+  }, []);
+
+  useEffect(() => {
+    const previous = window.gm_authFailure;
+    window.gm_authFailure = () => {
+      setLoadError("failed");
+    };
+    return () => {
+      window.gm_authFailure = previous;
+    };
   }, []);
 
   const mapId = getClientGoogleMapId();
@@ -138,38 +169,26 @@ export function PropertiesMap({
     return <div className={cn("animate-pulse rounded-xl bg-neutral-100", className)} />;
   }
 
-  if (!apiKey) {
+  if (withCoords.length === 0) {
     return (
       <div
         className={cn(
-          "flex flex-col items-center justify-center rounded-xl border border-dashed border-neutral-300 bg-neutral-50 p-8 text-center",
+          "flex h-full min-h-[320px] flex-col items-center justify-center rounded-2xl bg-slate-100 p-8 text-center",
           className,
         )}
       >
-        <MapPin className="mb-3 h-10 w-10 text-neutral-400" />
-        <p className="font-medium text-neutral-900">Google Maps not configured</p>
-        <p className="mt-2 max-w-md text-sm text-neutral-600">
-          Enable <strong>Maps JavaScript API</strong> in Google Cloud Console for this key, then refresh.
-          Ensure <code className="rounded bg-neutral-200 px-1">VITE_GOOGLE_MAPS_API_KEY</code> is set on Render and redeploy.
+        <MapPin className="mb-3 h-10 w-10 text-slate-400" />
+        <p className="font-medium text-slate-900">Nothing on the map yet</p>
+        <p className="mt-2 max-w-sm text-sm text-slate-500">
+          New listings will appear here as we publish them.
         </p>
       </div>
     );
   }
 
-  if (withCoords.length === 0) {
+  if (!interactive || !apiKey) {
     return (
-      <div
-        className={cn(
-          "flex flex-col items-center justify-center rounded-xl border border-dashed border-neutral-300 bg-neutral-50 p-8 text-center",
-          className,
-        )}
-      >
-        <MapPin className="mb-3 h-10 w-10 text-neutral-400" />
-        <p className="font-medium text-neutral-900">No published listings yet</p>
-        <p className="mt-2 max-w-md text-sm text-neutral-600">
-          Publish properties in admin — they will appear here automatically using their map pin, address, or city.
-        </p>
-      </div>
+      <ListingsMapPreview properties={properties} className={className} showPricePins={showPricePins} />
     );
   }
 
@@ -179,17 +198,30 @@ export function PropertiesMap({
   };
   const zoom = withCoords.length === 1 ? 16 : 11;
 
+  const mapsInteractiveReady = !!apiKey && mapsStatus?.ok && !loadError;
+
+  if (ready && !checkingMaps && !mapsInteractiveReady) {
+    return (
+      <ListingsMapPreview properties={properties} className={className} showPricePins={showPricePins} />
+    );
+  }
+
+  if (loadError) {
+    return (
+      <ListingsMapPreview properties={properties} className={className} showPricePins={showPricePins} />
+    );
+  }
+
+  if (checkingMaps || !mapsStatus?.ok) {
+    return <div className={cn("animate-pulse rounded-2xl bg-slate-200", className)} />;
+  }
+
   return (
     <APIProvider
       apiKey={apiKey}
-      onError={(e) => setLoadError(e instanceof Error ? e.message : "Could not load Google Maps")}
+      onError={() => setLoadError("failed")}
     >
       <div className={cn("flex h-full min-h-[320px] flex-col", className)}>
-        {loadError && (
-          <div className="mb-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
-            Map failed to load: {loadError}. Enable Maps JavaScript API for this key in Google Cloud Console.
-          </div>
-        )}
         <div className="min-h-0 flex-1 overflow-hidden rounded-xl border border-neutral-200 shadow-sm">
           <Map
             defaultCenter={center}
@@ -228,7 +260,7 @@ export function PropertiesMap({
                   {selected.city && <p className="text-xs text-neutral-500">{selected.city}</p>}
                   {selected.locationSource && selected.locationSource !== "exact" ? (
                     <p className="mt-1 text-[10px] text-neutral-500">
-                      ~ Approximate {selected.locationSource === "ai" ? "AI" : "area"} location
+                      ~ Approximate {selected.locationSource === "ai" ? "estimated" : "area"} location
                     </p>
                   ) : null}
                   <div className="mt-3 flex flex-col gap-2">

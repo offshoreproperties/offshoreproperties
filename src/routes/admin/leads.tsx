@@ -5,7 +5,7 @@ import { adminListLeads, adminUpdateLead } from "@/lib/properties.functions";
 import { useAdminAuth } from "@/hooks/use-admin-auth";
 import { useEffect } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { SectionHeading } from "@/components/section-heading";
+import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { Badge } from "@/components/ui/badge";
 import {
   Select,
@@ -53,19 +53,23 @@ function AdminLeads() {
 
   return (
     <div>
-      <SectionHeading eyebrow="CRM" title="Leads" description="Enquiries from the website and property pages." />
-      <div className="mt-8 space-y-3">
+      <AdminPageHeader
+        eyebrow="CRM"
+        title="Leads"
+        description="Enquiries from the website and property pages."
+      />
+      <div className="space-y-3">
         {rows.length === 0 && (
-          <p className="rounded-xl border border-dashed border-border p-12 text-center text-muted-foreground">No leads yet.</p>
+          <p className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-12 text-center text-slate-500">No leads yet.</p>
         )}
         {rows.map((l) => (
-          <div key={l.id} className="rounded-xl border border-border bg-card p-5 shadow-card">
+          <div key={l.id} className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
-                <p className="font-medium">{l.client_name}</p>
-                <p className="text-sm text-muted-foreground">{l.client_email}</p>
+                <p className="font-medium text-slate-900">{l.client_name}</p>
+                <p className="text-sm text-slate-500">{l.client_email}</p>
                 {l.properties && (
-                  <p className="mt-1 text-xs text-brass">
+                  <p className="mt-1 text-xs font-medium text-blue-600">
                     Re: {(l.properties as { title: string }).title}
                   </p>
                 )}
@@ -82,10 +86,10 @@ function AdminLeads() {
                 </SelectContent>
               </Select>
             </div>
-            {l.message && <p className="mt-3 text-sm text-muted-foreground">{l.message}</p>}
+            {l.message && <p className="mt-3 text-sm text-slate-600">{l.message}</p>}
             <div className="mt-3 flex gap-2">
               <Badge variant="outline">{l.source}</Badge>
-              <span className="text-xs text-muted-foreground">
+              <span className="text-xs text-slate-400">
                 {new Date(l.created_at).toLocaleString()}
               </span>
             </div>

@@ -8,10 +8,10 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const QUICK_QUESTIONS = [
-  "Tell me about the neighbourhood and lifestyle",
-  "Who is this property best suited for?",
-  "What schools, malls, and amenities are nearby?",
-  "Is this a good investment?",
+  "What's the neighbourhood like day to day?",
+  "Who is this best suited for?",
+  "What's nearby — schools, malls, commute?",
+  "Does the price make sense for this area?",
 ];
 
 export function PropertyAiAdvisor({
@@ -45,7 +45,7 @@ export function PropertyAiAdvisor({
       setAreaLabel(result.areaLabel ?? null);
       setQuestion("");
     } catch (err) {
-      setReply(err instanceof Error ? err.message : "Advisor unavailable. Please contact us directly.");
+      setReply(err instanceof Error ? err.message : "We couldn't load that just now — message us on WhatsApp and we'll help directly.");
     } finally {
       setLoading(false);
     }
@@ -58,10 +58,10 @@ export function PropertyAiAdvisor({
           <AiAssistantIcon className="h-4 w-4" />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-xs font-semibold uppercase tracking-wider text-blue-600">Property advisor</p>
-          <h3 className="mt-0.5 font-semibold text-neutral-900">Ask about {propertyTitle}</h3>
+          <p className="text-xs font-semibold uppercase tracking-wider text-blue-600">Ask about this home</p>
+          <h3 className="mt-0.5 font-semibold text-neutral-900">{propertyTitle}</h3>
           <p className="mt-1 text-sm text-neutral-600">
-            Get a personalised briefing on the home, the area{areaLabel ? ` (${areaLabel})` : ""}, and nearby lifestyle — written like a senior sales consultant.
+            Neighbourhood, daily life, who it suits — the same straight talk you'd get on a viewing.
           </p>
         </div>
       </div>
@@ -73,14 +73,14 @@ export function PropertyAiAdvisor({
           onClick={() => run()}
         >
           <MessageCircle className="mr-2 h-4 w-4" />
-          Get property briefing
+          Tell me about this place
         </Button>
       ) : (
         <div className="mt-4 space-y-3">
           {loading ? (
             <div className="flex items-center gap-2 rounded-xl border border-neutral-200 bg-white px-4 py-6 text-sm text-neutral-600">
               <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
-              Preparing your briefing…
+              Putting together what we know about this place…
             </div>
           ) : reply ? (
             <div className="rounded-xl border border-neutral-200 bg-white p-4">
@@ -112,7 +112,7 @@ export function PropertyAiAdvisor({
             <input
               value={question}
               onChange={(e) => setQuestion(e.target.value)}
-              placeholder="Ask anything about this property or area…"
+              placeholder="e.g. Is this quiet at night? How's the commute to Westlands?"
               className="min-w-0 flex-1 rounded-full border border-neutral-200 bg-white px-4 py-2.5 text-sm text-neutral-900 placeholder:text-neutral-400 focus:border-blue-400 focus:outline-none"
             />
             <Button type="submit" disabled={loading || !question.trim()} className="shrink-0 rounded-full">

@@ -24,7 +24,7 @@ import {
   ArrowUpRight,
 } from "lucide-react";
 import { adminAnalytics } from "@/lib/analytics.functions";
-import { SectionHeading } from "@/components/section-heading";
+import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -39,12 +39,12 @@ const periodOptions: { value: Period; label: string }[] = [
 ];
 
 const trafficChartConfig = {
-  visits: { label: "Site visits", color: "hsl(var(--chart-1))" },
-  views: { label: "Property views", color: "hsl(var(--chart-2))" },
+  visits: { label: "Site visits", color: "#2563eb" },
+  views: { label: "Property views", color: "#059669" },
 };
 
 const propertyChartConfig = {
-  views: { label: "Views", color: "hsl(var(--chart-1))" },
+  views: { label: "Views", color: "#2563eb" },
 };
 
 function formatNumber(n: number) {
@@ -65,21 +65,21 @@ function StatCard({
   href?: string;
 }) {
   const content = (
-  <>
+    <>
       <div className="flex items-start justify-between gap-3">
-        <div className="rounded-lg bg-brass/10 p-2.5">
-          <Icon className="h-4 w-4 text-brass" />
+        <div className="rounded-lg bg-blue-50 p-2.5 ring-1 ring-blue-100">
+          <Icon className="h-4 w-4 text-blue-600" />
         </div>
-        {href ? <ArrowUpRight className="h-4 w-4 text-muted-foreground/50" /> : null}
+        {href ? <ArrowUpRight className="h-4 w-4 text-slate-300 transition group-hover:text-blue-500" /> : null}
       </div>
-      <p className="mt-4 font-display text-3xl text-foreground">{value}</p>
-      <p className="mt-1 text-xs uppercase tracking-wider text-muted-foreground">{label}</p>
-      {sub ? <p className="mt-2 text-xs text-muted-foreground/80">{sub}</p> : null}
+      <p className="mt-4 text-3xl font-bold tabular-nums tracking-tight text-slate-900">{value}</p>
+      <p className="mt-1 text-xs font-medium uppercase tracking-wide text-slate-500">{label}</p>
+      {sub ? <p className="mt-2 text-xs text-slate-400">{sub}</p> : null}
     </>
   );
 
   const className =
-    "rounded-xl border border-border bg-card p-5 shadow-card transition-smooth hover:shadow-elevated";
+    "group rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-blue-200 hover:shadow-md";
 
   if (href) {
     return (
@@ -114,36 +114,43 @@ export function AnalyticsDashboard() {
       fullTitle: p.title,
     })) ?? [];
 
+  const hasTraffic = trafficData.some((d) => d.visits > 0 || d.views > 0);
+
   return (
-    <div className="space-y-10">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <SectionHeading
-          eyebrow="Analytics"
-          title="Performance overview"
-          description="Site traffic, property engagement, leads, and viewing requests in one place."
-        />
-        <div className="flex flex-wrap items-center gap-2">
-          {periodOptions.map((opt) => (
-            <Button
-              key={opt.value}
-              size="sm"
-              variant={period === opt.value ? "default" : "outline"}
-              className={cn("h-9", period === opt.value && "bg-brass text-brass-foreground hover:bg-brass/90")}
-              onClick={() => setPeriod(opt.value)}
-            >
-              {opt.label}
-            </Button>
-          ))}
-          {isFetching && !isLoading ? (
-            <span className="text-xs text-muted-foreground">Updating…</span>
-          ) : null}
-        </div>
-      </div>
+    <div className="space-y-8">
+      <AdminPageHeader
+        eyebrow="Analytics"
+        title="Performance overview"
+        description="Site traffic, property engagement, leads, and viewing requests in one place."
+        actions={
+          <>
+            {periodOptions.map((opt) => (
+              <Button
+                key={opt.value}
+                size="sm"
+                variant={period === opt.value ? "default" : "outline"}
+                className={cn(
+                  "h-9 rounded-lg px-4 font-medium",
+                  period === opt.value
+                    ? "bg-blue-600 text-white hover:bg-blue-700"
+                    : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50",
+                )}
+                onClick={() => setPeriod(opt.value)}
+              >
+                {opt.label}
+              </Button>
+            ))}
+            {isFetching && !isLoading ? (
+              <span className="text-xs text-slate-500">Updating…</span>
+            ) : null}
+          </>
+        }
+      />
 
       {isLoading ? (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {Array.from({ length: 8 }).map((_, i) => (
-            <div key={i} className="h-36 animate-pulse rounded-xl border border-border bg-muted/40" />
+            <div key={i} className="h-32 animate-pulse rounded-xl border border-slate-200 bg-slate-50" />
           ))}
         </div>
       ) : data ? (
@@ -208,40 +215,60 @@ export function AnalyticsDashboard() {
           </div>
 
           <div className="grid gap-6 xl:grid-cols-3">
-            <div className="rounded-xl border border-border bg-card p-5 shadow-card xl:col-span-2">
-              <div className="mb-6 flex items-center gap-2">
-                <BarChart3 className="h-4 w-4 text-brass" />
-                <h3 className="font-display text-lg text-foreground">Traffic trend</h3>
+            <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm xl:col-span-2">
+              <div className="mb-4 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <BarChart3 className="h-4 w-4 text-blue-600" />
+                  <h3 className="text-base font-semibold text-slate-900">Traffic trend</h3>
+                </div>
+                <div className="flex gap-3 text-xs text-slate-500">
+                  <span className="flex items-center gap-1.5">
+                    <span className="h-2 w-2 rounded-full bg-blue-600" /> Site visits
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="h-2 w-2 rounded-full bg-emerald-600" /> Property views
+                  </span>
+                </div>
               </div>
-              <ChartContainer config={trafficChartConfig} className="aspect-[2.4/1] w-full">
-                <AreaChart data={trafficData} margin={{ left: 0, right: 8, top: 8, bottom: 0 }}>
-                  <CartesianGrid vertical={false} strokeDasharray="3 3" className="stroke-border/60" />
-                  <XAxis dataKey="label" tickLine={false} axisLine={false} tickMargin={8} fontSize={11} />
-                  <YAxis tickLine={false} axisLine={false} width={36} fontSize={11} allowDecimals={false} />
-                  <ChartTooltip content={<ChartTooltipContent />} />
-                  <Area
-                    type="monotone"
-                    dataKey="visits"
-                    stroke="var(--color-visits)"
-                    fill="var(--color-visits)"
-                    fillOpacity={0.15}
-                    strokeWidth={2}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="views"
-                    stroke="var(--color-views)"
-                    fill="var(--color-views)"
-                    fillOpacity={0.1}
-                    strokeWidth={2}
-                  />
-                </AreaChart>
-              </ChartContainer>
+              {hasTraffic ? (
+                <ChartContainer config={trafficChartConfig} className="aspect-[2.4/1] w-full min-h-[220px]">
+                  <AreaChart data={trafficData} margin={{ left: 0, right: 8, top: 8, bottom: 0 }}>
+                    <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="#e2e8f0" />
+                    <XAxis dataKey="label" tickLine={false} axisLine={false} tickMargin={8} fontSize={11} stroke="#64748b" />
+                    <YAxis tickLine={false} axisLine={false} width={36} fontSize={11} allowDecimals={false} stroke="#64748b" />
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <Area
+                      type="monotone"
+                      dataKey="visits"
+                      stroke="var(--color-visits)"
+                      fill="var(--color-visits)"
+                      fillOpacity={0.12}
+                      strokeWidth={2}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="views"
+                      stroke="var(--color-views)"
+                      fill="var(--color-views)"
+                      fillOpacity={0.08}
+                      strokeWidth={2}
+                    />
+                  </AreaChart>
+                </ChartContainer>
+              ) : (
+                <div className="flex min-h-[220px] flex-col items-center justify-center rounded-lg border border-dashed border-slate-200 bg-slate-50 text-center">
+                  <BarChart3 className="mb-2 h-8 w-8 text-slate-300" />
+                  <p className="text-sm font-medium text-slate-600">No traffic data yet</p>
+                  <p className="mt-1 max-w-xs text-xs text-slate-400">
+                    Charts fill in as visitors browse the site and view listings.
+                  </p>
+                </div>
+              )}
             </div>
 
-            <div className="rounded-xl border border-border bg-card p-5 shadow-card">
-              <h3 className="font-display text-lg text-foreground">Lead pipeline</h3>
-              <p className="mt-1 text-sm text-muted-foreground">Status breakdown for the selected period</p>
+            <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+              <h3 className="text-base font-semibold text-slate-900">Lead pipeline</h3>
+              <p className="mt-1 text-sm text-slate-500">Status breakdown for the selected period</p>
               <div className="mt-6 space-y-3">
                 {[
                   { label: "New", value: data.leadByStatus.new, tone: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300" },
@@ -249,8 +276,8 @@ export function AnalyticsDashboard() {
                   { label: "Closed", value: data.leadByStatus.closed, tone: "bg-muted text-muted-foreground" },
                   { label: "Other", value: data.leadByStatus.other, tone: "bg-amber-500/15 text-amber-700 dark:text-amber-300" },
                 ].map((row) => (
-                  <div key={row.label} className="flex items-center justify-between rounded-lg border border-border/60 px-3 py-2.5">
-                    <span className="text-sm text-foreground">{row.label}</span>
+                  <div key={row.label} className="flex items-center justify-between rounded-lg border border-slate-100 bg-slate-50 px-3 py-2.5">
+                    <span className="text-sm font-medium text-slate-700">{row.label}</span>
                     <Badge variant="secondary" className={cn("font-mono", row.tone)}>
                       {row.value}
                     </Badge>
@@ -258,15 +285,15 @@ export function AnalyticsDashboard() {
                 ))}
               </div>
               <div className="mt-8">
-                <h4 className="text-sm font-medium text-foreground">Viewing requests</h4>
+                <h4 className="text-sm font-semibold text-slate-800">Viewing requests</h4>
                 <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
-                  <div className="rounded-lg bg-muted/50 px-3 py-2">
-                    <p className="text-xs text-muted-foreground">Pending</p>
-                    <p className="font-display text-xl">{data.bookingByStatus.pending}</p>
+                  <div className="rounded-lg border border-slate-100 bg-slate-50 px-3 py-2">
+                    <p className="text-xs text-slate-500">Pending</p>
+                    <p className="text-xl font-bold text-slate-900">{data.bookingByStatus.pending}</p>
                   </div>
-                  <div className="rounded-lg bg-muted/50 px-3 py-2">
-                    <p className="text-xs text-muted-foreground">Confirmed</p>
-                    <p className="font-display text-xl">{data.bookingByStatus.confirmed}</p>
+                  <div className="rounded-lg border border-slate-100 bg-slate-50 px-3 py-2">
+                    <p className="text-xs text-slate-500">Confirmed</p>
+                    <p className="text-xl font-bold text-slate-900">{data.bookingByStatus.confirmed}</p>
                   </div>
                 </div>
               </div>
@@ -274,9 +301,9 @@ export function AnalyticsDashboard() {
           </div>
 
           <div className="grid gap-6 xl:grid-cols-2">
-            <div className="rounded-xl border border-border bg-card p-5 shadow-card">
-              <h3 className="font-display text-lg text-foreground">Top properties by views</h3>
-              <p className="mt-1 text-sm text-muted-foreground">Most viewed listings in the last {period} days</p>
+            <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+              <h3 className="text-base font-semibold text-slate-900">Top properties by views</h3>
+              <p className="mt-1 text-sm text-slate-500">Most viewed listings in the last {period} days</p>
               {propertyChartData.length ? (
                 <ChartContainer config={propertyChartConfig} className="mt-6 aspect-[1.6/1] w-full">
                   <BarChart data={propertyChartData} layout="vertical" margin={{ left: 4, right: 16, top: 4, bottom: 4 }}>
@@ -296,19 +323,19 @@ export function AnalyticsDashboard() {
                   </BarChart>
                 </ChartContainer>
               ) : (
-                <p className="mt-8 text-sm text-muted-foreground">No property views recorded in this period yet.</p>
+                <p className="mt-8 text-sm text-slate-500">No property views recorded in this period yet.</p>
               )}
             </div>
 
-            <div className="rounded-xl border border-border bg-card p-5 shadow-card">
-              <h3 className="font-display text-lg text-foreground">Top pages</h3>
-              <p className="mt-1 text-sm text-muted-foreground">Most visited routes on the public site</p>
+            <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+              <h3 className="text-base font-semibold text-slate-900">Top pages</h3>
+              <p className="mt-1 text-sm text-slate-500">Most visited routes on the public site</p>
               <div className="mt-4 divide-y divide-border">
                 {data.topPages.length ? (
                   data.topPages.map((page) => (
                     <div key={page.path} className="flex items-center justify-between gap-3 py-3 text-sm">
-                      <code className="truncate rounded bg-muted px-2 py-1 text-xs text-foreground">{page.path}</code>
-                      <span className="shrink-0 font-mono text-muted-foreground">{formatNumber(page.count)}</span>
+                      <code className="truncate rounded bg-slate-100 px-2 py-1 text-xs text-slate-700">{page.path}</code>
+                      <span className="shrink-0 font-mono text-sm text-slate-600">{formatNumber(page.count)}</span>
                     </div>
                   ))
                 ) : (
@@ -320,17 +347,17 @@ export function AnalyticsDashboard() {
             </div>
           </div>
 
-          <div className="rounded-xl border border-border bg-card shadow-card">
-            <div className="border-b border-border px-5 py-4">
-              <h3 className="font-display text-lg text-foreground">All properties — engagement</h3>
-              <p className="mt-1 text-sm text-muted-foreground">
+          <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+            <div className="border-b border-slate-200 px-5 py-4">
+              <h3 className="text-base font-semibold text-slate-900">All properties — engagement</h3>
+              <p className="mt-1 text-sm text-slate-500">
                 Views, likes, and saves per listing for the last {period} days
               </p>
             </div>
-            <div className="overflow-x-auto">
+            <div className="scrollbar-offshore overflow-x-auto">
               <table className="w-full min-w-[720px] text-left text-sm">
                 <thead>
-                  <tr className="border-b border-border text-xs uppercase tracking-wider text-muted-foreground">
+                  <tr className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wider text-slate-500">
                     <th className="px-5 py-3 font-medium">Property</th>
                     <th className="px-3 py-3 font-medium">Status</th>
                     <th className="px-3 py-3 text-right font-medium">Views ({period}d)</th>
@@ -342,7 +369,7 @@ export function AnalyticsDashboard() {
                 </thead>
                 <tbody>
                   {data.propertyStats.map((p) => (
-                    <tr key={p.id} className="border-b border-border/60 last:border-0 hover:bg-muted/30">
+                    <tr key={p.id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50/80">
                       <td className="px-5 py-3">
                         <div className="flex items-center gap-3">
                           {p.heroImage ? (
@@ -355,7 +382,7 @@ export function AnalyticsDashboard() {
                               <Link
                                 to="/properties/$slug"
                                 params={{ slug: p.slug }}
-                                className="truncate font-medium text-foreground hover:text-brass"
+                                className="truncate font-medium text-slate-900 hover:text-blue-600"
                                 target="_blank"
                               >
                                 {p.title}
@@ -378,7 +405,7 @@ export function AnalyticsDashboard() {
                       </td>
                       <td className="px-3 py-3 text-right font-mono">{formatNumber(p.likesInPeriod)}</td>
                       <td className="px-3 py-3 text-right font-mono">{formatNumber(p.savesInPeriod)}</td>
-                      <td className="px-3 py-3 text-right font-mono text-brass">{formatNumber(p.engagementScore)}</td>
+                      <td className="px-3 py-3 text-right font-mono text-blue-600">{formatNumber(p.engagementScore)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -387,20 +414,20 @@ export function AnalyticsDashboard() {
           </div>
 
           <div className="grid gap-6 lg:grid-cols-2">
-            <div className="rounded-xl border border-border bg-card p-5 shadow-card">
+            <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
               <div className="flex items-center justify-between">
-                <h3 className="font-display text-lg text-foreground">Recent enquiries</h3>
-                <Link to="/admin/leads" className="text-xs uppercase tracking-wider text-brass hover:underline">
+                <h3 className="text-base font-semibold text-slate-900">Recent enquiries</h3>
+                <Link to="/admin/leads" className="text-xs font-medium text-blue-600 hover:underline">
                   View all
                 </Link>
               </div>
               <div className="mt-4 space-y-3">
                 {data.recentLeads.length ? (
                   data.recentLeads.map((lead) => (
-                    <div key={lead.id} className="flex items-center justify-between rounded-lg border border-border/60 px-3 py-2.5">
+                    <div key={lead.id} className="flex items-center justify-between rounded-lg border border-slate-100 bg-slate-50 px-3 py-2.5">
                       <div>
-                        <p className="text-sm font-medium capitalize text-foreground">{lead.source.replace("_", " ")}</p>
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-sm font-medium capitalize text-slate-800">{lead.source.replace("_", " ")}</p>
+                        <p className="text-xs text-slate-500">
                           {new Date(lead.created_at).toLocaleString("en-KE")}
                         </p>
                       </div>
@@ -415,19 +442,19 @@ export function AnalyticsDashboard() {
               </div>
             </div>
 
-            <div className="rounded-xl border border-border bg-card p-5 shadow-card">
+            <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
               <div className="flex items-center justify-between">
-                <h3 className="font-display text-lg text-foreground">Recent viewing requests</h3>
-                <Link to="/admin/bookings" className="text-xs uppercase tracking-wider text-brass hover:underline">
+                <h3 className="text-base font-semibold text-slate-900">Recent viewing requests</h3>
+                <Link to="/admin/bookings" className="text-xs font-medium text-blue-600 hover:underline">
                   View all
                 </Link>
               </div>
               <div className="mt-4 space-y-3">
                 {data.recentBookings.length ? (
                   data.recentBookings.map((booking) => (
-                    <div key={booking.id} className="flex items-center justify-between rounded-lg border border-border/60 px-3 py-2.5">
+                    <div key={booking.id} className="flex items-center justify-between rounded-lg border border-slate-100 bg-slate-50 px-3 py-2.5">
                       <div>
-                        <p className="text-sm font-medium text-foreground">
+                        <p className="text-sm font-medium text-slate-800">
                           {new Date(booking.requested_at).toLocaleString("en-KE", {
                             dateStyle: "medium",
                             timeStyle: "short",

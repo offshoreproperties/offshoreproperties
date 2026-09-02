@@ -13,6 +13,7 @@ import { useAdminAuth } from "@/hooks/use-admin-auth";
 import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { ListingBadgesDisplay } from "@/components/listing-badges-display";
+import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { PropertyForm, type PropertyFormValues } from "@/components/admin/property-form";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -108,25 +109,29 @@ function AdminProperties() {
 
   return (
     <div>
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <SectionHeading eyebrow="Inventory" title="Properties" description="Upload images, set map location, publish to the public site." />
-        <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-          <DialogTrigger asChild>
-            <Button className="gap-2 rounded-full uppercase tracking-wider">
-              <Plus className="h-4 w-4" /> Add property
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-h-[min(92dvh,92vh)] max-w-3xl overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>New property</DialogTitle>
-            </DialogHeader>
-            <PropertyForm onSubmit={handleSave} onCancel={() => setCreateOpen(false)} />
-          </DialogContent>
-        </Dialog>
-      </div>
+      <AdminPageHeader
+        eyebrow="Inventory"
+        title="Properties"
+        description="Upload images, set map location, and publish listings to the public site."
+        actions={
+          <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+            <DialogTrigger asChild>
+              <Button className="gap-2 bg-blue-600 hover:bg-blue-700">
+                <Plus className="h-4 w-4" /> Add property
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="scrollbar-offshore max-h-[min(92dvh,92vh)] max-w-3xl overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>New property</DialogTitle>
+              </DialogHeader>
+              <PropertyForm onSubmit={handleSave} onCancel={() => setCreateOpen(false)} />
+            </DialogContent>
+          </Dialog>
+        }
+      />
 
       <Dialog open={!!editId} onOpenChange={(o) => !o && setEditId(null)}>
-        <DialogContent className="max-h-[min(92dvh,92vh)] max-w-3xl overflow-y-auto">
+        <DialogContent className="scrollbar-offshore max-h-[min(92dvh,92vh)] max-w-3xl overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit property</DialogTitle>
           </DialogHeader>
@@ -145,9 +150,10 @@ function AdminProperties() {
         </DialogContent>
       </Dialog>
 
-      <div className="mt-8 overflow-x-auto rounded-xl border border-border bg-card shadow-card">
+      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+        <div className="scrollbar-offshore overflow-x-auto">
         <table className="w-full min-w-[720px] text-left text-sm">
-          <thead className="border-b border-border bg-muted/50 text-xs uppercase tracking-wider text-muted-foreground">
+          <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wider text-slate-500">
             <tr>
               <th className="px-4 py-3">Title</th>
               <th className="px-4 py-3">Type</th>
@@ -160,16 +166,16 @@ function AdminProperties() {
           </thead>
           <tbody>
             {isLoading && (
-              <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">Loading…</td></tr>
+              <tr><td colSpan={7} className="px-4 py-8 text-center text-slate-500">Loading…</td></tr>
             )}
             {!isLoading && rows.length === 0 && (
-              <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">No properties yet — add your first listing.</td></tr>
+              <tr><td colSpan={7} className="px-4 py-8 text-center text-slate-500">No properties yet — add your first listing.</td></tr>
             )}
             {rows.map((p) => (
-              <tr key={p.id} className="border-b border-border/60 last:border-0">
+              <tr key={p.id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50/80">
                 <td className="px-4 py-3">
-                  <div className="font-medium">{p.title}</div>
-                  <div className="text-xs text-muted-foreground">{p.city ?? "—"} · {p.view_count} views</div>
+                  <div className="font-medium text-slate-900">{p.title}</div>
+                  <div className="text-xs text-slate-500">{p.city ?? "—"} · {p.view_count} views</div>
                 </td>
                 <td className="px-4 py-3">{propertyTypeLabel(p.property_type)}</td>
                 <td className="px-4 py-3">{formatPrice(Number(p.price), p.currency, p.listing_type)}</td>
@@ -252,6 +258,7 @@ function AdminProperties() {
             ))}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   );

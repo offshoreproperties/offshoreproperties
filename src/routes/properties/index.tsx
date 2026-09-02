@@ -31,7 +31,7 @@ export const Route = createFileRoute("/properties/")({
   head: () => ({
     meta: [
       { title: `Collection — ${BRAND.name}` },
-      { name: "description", content: "Browse curated villas, apartments, townhouses, and land." },
+      { name: "description", content: "Every listing here is one we'd take you to see — filter by area, price, or type." },
     ],
   }),
   component: PropertiesPage,
@@ -105,9 +105,9 @@ function PropertiesPage() {
           <div className="mx-auto flex max-w-7xl flex-col gap-4 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
             <SectionHeading
               variant="light"
-              eyebrow="The collection"
-              title="Our properties"
-              description="Every listing is vetted for location, craft, and long-term value."
+              eyebrow="Listings"
+              title="What's on the market right now"
+              description="Each property is vetted for location and value. Filter below, or describe what you want in the search box — we'll match you up."
             />
             <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
               <Link to="/map">
@@ -133,7 +133,7 @@ function PropertiesPage() {
           )}
           {search.ai && search.q && (
             <p className="mt-4 text-sm text-neutral-600">
-              AI picks for &ldquo;{search.q}&rdquo;
+              Picks for &ldquo;{search.q}&rdquo;
               {aiSlugs?.length ? ` — ${aiSlugs.length} matched` : ""}
             </p>
           )}
@@ -143,8 +143,8 @@ function PropertiesPage() {
             </div>
           ) : properties.length === 0 ? (
             <div className="mt-10 rounded-2xl border border-dashed border-black/15 px-4 py-10 text-center sm:mt-16 sm:p-16">
-              <p className="text-xl font-bold text-[#0a0a0a] sm:text-2xl">No matches found</p>
-              <p className="mt-2 text-sm text-black/50">Adjust filters or explore all listings.</p>
+              <p className="text-xl font-bold text-[#0a0a0a] sm:text-2xl">Nothing quite matches yet</p>
+              <p className="mt-2 text-sm text-black/50">Try widening the area or budget — or message us and we'll suggest options.</p>
               <Link
                 to="/properties"
                 search={{}}
