@@ -6,9 +6,14 @@ import { applyMediaWatermark, isAudioMedia, isVideoMedia } from "@/lib/watermark
 
 const IMAGE_MIME_TYPES = [
   "image/jpeg",
+  "image/jpg",
+  "image/pjpeg",
   "image/png",
+  "image/x-png",
   "image/webp",
   "image/gif",
+  "image/heic",
+  "image/heif",
 ] as const;
 
 const VIDEO_MIME_TYPES = [

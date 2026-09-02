@@ -78,7 +78,7 @@ function isAudioFile(fileName: string, contentType: string): boolean {
 }
 
 function outputImageType(contentType: string): "jpeg" | "png" | "webp" | "gif" {
-  if (contentType === "image/png") return "png";
+  if (contentType === "image/png" || contentType === "image/x-png") return "png";
   if (contentType === "image/webp") return "webp";
   if (contentType === "image/gif") return "gif";
   return "jpeg";

@@ -696,8 +696,8 @@ export function PropertyForm({
         <Label className="text-base">Photos, videos &amp; recordings</Label>
         <p className="mt-1 text-xs text-muted-foreground">
           Select or drag many files at once — photos, phone videos, and voice notes. Uploads run in
-          parallel; images and videos get the Offshore watermark. Images up to 5MB, recordings up to
-          80MB (MP4, MOV, WebM, 3GP, M4A, MP3, and more).
+          parallel; images and videos get the Offshore watermark. Photos: JPG, JPEG, PNG, WebP, GIF, HEIC
+          (up to 5MB). Recordings up to 80MB.
         </p>
         <label
           className={cn(

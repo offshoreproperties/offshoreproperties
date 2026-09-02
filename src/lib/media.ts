@@ -11,9 +11,14 @@ export function isAudioUrl(url: string): boolean {
 
 export const IMAGE_UPLOAD_MIME = [
   "image/jpeg",
+  "image/jpg",
+  "image/pjpeg",
   "image/png",
+  "image/x-png",
   "image/webp",
   "image/gif",
+  "image/heic",
+  "image/heif",
 ] as const;
 
 export const VIDEO_UPLOAD_MIME = [
@@ -45,9 +50,12 @@ export type PropertyUploadMime =
 const EXT_TO_MIME: Record<string, PropertyUploadMime> = {
   jpg: "image/jpeg",
   jpeg: "image/jpeg",
+  jpe: "image/jpeg",
   png: "image/png",
   webp: "image/webp",
   gif: "image/gif",
+  heic: "image/heic",
+  heif: "image/heif",
   mp4: "video/mp4",
   m4v: "video/x-m4v",
   mov: "video/quicktime",
@@ -68,6 +76,14 @@ export const PROPERTY_MEDIA_ACCEPT = [
   ...IMAGE_UPLOAD_MIME,
   ...VIDEO_UPLOAD_MIME,
   ...AUDIO_UPLOAD_MIME,
+  "image/*",
+  ".jpg",
+  ".jpeg",
+  ".png",
+  ".webp",
+  ".gif",
+  ".heic",
+  ".heif",
   "video/*",
   "audio/*",
 ].join(",");
@@ -89,6 +105,14 @@ export function isRecordingMime(type: string): boolean {
 export function resolvePropertyUploadMime(file: File): PropertyUploadMime | null {
   const type = file.type?.toLowerCase().trim() ?? "";
   if (type === "image/jpg" || type === "image/pjpeg") return "image/jpeg";
+  if (type === "image/x-png") return "image/png";
+  if (type.startsWith("image/") && !isPropertyUploadMime(type)) {
+    if (type.includes("jpeg") || type.includes("jpg")) return "image/jpeg";
+    if (type.includes("png")) return "image/png";
+    if (type.includes("webp")) return "image/webp";
+    if (type.includes("gif")) return "image/gif";
+    if (type.includes("heic") || type.includes("heif")) return "image/heic";
+  }
   if (type && isPropertyUploadMime(type)) return type;
 
   if (type.startsWith("video/")) return "video/mp4";
