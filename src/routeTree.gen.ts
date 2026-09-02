@@ -24,6 +24,9 @@ import { Route as AuthCallbackRouteImport } from './routes/auth/callback'
 import { Route as AdminPropertiesRouteImport } from './routes/admin/properties'
 import { Route as AdminLeadsRouteImport } from './routes/admin/leads'
 import { Route as AdminBookingsRouteImport } from './routes/admin/bookings'
+import { Route as AdminDraftsIndexRouteImport } from './routes/admin/drafts/index'
+import { Route as AdminDraftsNewRouteImport } from './routes/admin/drafts/new'
+import { Route as AdminDraftsDraftIdRouteImport } from './routes/admin/drafts/$draftId'
 
 const SavedRoute = SavedRouteImport.update({
   id: '/saved',
@@ -100,6 +103,21 @@ const AdminBookingsRoute = AdminBookingsRouteImport.update({
   path: '/bookings',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminDraftsIndexRoute = AdminDraftsIndexRouteImport.update({
+  id: '/drafts/',
+  path: '/drafts/',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminDraftsNewRoute = AdminDraftsNewRouteImport.update({
+  id: '/drafts/new',
+  path: '/drafts/new',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminDraftsDraftIdRoute = AdminDraftsDraftIdRouteImport.update({
+  id: '/drafts/$draftId',
+  path: '/drafts/$draftId',
+  getParentRoute: () => AdminRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -117,6 +135,9 @@ export interface FileRoutesByFullPath {
   '/properties/$slug': typeof PropertiesSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/properties/': typeof PropertiesIndexRoute
+  '/admin/drafts/$draftId': typeof AdminDraftsDraftIdRoute
+  '/admin/drafts/new': typeof AdminDraftsNewRoute
+  '/admin/drafts/': typeof AdminDraftsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -133,6 +154,9 @@ export interface FileRoutesByTo {
   '/properties/$slug': typeof PropertiesSlugRoute
   '/admin': typeof AdminIndexRoute
   '/properties': typeof PropertiesIndexRoute
+  '/admin/drafts/$draftId': typeof AdminDraftsDraftIdRoute
+  '/admin/drafts/new': typeof AdminDraftsNewRoute
+  '/admin/drafts': typeof AdminDraftsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -151,6 +175,9 @@ export interface FileRoutesById {
   '/properties/$slug': typeof PropertiesSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/properties/': typeof PropertiesIndexRoute
+  '/admin/drafts/$draftId': typeof AdminDraftsDraftIdRoute
+  '/admin/drafts/new': typeof AdminDraftsNewRoute
+  '/admin/drafts/': typeof AdminDraftsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -170,6 +197,9 @@ export interface FileRouteTypes {
     | '/properties/$slug'
     | '/admin/'
     | '/properties/'
+    | '/admin/drafts/$draftId'
+    | '/admin/drafts/new'
+    | '/admin/drafts/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -186,6 +216,9 @@ export interface FileRouteTypes {
     | '/properties/$slug'
     | '/admin'
     | '/properties'
+    | '/admin/drafts/$draftId'
+    | '/admin/drafts/new'
+    | '/admin/drafts'
   id:
     | '__root__'
     | '/'
@@ -203,6 +236,9 @@ export interface FileRouteTypes {
     | '/properties/$slug'
     | '/admin/'
     | '/properties/'
+    | '/admin/drafts/$draftId'
+    | '/admin/drafts/new'
+    | '/admin/drafts/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -326,6 +362,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminBookingsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/drafts/': {
+      id: '/admin/drafts/'
+      path: '/drafts'
+      fullPath: '/admin/drafts/'
+      preLoaderRoute: typeof AdminDraftsIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/drafts/new': {
+      id: '/admin/drafts/new'
+      path: '/drafts/new'
+      fullPath: '/admin/drafts/new'
+      preLoaderRoute: typeof AdminDraftsNewRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/drafts/$draftId': {
+      id: '/admin/drafts/$draftId'
+      path: '/drafts/$draftId'
+      fullPath: '/admin/drafts/$draftId'
+      preLoaderRoute: typeof AdminDraftsDraftIdRouteImport
+      parentRoute: typeof AdminRoute
+    }
   }
 }
 
@@ -334,6 +391,9 @@ interface AdminRouteChildren {
   AdminLeadsRoute: typeof AdminLeadsRoute
   AdminPropertiesRoute: typeof AdminPropertiesRoute
   AdminIndexRoute: typeof AdminIndexRoute
+  AdminDraftsDraftIdRoute: typeof AdminDraftsDraftIdRoute
+  AdminDraftsNewRoute: typeof AdminDraftsNewRoute
+  AdminDraftsIndexRoute: typeof AdminDraftsIndexRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
@@ -341,6 +401,9 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminLeadsRoute: AdminLeadsRoute,
   AdminPropertiesRoute: AdminPropertiesRoute,
   AdminIndexRoute: AdminIndexRoute,
+  AdminDraftsDraftIdRoute: AdminDraftsDraftIdRoute,
+  AdminDraftsNewRoute: AdminDraftsNewRoute,
+  AdminDraftsIndexRoute: AdminDraftsIndexRoute,
 }
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
