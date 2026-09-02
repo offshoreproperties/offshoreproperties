@@ -1,5 +1,5 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import { BarChart3, Building2, Inbox, Calendar, LogOut, Menu, ExternalLink } from "lucide-react";
+import { BarChart3, Building2, Inbox, Calendar, LogOut, Menu, ExternalLink, FileText } from "lucide-react";
 import { useAdminAuth } from "@/hooks/use-admin-auth";
 import { clearAdminSession } from "@/lib/admin-session";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import { BrandLogo } from "@/components/brand-logo";
 const links = [
   { to: "/admin", label: "Analytics", icon: BarChart3, exact: true },
   { to: "/admin/properties", label: "Properties", icon: Building2 },
+  { to: "/admin/drafts", label: "Drafts", icon: FileText },
   { to: "/admin/leads", label: "Leads", icon: Inbox },
   { to: "/admin/bookings", label: "Bookings", icon: Calendar },
 ] as const;
@@ -17,12 +18,14 @@ const links = [
 const PAGE_TITLES: Record<string, string> = {
   "/admin": "Analytics",
   "/admin/properties": "Properties",
+  "/admin/drafts": "Drafts",
   "/admin/leads": "Leads",
   "/admin/bookings": "Bookings",
 };
 
 function pageTitle(pathname: string) {
   if (PAGE_TITLES[pathname]) return PAGE_TITLES[pathname];
+  if (pathname.startsWith("/admin/drafts")) return "Drafts";
   if (pathname.startsWith("/admin/properties")) return "Properties";
   return "Admin";
 }

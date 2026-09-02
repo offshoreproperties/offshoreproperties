@@ -344,6 +344,41 @@ export type Database = {
           },
         ]
       }
+      property_drafts: {
+        Row: {
+          created_at: string
+          id: string
+          label: string
+          payload: Json
+          property_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          label?: string
+          payload?: Json
+          property_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          label?: string
+          payload?: Json
+          property_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "property_drafts_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       property_views: {
         Row: {
           created_at: string

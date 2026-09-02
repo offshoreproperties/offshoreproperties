@@ -1,6 +1,7 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { useEffect, useState } from "react";
 import {
   adminListProperties,
   adminGetProperty,
@@ -9,9 +10,8 @@ import {
   setPropertyPublished,
   setPropertyFeatured,
 } from "@/lib/properties.functions";
+import { deletePropertyDraft, listPropertyDrafts } from "@/lib/property-drafts.functions";
 import { useAdminAuth } from "@/hooks/use-admin-auth";
-import { useEffect, useState } from "react";
-import { useNavigate } from "@tanstack/react-router";
 import { ListingBadgesDisplay } from "@/components/listing-badges-display";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { PropertyForm, type PropertyFormValues } from "@/components/admin/property-form";
@@ -22,12 +22,10 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { formatPrice, propertyTypeLabel } from "@/lib/format";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, ExternalLink } from "lucide-react";
-import { Link } from "@tanstack/react-router";
+import { Plus, Pencil, Trash2, ExternalLink, FileText } from "lucide-react";
 import { BRAND } from "@/lib/constants";
 
 export const Route = createFileRoute("/admin/properties")({
@@ -45,12 +43,20 @@ function AdminProperties() {
   const save = useServerFn(upsertProperty);
   const publish = useServerFn(setPropertyPublished);
   const feature = useServerFn(setPropertyFeatured);
-  const [createOpen, setCreateOpen] = useState(false);
+  const listDrafts = useServerFn(listPropertyDrafts);
+  const removeDraft = useServerFn(deletePropertyDraft);
   const [editId, setEditId] = useState<string | null>(null);
+  const [editDraftId, setEditDraftId] = useState<string | null>(null);
 
   const { data: rows = [], isLoading } = useQuery({
     queryKey: ["admin-properties"],
     queryFn: () => list(),
+    enabled: isAdmin,
+  });
+
+  const { data: draftRows = [] } = useQuery({
+    queryKey: ["admin-property-drafts"],
+    queryFn: () => listDrafts(),
     enabled: isAdmin,
   });
 
@@ -63,6 +69,10 @@ function AdminProperties() {
   useEffect(() => {
     if (!loading && !isAdmin) navigate({ to: "/adminlogin" });
   }, [loading, isAdmin, navigate]);
+
+  useEffect(() => {
+    if (!editId) setEditDraftId(null);
+  }, [editId]);
 
   const del = useMutation({
     mutationFn: (id: string) => remove({ data: { id } }),
@@ -95,9 +105,13 @@ function AdminProperties() {
 
   async function handleSave(values: PropertyFormValues) {
     await save({ data: values });
+    if (editDraftId) {
+      await removeDraft({ data: { id: editDraftId } });
+      qc.invalidateQueries({ queryKey: ["admin-property-drafts"] });
+    }
     qc.invalidateQueries({ queryKey: ["admin-properties"] });
-    setCreateOpen(false);
     setEditId(null);
+    setEditDraftId(null);
     if (values.is_published) {
       toast.success("Property saved and published — visible on the public site");
     } else {
@@ -114,23 +128,41 @@ function AdminProperties() {
         title="Properties"
         description="Upload images, set map location, and publish listings to the public site."
         actions={
-          <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-            <DialogTrigger asChild>
+          <div className="flex flex-wrap gap-2">
+            <Link to="/admin/drafts">
+              <Button variant="outline" className="gap-2 rounded-full">
+                <FileText className="h-4 w-4" />
+                Drafts{draftRows.length > 0 ? ` (${draftRows.length})` : ""}
+              </Button>
+            </Link>
+            <Link to="/admin/drafts/new">
               <Button className="gap-2 bg-blue-600 hover:bg-blue-700">
                 <Plus className="h-4 w-4" /> Add property
               </Button>
-            </DialogTrigger>
-            <DialogContent className="scrollbar-offshore max-h-[min(92dvh,92vh)] max-w-3xl overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>New property</DialogTitle>
-              </DialogHeader>
-              <PropertyForm onSubmit={handleSave} onCancel={() => setCreateOpen(false)} />
-            </DialogContent>
-          </Dialog>
+            </Link>
+          </div>
         }
       />
 
-      <Dialog open={!!editId} onOpenChange={(o) => !o && setEditId(null)}>
+      {draftRows.length > 0 && (
+        <div className="mb-5 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-950">
+          You have {draftRows.length} autosaved draft{draftRows.length === 1 ? "" : "s"} —{" "}
+          <Link to="/admin/drafts" className="font-semibold underline underline-offset-2">
+            continue where you left off
+          </Link>
+          , even on another device.
+        </div>
+      )}
+
+      <Dialog
+        open={!!editId}
+        onOpenChange={(o) => {
+          if (!o) {
+            setEditId(null);
+            setEditDraftId(null);
+          }
+        }}
+      >
         <DialogContent className="scrollbar-offshore max-h-[min(92dvh,92vh)] max-w-3xl overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit property</DialogTitle>
@@ -143,8 +175,14 @@ function AdminProperties() {
                 features: editing.features ?? [],
                 listing_badges: editing.listing_badges ?? [],
               }}
+              draftId={editDraftId}
+              onDraftIdChange={setEditDraftId}
+              autosaveEnabled
               onSubmit={handleSave}
-              onCancel={() => setEditId(null)}
+              onCancel={() => {
+                setEditId(null);
+                setEditDraftId(null);
+              }}
             />
           )}
         </DialogContent>
@@ -152,112 +190,135 @@ function AdminProperties() {
 
       <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
         <div className="scrollbar-offshore overflow-x-auto">
-        <table className="w-full min-w-[720px] text-left text-sm">
-          <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wider text-slate-500">
-            <tr>
-              <th className="px-4 py-3">Title</th>
-              <th className="px-4 py-3">Type</th>
-              <th className="px-4 py-3">Price</th>
-              <th className="px-4 py-3">Map</th>
-              <th className="px-4 py-3">Badges</th>
-              <th className="px-4 py-3">Status</th>
-              <th className="px-4 py-3 text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {isLoading && (
-              <tr><td colSpan={7} className="px-4 py-8 text-center text-slate-500">Loading…</td></tr>
-            )}
-            {!isLoading && rows.length === 0 && (
-              <tr><td colSpan={7} className="px-4 py-8 text-center text-slate-500">No properties yet — add your first listing.</td></tr>
-            )}
-            {rows.map((p) => (
-              <tr key={p.id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50/80">
-                <td className="px-4 py-3">
-                  <div className="font-medium text-slate-900">{p.title}</div>
-                  <div className="text-xs text-slate-500">{p.city ?? "—"} · {p.view_count} views</div>
-                </td>
-                <td className="px-4 py-3">{propertyTypeLabel(p.property_type)}</td>
-                <td className="px-4 py-3">{formatPrice(Number(p.price), p.currency, p.listing_type)}</td>
-                <td className="px-4 py-3">
-                  <Badge variant={p.latitude != null ? "default" : "secondary"} className="text-xs">
-                    {p.latitude != null ? "On map" : "No coords"}
-                  </Badge>
-                </td>
-                <td className="px-4 py-3">
-                  <div className="flex max-w-[220px] flex-col items-start gap-1.5">
-                    <ListingBadgesDisplay
-                      badges={p.listing_badges}
-                      isFeatured={p.is_featured}
-                      limit={3}
-                      size="sm"
-                    />
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="h-7 rounded-full text-xs"
-                      disabled={featureMut.isPending}
-                      onClick={() => featureMut.mutate({ id: p.id, is_featured: !p.is_featured })}
-                    >
-                      {p.is_featured ? "Unfeature" : "Feature"}
-                    </Button>
-                  </div>
-                </td>
-                <td className="px-4 py-3">
-                  <div className="flex flex-col items-start gap-1.5">
-                    <Badge variant={p.is_published ? "default" : "secondary"}>
-                      {p.is_published ? "Live" : "Draft"}
+          <table className="w-full min-w-[720px] text-left text-sm">
+            <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wider text-slate-500">
+              <tr>
+                <th className="px-4 py-3">Title</th>
+                <th className="px-4 py-3">Type</th>
+                <th className="px-4 py-3">Price</th>
+                <th className="px-4 py-3">Map</th>
+                <th className="px-4 py-3">Badges</th>
+                <th className="px-4 py-3">Status</th>
+                <th className="px-4 py-3 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {isLoading && (
+                <tr>
+                  <td colSpan={7} className="px-4 py-8 text-center text-slate-500">
+                    Loading…
+                  </td>
+                </tr>
+              )}
+              {!isLoading && rows.length === 0 && (
+                <tr>
+                  <td colSpan={7} className="px-4 py-8 text-center text-slate-500">
+                    No properties yet —{" "}
+                    <Link to="/admin/drafts/new" className="font-medium text-blue-600 underline">
+                      start a draft
+                    </Link>
+                    .
+                  </td>
+                </tr>
+              )}
+              {rows.map((p) => (
+                <tr key={p.id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50/80">
+                  <td className="px-4 py-3">
+                    <div className="font-medium text-slate-900">{p.title}</div>
+                    <div className="text-xs text-slate-500">
+                      {p.city ?? "—"} · {p.view_count} views
+                    </div>
+                  </td>
+                  <td className="px-4 py-3">{propertyTypeLabel(p.property_type)}</td>
+                  <td className="px-4 py-3">
+                    {formatPrice(Number(p.price), p.currency, p.listing_type)}
+                  </td>
+                  <td className="px-4 py-3">
+                    <Badge variant={p.latitude != null ? "default" : "secondary"} className="text-xs">
+                      {p.latitude != null ? "On map" : "No coords"}
                     </Badge>
-                    {!p.is_published && (
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex max-w-[220px] flex-col items-start gap-1.5">
+                      <ListingBadgesDisplay
+                        badges={p.listing_badges}
+                        isFeatured={p.is_featured}
+                        limit={3}
+                        size="sm"
+                      />
                       <Button
                         size="sm"
                         variant="outline"
                         className="h-7 rounded-full text-xs"
-                        disabled={publishMut.isPending}
-                        onClick={() => publishMut.mutate({ id: p.id, is_published: true })}
+                        disabled={featureMut.isPending}
+                        onClick={() => featureMut.mutate({ id: p.id, is_featured: !p.is_featured })}
                       >
-                        Publish
+                        {p.is_featured ? "Unfeature" : "Feature"}
                       </Button>
-                    )}
-                    {p.is_published && (
+                    </div>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex flex-col items-start gap-1.5">
+                      <Badge variant={p.is_published ? "default" : "secondary"}>
+                        {p.is_published ? "Live" : "Draft"}
+                      </Badge>
+                      {!p.is_published && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-7 rounded-full text-xs"
+                          disabled={publishMut.isPending}
+                          onClick={() => publishMut.mutate({ id: p.id, is_published: true })}
+                        >
+                          Publish
+                        </Button>
+                      )}
+                      {p.is_published && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 rounded-full text-xs text-muted-foreground"
+                          disabled={publishMut.isPending}
+                          onClick={() => publishMut.mutate({ id: p.id, is_published: false })}
+                        >
+                          Unpublish
+                        </Button>
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex justify-end gap-1">
+                      {p.is_published && p.slug && (
+                        <Link to="/properties/$slug" params={{ slug: p.slug }} target="_blank">
+                          <Button size="icon" variant="ghost" aria-label="View">
+                            <ExternalLink className="h-4 w-4" />
+                          </Button>
+                        </Link>
+                      )}
                       <Button
-                        size="sm"
+                        size="icon"
                         variant="ghost"
-                        className="h-7 rounded-full text-xs text-muted-foreground"
-                        disabled={publishMut.isPending}
-                        onClick={() => publishMut.mutate({ id: p.id, is_published: false })}
+                        aria-label="Edit"
+                        onClick={() => setEditId(p.id)}
                       >
-                        Unpublish
+                        <Pencil className="h-4 w-4" />
                       </Button>
-                    )}
-                  </div>
-                </td>
-                <td className="px-4 py-3">
-                  <div className="flex justify-end gap-1">
-                    {p.is_published && p.slug && (
-                      <Link to="/properties/$slug" params={{ slug: p.slug }} target="_blank">
-                        <Button size="icon" variant="ghost" aria-label="View"><ExternalLink className="h-4 w-4" /></Button>
-                      </Link>
-                    )}
-                    <Button size="icon" variant="ghost" aria-label="Edit" onClick={() => setEditId(p.id)}>
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      aria-label="Delete"
-                      onClick={() => {
-                        if (confirm("Delete this property?")) del.mutate(p.id);
-                      }}
-                    >
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        aria-label="Delete"
+                        onClick={() => {
+                          if (confirm("Delete this property?")) del.mutate(p.id);
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>

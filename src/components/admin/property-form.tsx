@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { uploadPropertyImage } from "@/lib/storage.functions";
@@ -34,10 +34,12 @@ import {
   PROPERTY_MEDIA_ACCEPT,
   resolvePropertyUploadMime,
 } from "@/lib/media";
-import { Loader2, MapPin, Upload, X, GripVertical, Link2, Video, Mic } from "lucide-react";
+import { Loader2, MapPin, Upload, X, GripVertical, Link2, Video, Mic, Cloud, CloudOff } from "lucide-react";
 import { toast } from "sonner";
 import { userFacingError } from "@/lib/user-facing-error";
 import { cn } from "@/lib/utils";
+import { usePropertyDraftAutosave } from "@/hooks/use-property-draft-autosave";
+import type { PropertyFormDraftSnapshot } from "@/lib/property-draft";
 
 const UPLOAD_CONCURRENCY = 2;
 
@@ -74,7 +76,15 @@ export type PropertyFormValues = {
   available_from: string | null;
 };
 
-type Initial = Partial<PropertyFormValues> & { id?: string };
+type Initial = Partial<PropertyFormValues> & {
+  id?: string;
+  areaSqm?: string;
+  plotSizeSqm?: string;
+  lat?: string;
+  lng?: string;
+  furnishing?: string;
+  mapsLink?: string;
+};
 
 const FURNISHING_OPTIONS = [
   { value: "", label: "Not specified" },
@@ -87,10 +97,16 @@ export function PropertyForm({
   initial,
   onSubmit,
   onCancel,
+  draftId = null,
+  onDraftIdChange,
+  autosaveEnabled = false,
 }: {
   initial?: Initial;
   onSubmit: (values: PropertyFormValues) => Promise<void>;
   onCancel?: () => void;
+  draftId?: string | null;
+  onDraftIdChange?: (id: string) => void;
+  autosaveEnabled?: boolean;
 }) {
   const upload = useServerFn(uploadPropertyImage);
   const geocode = useServerFn(geocodeAddress);
@@ -121,24 +137,28 @@ export function PropertyForm({
   const sqmToAcres = (sqm: number) => sqm / 4046.86;
   const acresToSqm = (acres: number) => acres * 4046.86;
 
-  const initArea = initial?.area_sqm != null && initial.property_type === "land"
-    ? String(parseFloat(sqmToAcres(Number(initial.area_sqm)).toFixed(4)))
-    : String(initial?.area_sqm ?? "");
-  const initPlot = initial?.plot_size_sqm != null && initial.property_type === "land"
-    ? String(parseFloat(sqmToAcres(Number(initial.plot_size_sqm)).toFixed(4)))
-    : String(initial?.plot_size_sqm ?? "");
+  const initArea =
+    initial?.areaSqm ??
+    (initial?.area_sqm != null && initial.property_type === "land"
+      ? String(parseFloat(sqmToAcres(Number(initial.area_sqm)).toFixed(4)))
+      : String(initial?.area_sqm ?? ""));
+  const initPlot =
+    initial?.plotSizeSqm ??
+    (initial?.plot_size_sqm != null && initial.property_type === "land"
+      ? String(parseFloat(sqmToAcres(Number(initial.plot_size_sqm)).toFixed(4)))
+      : String(initial?.plot_size_sqm ?? ""));
 
   const [areaSqm, setAreaSqm] = useState(initArea);
   const [plotSizeSqm, setPlotSizeSqm] = useState(initPlot);
   const [yearBuilt, setYearBuilt] = useState(String(initial?.year_built ?? ""));
-  const [furnishing, setFurnishing] = useState(initial?.furnishing_status ?? "__none");
+  const [furnishing, setFurnishing] = useState(initial?.furnishing ?? initial?.furnishing_status ?? "__none");
   const [parkingSpaces, setParkingSpaces] = useState(String(initial?.parking_spaces ?? ""));
   const [shortLetMinNights, setShortLetMinNights] = useState(String(initial?.short_let_min_nights ?? ""));
   const [address, setAddress] = useState(initial?.address ?? "");
   const [city, setCity] = useState(initial?.city ?? "");
   const [country, setCountry] = useState(initial?.country ?? "");
-  const [lat, setLat] = useState(String(initial?.latitude ?? ""));
-  const [lng, setLng] = useState(String(initial?.longitude ?? ""));
+  const [lat, setLat] = useState(initial?.lat ?? String(initial?.latitude ?? ""));
+  const [lng, setLng] = useState(initial?.lng ?? String(initial?.longitude ?? ""));
   const [description, setDescription] = useState(initial?.description ?? "");
   const [features, setFeatures] = useState<string[]>(initial?.features ?? []);
   const [images, setImages] = useState<string[]>(initial?.images?.length ? initial.images : initial?.hero_image ? [initial.hero_image] : []);
@@ -157,8 +177,88 @@ export function PropertyForm({
   const recordVideoInputRef = useRef<HTMLInputElement>(null);
   const recordAudioInputRef = useRef<HTMLInputElement>(null);
   const [geocoding, setGeocoding] = useState(false);
-  const [mapsLink, setMapsLink] = useState("");
+  const [mapsLink, setMapsLink] = useState(initial?.mapsLink ?? "");
   const [saving, setSaving] = useState(false);
+
+  const getSnapshot = useCallback(
+    (): PropertyFormDraftSnapshot => ({
+      propertyId: initial?.id,
+      title,
+      slug,
+      property_type: propertyType,
+      listing_type: listingType,
+      status,
+      price,
+      currency,
+      bedrooms,
+      bathrooms,
+      areaSqm,
+      plotSizeSqm,
+      yearBuilt,
+      furnishing,
+      parkingSpaces,
+      shortLetMinNights,
+      address,
+      city,
+      country,
+      lat,
+      lng,
+      description,
+      features,
+      images,
+      heroImage,
+      isPublished,
+      isFeatured,
+      listingBadges,
+      agentId,
+      availableFrom,
+      mapsLink,
+    }),
+    [
+      initial?.id,
+      title,
+      slug,
+      propertyType,
+      listingType,
+      status,
+      price,
+      currency,
+      bedrooms,
+      bathrooms,
+      areaSqm,
+      plotSizeSqm,
+      yearBuilt,
+      furnishing,
+      parkingSpaces,
+      shortLetMinNights,
+      address,
+      city,
+      country,
+      lat,
+      lng,
+      description,
+      features,
+      images,
+      heroImage,
+      isPublished,
+      isFeatured,
+      listingBadges,
+      agentId,
+      availableFrom,
+      mapsLink,
+    ],
+  );
+
+  const { saveState, lastSavedAt, scheduleSave, flushSave } = usePropertyDraftAutosave({
+    draftId,
+    onDraftIdChange: onDraftIdChange ?? (() => {}),
+    getSnapshot,
+    enabled: autosaveEnabled && !!onDraftIdChange,
+  });
+
+  useEffect(() => {
+    if (autosaveEnabled) scheduleSave();
+  }, [autosaveEnabled, getSnapshot, scheduleSave]);
 
   const showShortLet = listingType === "short_let";
 
@@ -237,6 +337,7 @@ export function PropertyForm({
       if (completed > 0) {
         setHeroImage((current) => current || firstUrl || "");
         toast.success(`Uploaded ${completed} file${completed === 1 ? "" : "s"}`);
+        if (autosaveEnabled) void flushSave();
       }
       if (failed > 0 && completed === 0) {
         toast.error("No files uploaded — check sizes and try again.");
@@ -353,6 +454,34 @@ export function PropertyForm({
 
   return (
     <form onSubmit={handleSave} className="space-y-6">
+      {autosaveEnabled && (
+        <div
+          className={cn(
+            "flex items-center gap-2 rounded-lg border px-3 py-2 text-xs",
+            saveState === "error"
+              ? "border-amber-300 bg-amber-50 text-amber-900"
+              : "border-emerald-200 bg-emerald-50 text-emerald-900",
+          )}
+        >
+          {saveState === "saving" ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : saveState === "error" ? (
+            <CloudOff className="h-3.5 w-3.5" />
+          ) : (
+            <Cloud className="h-3.5 w-3.5" />
+          )}
+          <span>
+            {saveState === "saving" && "Saving draft…"}
+            {saveState === "saved" &&
+              (lastSavedAt
+                ? `Draft saved ${lastSavedAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} — safe to refresh`
+                : "Draft autosave on")}
+            {saveState === "idle" && "Draft autosave on — your work syncs to the server"}
+            {saveState === "error" && "Draft save failed — check connection and keep this tab open"}
+          </span>
+        </div>
+      )}
+
       <div className="grid gap-3 sm:grid-cols-2">
         <div
           className={`rounded-xl border p-4 ${
