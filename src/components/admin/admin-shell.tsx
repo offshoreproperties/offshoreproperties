@@ -39,7 +39,9 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 
   const NavLinks = ({ onNavigate }: { onNavigate?: () => void }) => (
     <nav className="flex flex-col gap-1 p-3">
-      {links.map(({ to, label, icon: Icon, exact }) => {
+      {links.map((link) => {
+        const { to, label, icon: Icon } = link;
+        const exact = "exact" in link && link.exact;
         const active = exact ? pathname === to : pathname.startsWith(to);
         return (
           <Link
@@ -64,11 +66,11 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex h-dvh overflow-hidden bg-slate-100">
       <aside className="hidden h-full w-[260px] shrink-0 flex-col bg-slate-950 text-white lg:flex">
-        <div className="shrink-0 border-b border-slate-800 px-5 py-6">
-          <Link to="/">
-            <BrandLogo imgClassName="h-10" />
+        <div className="shrink-0 border-b border-slate-800 py-5 pl-2 pr-4">
+          <Link to="/" className="-ml-0.5 inline-flex">
+            <BrandLogo size="sidebar" />
           </Link>
-          <p className="mt-1 text-xs font-medium uppercase tracking-wider text-slate-500">Administration</p>
+          <p className="mt-2 pl-0.5 text-xs font-medium uppercase tracking-wider text-slate-500">Administration</p>
         </div>
         <div className="min-h-0 flex-1">
           <NavLinks />
@@ -97,8 +99,8 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                 </Button>
               </SheetTrigger>
               <SheetContent side="left" className="scrollbar-dark w-[260px] overflow-y-auto border-slate-800 bg-slate-950 p-0 text-white">
-                <div className="border-b border-slate-800 px-5 py-5">
-                  <BrandLogo imgClassName="h-10" />
+                <div className="border-b border-slate-800 py-5 pl-2 pr-4">
+                  <BrandLogo size="sidebar" />
                 </div>
                 <NavLinks onNavigate={() => {}} />
               </SheetContent>

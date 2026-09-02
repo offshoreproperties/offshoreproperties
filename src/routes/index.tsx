@@ -6,10 +6,10 @@ import { useEffect, useMemo, useState } from "react";
 import { HavenlyHero } from "@/components/home/havenly-hero";
 import { HomeTabStrip } from "@/components/home/home-tab-strip";
 import { HomeListingsMap } from "@/components/home/home-listings-map";
+import type { HomeTab } from "@/components/public-header";
 import { PropertyCard } from "@/components/property-card";
 import { listProperties } from "@/lib/properties.functions";
 import { BRAND } from "@/lib/constants";
-import { PublicHeader, type HomeTab } from "@/components/public-header";
 import { z } from "zod";
 
 const homeSearchSchema = z.object({
@@ -81,11 +81,7 @@ function Index() {
 
   return (
     <div className="min-h-dvh-screen bg-[#f8fafc]">
-      <PublicHeader variant="bar" homeTab={homeTab} onHomeTabChange={setTab} />
-
-      <div className="px-3 pt-1 sm:px-4 lg:px-6">
-        <HavenlyHero homeTab={homeTab} />
-      </div>
+      <HavenlyHero homeTab={homeTab} onHomeTabChange={setTab} />
 
       <HomeTabStrip active={homeTab} onChange={setTab} />
 

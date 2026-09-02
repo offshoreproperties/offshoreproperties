@@ -8,7 +8,12 @@ const LOGO_SIZES = {
   default:
     "h-14 w-auto max-w-[min(280px,58vw)] object-contain sm:h-16 md:h-[4.25rem] lg:h-[4.75rem] lg:max-w-[320px]",
   hero: "h-24 w-auto max-w-[min(480px,88vw)] object-contain sm:h-28 md:h-32 lg:h-36 xl:h-[10rem]",
-  compact: "h-10 w-auto max-w-[min(200px,44vw)] object-contain sm:h-11",
+  /** Hero overlay header — sits on photo background */
+  overlay:
+    "h-16 w-auto max-w-[min(340px,68vw)] object-contain sm:h-20 md:h-24 lg:h-28 xl:h-32",
+  compact: "h-8 w-auto max-w-[min(180px,40vw)] object-contain sm:h-9",
+  /** Admin sidebar — dark panel */
+  sidebar: "h-14 w-auto max-w-[min(260px,100%)] object-contain lg:h-16",
 } as const;
 
 export function BrandLogo({

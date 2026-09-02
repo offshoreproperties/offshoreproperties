@@ -30,7 +30,7 @@ export function HavenlySearch({ listingType }: { listingType?: "sale" | "rent" }
       className="flex w-full flex-col gap-0 overflow-hidden rounded-2xl bg-white/95 shadow-lg ring-1 ring-black/5 backdrop-blur-md sm:flex-row sm:items-stretch sm:rounded-full sm:pr-2"
     >
       <div className="flex flex-1 flex-col divide-y divide-neutral-200 sm:flex-row sm:divide-x sm:divide-y-0">
-        <label className="group flex flex-1 cursor-text flex-col px-4 py-3 sm:px-6 sm:py-3">
+        <label className="group flex flex-1 cursor-text flex-col px-4 py-2.5 sm:px-5 sm:py-2.5">
           <span className="text-[11px] font-medium text-neutral-500 sm:text-xs">Location</span>
           <div className="mt-0.5 flex items-center justify-between gap-2">
             <input
@@ -50,7 +50,7 @@ export function HavenlySearch({ listingType }: { listingType?: "sale" | "rent" }
           </div>
         </label>
 
-        <label className="relative flex flex-1 flex-col px-4 py-3 sm:px-6 sm:py-3">
+        <label className="relative flex flex-1 flex-col px-4 py-2.5 sm:px-5 sm:py-2.5">
           <span className="text-[11px] font-medium text-neutral-500 sm:text-xs">Property type</span>
           <div className="mt-0.5 flex items-center justify-between gap-2">
             <select
@@ -69,7 +69,7 @@ export function HavenlySearch({ listingType }: { listingType?: "sale" | "rent" }
           </div>
         </label>
 
-        <label className="relative flex flex-1 flex-col px-4 py-3 sm:px-6 sm:py-3">
+        <label className="relative flex flex-1 flex-col px-4 py-2.5 sm:px-5 sm:py-2.5">
           <span className="text-[11px] font-medium text-neutral-500 sm:text-xs">Max price</span>
           <div className="mt-0.5 flex items-center justify-between gap-2">
             <select

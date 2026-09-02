@@ -5,7 +5,7 @@ import { FadePhrases } from "@/components/fade-phrases";
 import { Map } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { HeroKenyaGallery } from "@/components/kenya-gallery-provider";
-import type { HomeTab } from "@/components/public-header";
+import { PublicHeader, type HomeTab } from "@/components/public-header";
 
 const HERO_PHRASES = [
   "Let's find you the right home",
@@ -30,9 +30,10 @@ const BUY_PHRASES = [
 
 type HavenlyHeroProps = {
   homeTab: HomeTab;
+  onHomeTabChange: (tab: HomeTab) => void;
 };
 
-export function HavenlyHero({ homeTab }: HavenlyHeroProps) {
+export function HavenlyHero({ homeTab, onHomeTabChange }: HavenlyHeroProps) {
   const phrases =
     homeTab === "rent" ? RENT_PHRASES : homeTab === "buy" ? BUY_PHRASES : HERO_PHRASES;
 
@@ -44,12 +45,18 @@ export function HavenlyHero({ homeTab }: HavenlyHeroProps) {
         : "Same team behind every listing — search by area and budget, or just tell us what you're after.";
 
   return (
-    <section className="relative mb-0 w-full overflow-hidden rounded-b-2xl shadow-lg shadow-slate-900/15 sm:rounded-b-3xl">
-      <div className="relative flex min-h-[min(58vh,520px)] min-h-[min(58dvh,520px)] w-full flex-col sm:min-h-[min(64vh,580px)] sm:min-h-[min(64dvh,580px)] lg:min-h-[min(68vh,640px)]">
+    <section className="relative w-full overflow-hidden">
+      <div className="relative flex min-h-[min(70vh,640px)] min-h-[min(70dvh,640px)] w-full flex-col sm:min-h-[min(76vh,700px)] sm:min-h-[min(76dvh,700px)] lg:min-h-[min(80vh,760px)]">
         <HeroKenyaGallery />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-black/5" />
 
-        <div className="relative z-10 mt-auto px-4 pb-4 sm:px-8 sm:pb-5 lg:px-10 lg:pb-6">
+        <PublicHeader
+          variant="overlay"
+          homeTab={homeTab}
+          onHomeTabChange={onHomeTabChange}
+          className="absolute inset-x-0 top-0"
+        />
+
+        <div className="relative z-10 mt-auto w-full px-4 pb-3 pt-28 sm:px-8 sm:pb-4 sm:pt-32 lg:px-10 lg:pb-5 lg:pt-36">
         <div className="max-w-2xl">
           <h1 className="min-h-[2.4em] text-[clamp(1.5rem,5vw,3.5rem)] font-bold leading-[1.1] tracking-tight text-white drop-shadow-md sm:min-h-[1.3em]">
             <FadePhrases key={homeTab} phrases={phrases} />
@@ -59,7 +66,7 @@ export function HavenlyHero({ homeTab }: HavenlyHeroProps) {
           </p>
         </div>
 
-        <div className="mt-4 space-y-2 sm:mt-6 sm:ml-auto sm:max-w-[720px] sm:space-y-3">
+        <div className="mt-3 space-y-1.5 sm:mt-4 sm:ml-auto sm:max-w-[720px]">
           <AiSearchField variant="hero" />
           <div className="flex items-center justify-end gap-2">
             <Link to="/map">

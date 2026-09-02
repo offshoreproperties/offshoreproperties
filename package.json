@@ -22,7 +22,9 @@
     "db:migrate": "node scripts/migrate-supabase.mjs",
     "db:migrate:all": "node scripts/migrate-all.mjs",
     "watermark:existing": "node scripts/watermark-existing.mjs",
-    "watermark:existing:dry": "node scripts/watermark-existing.mjs --dry-run"
+    "watermark:existing:dry": "node scripts/watermark-existing.mjs --dry-run",
+    "sync:gallery": "node scripts/sync-kenya-gallery.mjs",
+    "prebuild": "node scripts/sync-kenya-gallery.mjs"
   },
   "dependencies": {
     "@cloudflare/vite-plugin": "^1.25.5",

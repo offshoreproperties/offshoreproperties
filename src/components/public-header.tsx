@@ -132,38 +132,30 @@ export function PublicHeader({
         className,
       )}
     >
-      {overlay ? (
-        <Link
-          to="/"
-          className="absolute left-3 z-30 pl-[max(2px,env(safe-area-inset-left))] drop-shadow-lg brightness-110 contrast-105 top-[calc(50%+2rem)] -translate-y-1/2 sm:left-4 sm:top-[calc(50%+2.375rem)] md:left-5 md:top-[calc(50%+2.75rem)] lg:left-6 lg:top-[calc(50%+3.125rem)]"
-        >
-          <BrandLogo size="hero" />
-        </Link>
-      ) : null}
-
       <div
         className={cn(
           "mx-auto w-full",
           overlay
-            ? "flex max-w-none items-center justify-end gap-3 py-3 pr-3 sm:gap-4 sm:py-4 sm:pr-5 lg:pr-6"
+            ? "grid h-[5rem] max-w-[1440px] grid-cols-[1fr_auto] items-center gap-3 px-4 sm:h-[5.75rem] sm:px-6 lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] lg:h-[6.5rem] lg:px-8"
             : compact
               ? "grid h-[4.5rem] max-w-7xl grid-cols-[1fr_auto] items-center gap-3 px-4 sm:h-20 sm:px-6"
               : "grid h-[4.75rem] max-w-7xl grid-cols-[1fr_auto] items-center gap-4 px-4 sm:h-20 sm:px-6 lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] lg:h-[5.25rem] lg:px-8",
         )}
       >
-      {!overlay ? (
-        <Link
-          to="/"
-          className="flex items-center justify-self-start lg:col-start-1"
-        >
-          <BrandLogo size="header" />
-        </Link>
-      ) : null}
+      <Link
+        to="/"
+        className={cn(
+          "flex items-center justify-self-start lg:col-start-1",
+          overlay && "drop-shadow-[0_2px_12px_rgba(0,0,0,0.65)]",
+        )}
+      >
+        <BrandLogo size={overlay ? "overlay" : "header"} />
+      </Link>
 
       <nav
         className={cn(
           overlay
-            ? "absolute left-1/2 top-1/2 hidden -translate-x-1/2 -translate-y-1/2 lg:block"
+            ? "hidden justify-self-center md:flex lg:col-start-2"
             : "hidden justify-self-center lg:col-start-2 lg:flex",
         )}
       >
@@ -171,7 +163,7 @@ export function PublicHeader({
           className={cn(
             "flex max-w-[min(100vw-12rem,42rem)] items-center gap-1 overflow-x-auto rounded-full p-1.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
             overlay
-              ? "bg-white/10 ring-1 ring-white/15 backdrop-blur-md"
+              ? "bg-black/35 ring-1 ring-white/20 backdrop-blur-md"
               : "bg-white/10 ring-1 ring-white/15 backdrop-blur-sm",
           )}
         >

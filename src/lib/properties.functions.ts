@@ -210,16 +210,7 @@ const PropertyInputSchema = z.object({
   available_from: z.string().max(20).nullable().optional(),
 });
 
-export const adminListAgents = createServerFn({ method: "GET" })
-  .middleware([requireAdminAuth])
-  .handler(async () => {
-    const { data, error } = await supabaseAdmin
-      .from("agents")
-      .select("id, name, agency")
-      .order("name");
-    if (error) throw error;
-    return data ?? [];
-  });
+export { adminListAgents } from "@/lib/admin-agents.functions";
 
 export const upsertProperty = createServerFn({ method: "POST" })
   .middleware([requireAdminAuth])

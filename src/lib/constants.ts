@@ -36,21 +36,11 @@ export const KES_PRICE_OPTIONS = [
 ] as const;
 
 /**
- * Homepage hero slideshow — controlled by THIS list, not the folder alone.
- * Deleting files from public/kenya does not remove them until you update this array.
+ * Homepage hero slideshow — ONLY files listed in kenya-gallery.allowlist.json appear.
+ * To remove an image: delete its line from that file, then run npm run sync:gallery
  * Property listing photos live in Supabase (admin uploads), not here.
  */
-export const KENYA_GALLERY_IMAGES = [
-  "/kenya/gtc-tower.jpg",
-  "/kenya/nairobi-expressway.png",
-  "/kenya/mt-longonot.jpg",
-  "/kenya/mt-longonot-crater.jpg",
-  "/kenya/golf-course-nairobi.jpg",
-  "/kenya/tea-farm-kenya.jpg",
-  "/kenya/flower-farm-roses.jpg",
-  "/kenya/Lake-Victoria-Dhow.jpg",
-  "/kenya/nairobi-city-county-kenyas-capital-cityscapes-skyline-skyscrapers-highrise-buildings-architecture_257688-271.avif",
-] as const;
+export { KENYA_GALLERY_IMAGES } from "@/lib/kenya-gallery.generated";
 
 export const HERO_IMAGE =
   "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=1920&q=85";
