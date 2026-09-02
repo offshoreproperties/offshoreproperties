@@ -111,7 +111,11 @@ export function AiSearchField({
     scrollToBottom();
 
     try {
-      const result = await runAi({ data: { query: trimmed } });
+      const priorHistory = turns.map((t) => ({
+        role: t.role as "user" | "assistant",
+        content: t.text.slice(0, 3000),
+      }));
+      const result = await runAi({ data: { query: trimmed, history: priorHistory } });
       const assistantTurn: ChatTurn = {
         id: newId(),
         role: "assistant",
@@ -239,20 +243,20 @@ export function AiSearchField({
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetContent
           side="right"
-          className="maasai-panel-bg flex h-dvh max-h-dvh w-full max-w-full flex-col gap-0 overflow-hidden border-l border-red-950/60 p-0 text-amber-50 sm:max-w-md [&>button]:text-amber-50 [&>button]:hover:bg-red-950/60 [&>button]:hover:opacity-100"
+          className="africa-panel-bg flex h-dvh max-h-dvh w-full max-w-full flex-col gap-0 overflow-hidden border-l border-[#1b6b3a]/40 p-0 text-[#F5E6D3] sm:max-w-md [&>button]:text-[#F5E6D3] [&>button]:hover:bg-[#1b6b3a]/40 [&>button]:hover:opacity-100"
         >
-          <div className="maasai-shuka-bar shrink-0" aria-hidden />
+          <div className="africa-kente-bar shrink-0" aria-hidden />
 
           {/* Header — fixed */}
-          <SheetHeader className="shrink-0 space-y-1 border-b border-red-900/40 bg-black/25 px-4 pb-4 pt-4 pr-14 text-left backdrop-blur-sm">
-            <SheetTitle className="flex items-center gap-3 text-base font-bold text-amber-50 sm:text-lg">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#9b1b30] via-[#c1272d] to-[#7a1525] text-amber-50 shadow-lg shadow-red-950/50 ring-2 ring-[#d4a017]/40">
+          <SheetHeader className="shrink-0 space-y-1 border-b border-[#1b6b3a]/30 bg-black/20 px-4 pb-4 pt-4 pr-14 text-left backdrop-blur-sm">
+            <SheetTitle className="flex items-center gap-3 text-base font-bold text-[#F5E6D3] sm:text-lg">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#1b6b3a] via-[#2d5016] to-[#c45c26] text-[#F5E6D3] shadow-lg shadow-black/40 ring-2 ring-[#E8B923]/35">
                 <AiAssistantIcon className="h-5 w-5" />
               </span>
               Property assistant
             </SheetTitle>
-            <SheetDescription className="text-left text-sm leading-relaxed text-amber-100/65">
-              Ask about areas, budget, or lifestyle — I&apos;ll match listings and explain why they fit.
+            <SheetDescription className="text-left text-sm leading-relaxed text-[#F5E6D3]/65">
+              Tell me what you need — area, budget, beds — and I&apos;ll search our listings and share direct links.
             </SheetDescription>
           </SheetHeader>
 
@@ -263,16 +267,16 @@ export function AiSearchField({
           >
             {turns.length === 0 && !loading && (
               <div className="space-y-4">
-                <div className="rounded-2xl border border-dashed border-red-800/50 bg-black/30 px-4 py-5 text-center backdrop-blur-sm">
-                  <Sparkles className="mx-auto h-6 w-6 text-[#d4a017]" aria-hidden />
-                  <p className="mt-2 text-sm font-medium text-amber-50">Try asking something like</p>
+                <div className="rounded-2xl border border-dashed border-[#1b6b3a]/45 bg-black/25 px-4 py-5 text-center backdrop-blur-sm">
+                  <Sparkles className="mx-auto h-6 w-6 text-[#E8B923]" aria-hidden />
+                  <p className="mt-2 text-sm font-medium text-[#F5E6D3]">Try asking something like</p>
                   <div className="mt-3 flex flex-wrap justify-center gap-2">
                     {QUICK_PROMPTS.map((prompt) => (
                       <button
                         key={prompt}
                         type="button"
                         onClick={() => void runSearch(prompt, true)}
-                        className="rounded-full border border-red-800/60 bg-red-950/40 px-3 py-2 text-xs font-medium text-amber-100/90 transition hover:border-[#d4a017]/50 hover:bg-red-900/50 hover:text-amber-50"
+                        className="rounded-full border border-[#1b6b3a]/50 bg-[#1b6b3a]/20 px-3 py-2 text-xs font-medium text-[#F5E6D3]/90 transition hover:border-[#E8B923]/50 hover:bg-[#1b6b3a]/35"
                       >
                         {prompt}
                       </button>
@@ -287,20 +291,20 @@ export function AiSearchField({
               {turns.map((turn) =>
                 turn.role === "user" ? (
                   <div key={turn.id} className="flex justify-end">
-                    <div className="max-w-[85%] rounded-2xl rounded-tr-md bg-gradient-to-br from-[#9b1b30] to-[#7a1525] px-4 py-2.5 text-sm leading-relaxed text-amber-50 shadow-md shadow-black/30 ring-1 ring-red-400/20">
+                    <div className="max-w-[85%] rounded-2xl rounded-tr-md bg-gradient-to-br from-[#c45c26] to-[#8b4513] px-4 py-2.5 text-sm leading-relaxed text-[#F5E6D3] shadow-md shadow-black/30 ring-1 ring-[#E8B923]/20">
                       {turn.text}
                     </div>
                   </div>
                 ) : (
                   <div key={turn.id} className="flex justify-start">
                     <div className="max-w-[92%] space-y-3">
-                      <div className="rounded-2xl rounded-tl-md border border-red-900/40 bg-black/35 px-4 py-3 text-sm shadow-sm backdrop-blur-sm">
+                      <div className="rounded-2xl rounded-tl-md border border-[#1b6b3a]/35 bg-black/30 px-4 py-3 text-sm shadow-sm backdrop-blur-sm">
                         <AiReplyText text={turn.text} variant="dark" />
                       </div>
 
                       {turn.matches && turn.matches.length > 0 && (
                         <div className="space-y-2">
-                          <p className="px-1 text-[11px] font-semibold uppercase tracking-wider text-[#d4a017]">
+                          <p className="px-1 text-[11px] font-semibold uppercase tracking-wider text-[#E8B923]">
                             Matches ({turn.matches.length})
                           </p>
                           {turn.matches.map((m) => (
@@ -309,28 +313,28 @@ export function AiSearchField({
                               to="/properties/$slug"
                               params={{ slug: m.slug ?? m.id }}
                               onClick={() => setOpen(false)}
-                              className="flex gap-3 rounded-xl border border-red-900/40 bg-black/40 p-3 shadow-sm transition hover:border-[#d4a017]/40 hover:bg-black/55 active:scale-[0.99]"
+                              className="flex gap-3 rounded-xl border border-[#1b6b3a]/35 bg-black/35 p-3 shadow-sm transition hover:border-[#E8B923]/40 hover:bg-black/50 active:scale-[0.99]"
                             >
                               {m.hero_image ? (
                                 <img
                                   src={m.hero_image}
                                   alt=""
                                   loading="lazy"
-                                  className="h-16 w-16 shrink-0 rounded-lg object-cover ring-1 ring-red-900/30"
+                                  className="h-16 w-16 shrink-0 rounded-lg object-cover ring-1 ring-[#1b6b3a]/30"
                                 />
                               ) : (
-                                <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg bg-red-950/50 text-[10px] text-amber-100/50">
+                                <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg bg-[#1b6b3a]/25 text-[10px] text-[#F5E6D3]/50">
                                   No photo
                                 </div>
                               )}
                               <div className="min-w-0 flex-1">
-                                <p className="font-semibold leading-snug text-amber-50">{m.title}</p>
-                                <p className="mt-0.5 text-sm font-medium text-[#f0c674]">
+                                <p className="font-semibold leading-snug text-[#F5E6D3]">{m.title}</p>
+                                <p className="mt-0.5 text-sm font-medium text-[#E8B923]">
                                   {formatPrice(Number(m.price), m.currency, m.listing_type)}
                                 </p>
-                                {m.city && <p className="text-xs text-amber-100/55">{m.city}</p>}
+                                {m.city && <p className="text-xs text-[#F5E6D3]/55">{m.city}</p>}
                               </div>
-                              <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-red-800/80" aria-hidden />
+                              <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-[#1b6b3a]" aria-hidden />
                             </Link>
                           ))}
                           <Link
@@ -341,7 +345,7 @@ export function AiSearchField({
                               ...(turn.matchSlugs?.length ? { slugs: turn.matchSlugs.join(",") } : {}),
                             }}
                             onClick={() => setOpen(false)}
-                            className="flex min-h-11 items-center justify-center rounded-xl bg-gradient-to-r from-[#9b1b30] to-[#7a1525] px-4 text-sm font-semibold text-amber-50 shadow-md transition hover:from-[#b01f38] hover:to-[#8b1830]"
+                            className="flex min-h-11 items-center justify-center rounded-xl bg-gradient-to-r from-[#1b6b3a] to-[#2d5016] px-4 text-sm font-semibold text-[#F5E6D3] shadow-md transition hover:from-[#227a44] hover:to-[#3a6b22]"
                           >
                             View all matches
                           </Link>
@@ -353,7 +357,7 @@ export function AiSearchField({
                           to="/properties"
                           search={{ q: lastQuery }}
                           onClick={() => setOpen(false)}
-                          className="flex min-h-11 items-center justify-center rounded-xl border border-red-800/50 bg-black/30 px-4 text-sm font-medium text-amber-100 transition hover:border-[#d4a017]/40 hover:bg-black/45"
+                          className="flex min-h-11 items-center justify-center rounded-xl border border-[#1b6b3a]/45 bg-black/25 px-4 text-sm font-medium text-[#F5E6D3]/90 transition hover:border-[#E8B923]/40 hover:bg-black/40"
                         >
                           Browse all listings
                         </Link>
@@ -365,17 +369,17 @@ export function AiSearchField({
 
               {loading && (
                 <div className="flex justify-start">
-                  <div className="flex items-center gap-3 rounded-2xl rounded-tl-md border border-red-900/40 bg-black/35 px-4 py-3 shadow-sm backdrop-blur-sm">
-                    <Loader2 className="h-4 w-4 animate-spin text-[#d4a017]" />
-                    <span className="text-sm text-amber-100/75">Checking our listings…</span>
+                  <div className="flex items-center gap-3 rounded-2xl rounded-tl-md border border-[#1b6b3a]/35 bg-black/30 px-4 py-3 shadow-sm backdrop-blur-sm">
+                    <Loader2 className="h-4 w-4 animate-spin text-[#E8B923]" />
+                    <span className="text-sm text-[#F5E6D3]/75">Searching our listings…</span>
                   </div>
                 </div>
               )}
             </div>
 
             {turns.length > 0 && !loading && (
-              <div className="mt-6 border-t border-red-900/40 pt-5">
-                <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-amber-100/50">
+              <div className="mt-6 border-t border-[#1b6b3a]/30 pt-5">
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-[#F5E6D3]/50">
                   Explore by area
                 </p>
                 <LocationBrowse compact variant="dark" layout="wrap" onSelect={(loc) => void runSearch(`Show me properties in ${loc}`, true)} />
@@ -386,7 +390,7 @@ export function AiSearchField({
           </div>
 
           {/* Input — fixed footer */}
-          <div className="shrink-0 border-t border-red-900/40 bg-black/40 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-md">
+          <div className="shrink-0 border-t border-[#1b6b3a]/30 bg-black/30 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-md">
             <form onSubmit={handleChatSubmit} className="flex items-center gap-2">
               <input
                 ref={chatInputRef}
@@ -395,14 +399,14 @@ export function AiSearchField({
                 onChange={(e) => setChatInput(e.target.value)}
                 placeholder="Ask a follow-up…"
                 disabled={loading}
-                className="min-h-11 flex-1 rounded-full border border-red-900/50 bg-red-950/30 px-4 text-base text-amber-50 placeholder:text-amber-100/40 focus:border-[#d4a017]/60 focus:bg-red-950/50 focus:outline-none focus:ring-2 focus:ring-[#d4a017]/25 disabled:opacity-60 sm:text-sm"
+                className="min-h-11 flex-1 rounded-full border border-[#1b6b3a]/45 bg-[#1b6b3a]/15 px-4 text-base text-[#F5E6D3] placeholder:text-[#F5E6D3]/40 focus:border-[#E8B923]/55 focus:bg-[#1b6b3a]/25 focus:outline-none focus:ring-2 focus:ring-[#E8B923]/20 disabled:opacity-60 sm:text-sm"
                 aria-label="Message property assistant"
               />
               <Button
                 type="submit"
                 size="icon"
                 disabled={loading || !chatInput.trim()}
-                className="h-11 w-11 shrink-0 rounded-full bg-gradient-to-br from-[#9b1b30] to-[#7a1525] text-amber-50 shadow-md hover:from-[#b01f38] hover:to-[#8b1830] disabled:opacity-40"
+                className="h-11 w-11 shrink-0 rounded-full bg-gradient-to-br from-[#1b6b3a] to-[#2d5016] text-[#F5E6D3] shadow-md hover:from-[#227a44] hover:to-[#3a6b22] disabled:opacity-40"
                 aria-label="Send message"
               >
                 {loading ? (

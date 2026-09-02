@@ -324,32 +324,34 @@
     min-width: 2.75rem;
   }
 
-  /* Maasai shuka stripe — Property assistant panel accent */
-  .maasai-shuka-bar {
-    height: 4px;
+  /* African kente accent — Property assistant panel */
+  .africa-kente-bar {
+    height: 5px;
     background: repeating-linear-gradient(
       90deg,
-      #9b1b30 0px,
-      #9b1b30 12px,
-      #0a0a0a 12px,
-      #0a0a0a 24px,
-      #f5f0e6 24px,
-      #f5f0e6 28px,
-      #9b1b30 28px,
-      #9b1b30 40px
+      #1b6b3a 0px,
+      #1b6b3a 10px,
+      #e8b923 10px,
+      #e8b923 18px,
+      #c45c26 18px,
+      #c45c26 26px,
+      #2c3e75 26px,
+      #2c3e75 34px,
+      #f5e6d3 34px,
+      #f5e6d3 38px
     );
   }
 
-  .maasai-panel-bg {
+  .africa-panel-bg {
     background:
-      radial-gradient(ellipse 120% 80% at 100% 0%, rgba(155, 27, 48, 0.22), transparent 55%),
-      radial-gradient(ellipse 80% 60% at 0% 100%, rgba(196, 92, 38, 0.12), transparent 50%),
-      linear-gradient(180deg, #0c0a09 0%, #1a0f0f 45%, #0f0d0c 100%);
+      radial-gradient(ellipse 100% 70% at 90% 0%, rgba(27, 107, 58, 0.18), transparent 55%),
+      radial-gradient(ellipse 80% 50% at 10% 100%, rgba(196, 92, 38, 0.14), transparent 50%),
+      linear-gradient(180deg, #14100c 0%, #1a1510 40%, #12100e 100%);
   }
 
-  .maasai-bead-dot {
+  .africa-accent-dot {
     @apply h-1.5 w-1.5 shrink-0 rounded-full;
-    background: linear-gradient(135deg, #c1272d 0%, #d4a017 50%, #1e56a0 100%);
+    background: linear-gradient(135deg, #1b6b3a 0%, #e8b923 50%, #c45c26 100%);
   }
 
   /* Sticky bottom action bar — property detail, admin forms */

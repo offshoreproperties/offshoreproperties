@@ -2,13 +2,23 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabaseAnonServer } from "@/integrations/supabase/client.anon-server";
 import { rateLimit } from "@/lib/rate-limit";
-import { aiConfigError, runAiChat } from "@/lib/ai-client";
+import { runAiChat } from "@/lib/ai-client";
 import { normalizeAiReply } from "@/lib/ai-format";
 import { buildSearchAdvisorPrompt } from "@/lib/ai-prompts";
 import { areaContextForProperty, findKenyaArea } from "@/lib/kenya-locations";
+import { SITE_URL } from "@/lib/constants";
 
 const Schema = z.object({
   query: z.string().min(1).max(500),
+  history: z
+    .array(
+      z.object({
+        role: z.enum(["user", "assistant"]),
+        content: z.string().max(3000),
+      }),
+    )
+    .max(14)
+    .optional(),
 });
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -32,6 +42,29 @@ function stripMatchLine(content: string): string {
 function detectLocationHint(query: string): string | undefined {
   const area = findKenyaArea(query);
   return area?.label ?? area?.city;
+}
+
+function propertyPageUrl(slug: string | null, id: string): string {
+  const base = SITE_URL.replace(/\/$/, "");
+  return `${base}/properties/${encodeURIComponent(slug ?? id)}`;
+}
+
+/** Ensure matched listings appear as clickable links in the reply text. */
+function enrichReplyWithPropertyLinks(
+  reply: string,
+  matches: Array<{ title: string; slug: string | null; id: string }>,
+): string {
+  if (!matches.length) return reply;
+
+  const lines: string[] = [];
+  for (const m of matches) {
+    const url = propertyPageUrl(m.slug, m.id);
+    if (reply.includes(url)) continue;
+    lines.push(`• ${m.title} — ${url}`);
+  }
+
+  if (lines.length === 0) return reply;
+  return `${reply}\n\nListings to view:\n${lines.join("\n")}`;
 }
 
 /**
@@ -58,6 +91,7 @@ export const aiSearch = createServerFn({ method: "POST" })
         id: r.id,
         slug: r.slug,
         title: r.title,
+        url: propertyPageUrl(r.slug, r.id),
         type: r.property_type,
         listing: r.listing_type,
         price: `${r.price} ${r.currency}`,
@@ -94,12 +128,16 @@ export const aiSearch = createServerFn({ method: "POST" })
 
     const sys = buildSearchAdvisorPrompt(JSON.stringify(catalog));
 
+    const prior = (data.history ?? []).slice(-10);
+    const messages: Array<{ role: "system" | "user" | "assistant"; content: string }> = [
+      { role: "system", content: sys },
+      ...prior.map((m) => ({ role: m.role, content: m.content })),
+      { role: "user", content: data.query },
+    ];
+
     let content: string;
     try {
-      content = await runAiChat([
-        { role: "system", content: sys },
-        { role: "user", content: data.query },
-      ]);
+      content = await runAiChat(messages);
     } catch (err) {
       if (err instanceof Error && err.message.includes("not configured")) {
         throw new Error(
@@ -110,9 +148,9 @@ export const aiSearch = createServerFn({ method: "POST" })
     }
 
     const ids = parseMatchIds(content);
-    const reply =
+    let reply =
       normalizeAiReply(stripMatchLine(content)) ||
-      "Here are some properties from our collection that may suit what you are looking for.";
+      "Tell me the area, budget, and whether you are buying or renting — I will search our catalog for a genuine match.";
 
     const slugRefs = ids.filter((id) => !UUID_RE.test(id));
     const uuidRefs = ids.filter((id) => UUID_RE.test(id));
@@ -159,6 +197,8 @@ export const aiSearch = createServerFn({ method: "POST" })
 
     const matchSlugs = matches.map((m) => m.slug ?? m.id);
     const locationHint = detectLocationHint(data.query);
+
+    reply = enrichReplyWithPropertyLinks(reply, matches);
 
     return { reply, matches, matchSlugs, locationHint };
   });
