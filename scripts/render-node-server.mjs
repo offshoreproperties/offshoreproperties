@@ -157,6 +157,22 @@ const server = createServer(async (req, res) => {
       return;
     }
 
+    if (pathname === "/health/ready") {
+      const checks = {
+        supabaseUrl: Boolean(process.env.SUPABASE_URL),
+        supabaseAnon: Boolean(process.env.SUPABASE_PUBLISHABLE_KEY),
+        supabaseService: Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY),
+        watermarkLogo:
+          existsSync(path.join(publicRoot, "offshore-logo.png")) ||
+          existsSync(path.join(root, "src", "assets", "brand", "offshore-logo.png")),
+      };
+      const ok = checks.supabaseUrl && checks.supabaseAnon && checks.supabaseService;
+      res.statusCode = ok ? 200 : 503;
+      res.setHeader("content-type", "application/json; charset=utf-8");
+      res.end(JSON.stringify({ ok, checks }));
+      return;
+    }
+
     const staticResponse = await tryStatic(pathname);
     if (staticResponse) {
       await sendResponse(res, staticResponse);

@@ -36,6 +36,7 @@ import {
 } from "@/lib/media";
 import { Loader2, MapPin, Upload, X, GripVertical, Link2, Video, Mic } from "lucide-react";
 import { toast } from "sonner";
+import { userFacingError } from "@/lib/user-facing-error";
 import { cn } from "@/lib/utils";
 
 const UPLOAD_CONCURRENCY = 2;
@@ -222,7 +223,7 @@ export function PropertyForm({
           completed += 1;
         } catch (e) {
           failed += 1;
-          toast.error(uploadErrorMessage(e, file.name));
+          toast.error(`${file.name}: ${userFacingError(e, "upload failed")}`);
         } finally {
           setUploadProgress({ done: completed + failed, total: valid.length });
         }
@@ -794,19 +795,4 @@ function fileToBase64(file: File): Promise<string> {
     reader.onerror = reject;
     reader.readAsDataURL(file);
   });
-}
-
-function uploadErrorMessage(error: unknown, fileName: string): string {
-  const raw =
-    error instanceof Error ? error.message.trim() : typeof error === "string" ? error.trim() : "";
-  if (
-    raw.startsWith("<!doctype") ||
-    raw.startsWith("<!DOCTYPE") ||
-    raw.includes("<html") ||
-    raw.includes("This page didn't load")
-  ) {
-    return `${fileName}: server error while uploading — try one photo under 5MB, or refresh and try again.`;
-  }
-  if (raw) return `${fileName}: ${raw}`;
-  return `${fileName}: upload failed`;
 }

@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 type HomeListingsSectionProps = {
   listings: PropertyCardData[];
   isLoading: boolean;
+  loadFailed?: boolean;
   allCount: number;
   homeTab: "all" | "buy" | "rent";
   sectionTitle: string;
@@ -15,6 +16,7 @@ type HomeListingsSectionProps = {
 export function HomeListingsSection({
   listings,
   isLoading,
+  loadFailed = false,
   allCount,
   homeTab,
   sectionTitle,
@@ -45,6 +47,11 @@ export function HomeListingsSection({
             <div key={i} className="aspect-[4/5] animate-pulse rounded-xl bg-slate-100" />
           ))}
         </div>
+      ) : loadFailed ? (
+        <p className="rounded-xl border border-dashed border-amber-200 bg-amber-50 py-10 text-center text-sm text-amber-900">
+          We couldn&apos;t refresh listings just now — please refresh the page. Your properties are
+          still live; this is a temporary connection issue.
+        </p>
       ) : listings.length === 0 ? (
         <p className="rounded-xl border border-dashed border-slate-200 py-10 text-center text-sm text-slate-500">
           {allCount === 0

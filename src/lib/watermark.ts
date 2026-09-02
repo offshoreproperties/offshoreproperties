@@ -7,25 +7,6 @@ import { fileURLToPath } from "node:url";
 import ffmpegPath from "ffmpeg-static";
 import sharp from "sharp";
 
-function resolveWatermarkPngPath(): string {
-  const bundled = fileURLToPath(
-    new URL("../assets/brand/offshore-logo.png", import.meta.url),
-  );
-  const candidates = [
-    bundled,
-    join(process.cwd(), "src", "assets", "brand", "offshore-logo.png"),
-    join(process.cwd(), "public", "offshore-logo.png"),
-  ];
-  for (const candidate of candidates) {
-    if (existsSync(candidate)) return candidate;
-  }
-  throw new Error(
-    "Offshore watermark logo not found (expected public/offshore-logo.png on the server)",
-  );
-}
-
-const WATERMARK_PNG = resolveWatermarkPngPath();
-
 /** Fraction of the shorter image side used for watermark width */
 const IMAGE_WM_SCALE = 0.32;
 /** Overall watermark opacity (0–1) */
@@ -35,10 +16,41 @@ const VIDEO_WM_ALPHA = 0.36;
 const VIDEO_EXTENSIONS = new Set(["mp4", "webm", "mov", "m4v", "3gp", "3g2", "avi", "mkv"]);
 const AUDIO_EXTENSIONS = new Set(["m4a", "mp3", "aac", "wav", "ogg"]);
 
-async function getWatermarkPng(targetWidth: number): Promise<Buffer> {
+let cachedWatermarkPath: string | null | undefined;
+
+function resolveWatermarkPngPath(): string | null {
+  if (cachedWatermarkPath !== undefined) return cachedWatermarkPath;
+
+  const bundled = fileURLToPath(
+    new URL("../assets/brand/offshore-logo.png", import.meta.url),
+  );
+  const candidates = [
+    bundled,
+    join(process.cwd(), "src", "assets", "brand", "offshore-logo.png"),
+    join(process.cwd(), "public", "offshore-logo.png"),
+  ];
+
+  for (const candidate of candidates) {
+    if (existsSync(candidate)) {
+      cachedWatermarkPath = candidate;
+      return candidate;
+    }
+  }
+
+  console.warn(
+    "[watermark] Logo not found — uploads will continue without a watermark until public/offshore-logo.png is available.",
+  );
+  cachedWatermarkPath = null;
+  return null;
+}
+
+async function getWatermarkPng(targetWidth: number): Promise<Buffer | null> {
+  const path = resolveWatermarkPngPath();
+  if (!path) return null;
+
   const width = Math.max(120, Math.round(targetWidth));
   const alpha = Math.round(255 * IMAGE_WM_OPACITY);
-  return sharp(WATERMARK_PNG)
+  return sharp(path)
     .resize(width)
     .ensureAlpha()
     .composite([
@@ -72,16 +84,50 @@ function outputImageType(contentType: string): "jpeg" | "png" | "webp" | "gif" {
   return "jpeg";
 }
 
-export async function applyImageWatermark(
+async function passthroughImage(
   input: Buffer,
   contentType: string,
 ): Promise<{ buffer: Buffer; contentType: string }> {
+  const format = outputImageType(contentType);
+  const image = sharp(input, { animated: contentType === "image/gif" });
+  let pipeline = image;
+  if (format === "jpeg") {
+    pipeline = pipeline.jpeg({ quality: 88, mozjpeg: true });
+  } else if (format === "png") {
+    pipeline = pipeline.png({ compressionLevel: 8 });
+  } else if (format === "webp") {
+    pipeline = pipeline.webp({ quality: 88 });
+  } else {
+    pipeline = pipeline.gif();
+  }
+  return {
+    buffer: await pipeline.toBuffer(),
+    contentType:
+      format === "jpeg"
+        ? "image/jpeg"
+        : format === "png"
+          ? "image/png"
+          : format === "webp"
+            ? "image/webp"
+            : "image/gif",
+  };
+}
+
+export async function applyImageWatermark(
+  input: Buffer,
+  contentType: string,
+): Promise<{ buffer: Buffer; contentType: string; watermarked: boolean }> {
   const image = sharp(input, { animated: contentType === "image/gif" });
   const meta = await image.metadata();
   const width = meta.width ?? 1200;
   const height = meta.height ?? 800;
   const wmWidth = Math.round(Math.min(width, height) * IMAGE_WM_SCALE);
   const watermark = await getWatermarkPng(wmWidth);
+
+  if (!watermark) {
+    const passthrough = await passthroughImage(input, contentType);
+    return { ...passthrough, watermarked: false };
+  }
 
   const format = outputImageType(contentType);
   let pipeline = image.composite([
@@ -112,6 +158,7 @@ export async function applyImageWatermark(
           : format === "webp"
             ? "image/webp"
             : "image/gif",
+    watermarked: true,
   };
 }
 
@@ -136,8 +183,16 @@ function runFfmpeg(args: string[]): Promise<void> {
 export async function applyVideoWatermark(
   input: Buffer,
   fileName: string,
-): Promise<{ buffer: Buffer; contentType: string }> {
+): Promise<{ buffer: Buffer; contentType: string; watermarked: boolean }> {
   const ext = fileName.split(".").pop()?.toLowerCase() || "mp4";
+  const contentType =
+    ext === "webm" ? "video/webm" : ext === "mov" ? "video/quicktime" : "video/mp4";
+
+  const wmPng = await getWatermarkPng(420);
+  if (!wmPng || !ffmpegPath) {
+    return { buffer: input, contentType, watermarked: false };
+  }
+
   const id = crypto.randomUUID();
   const inPath = join(tmpdir(), `${id}-in.${ext}`);
   const wmPath = join(tmpdir(), `${id}-wm.png`);
@@ -145,7 +200,6 @@ export async function applyVideoWatermark(
 
   try {
     await writeFile(inPath, input);
-    const wmPng = await getWatermarkPng(420);
     await writeFile(wmPath, wmPng);
 
     const filter = `[1]format=rgba,colorchannelmixer=aa=${VIDEO_WM_ALPHA}[wm];[0][wm]overlay=(W-w)/2:(H-h)/2:format=auto`;
@@ -175,9 +229,10 @@ export async function applyVideoWatermark(
     ]);
 
     const buffer = await readFile(outPath);
-    const contentType =
-      ext === "webm" ? "video/webm" : ext === "mov" ? "video/quicktime" : "video/mp4";
-    return { buffer, contentType };
+    return { buffer, contentType, watermarked: true };
+  } catch (error) {
+    console.warn("[watermark] Video watermark failed — uploading original:", error);
+    return { buffer: input, contentType, watermarked: false };
   } finally {
     await Promise.allSettled([unlink(inPath), unlink(wmPath), unlink(outPath)]);
   }
@@ -187,14 +242,23 @@ export async function applyMediaWatermark(
   input: Buffer,
   fileName: string,
   contentType: string,
-): Promise<{ buffer: Buffer; contentType: string }> {
-  if (isVideoFile(fileName, contentType)) {
-    return applyVideoWatermark(input, fileName);
+): Promise<{ buffer: Buffer; contentType: string; watermarked: boolean }> {
+  try {
+    if (isVideoFile(fileName, contentType)) {
+      return applyVideoWatermark(input, fileName);
+    }
+    if (isAudioFile(fileName, contentType)) {
+      return { buffer: input, contentType: contentType || "audio/mp4", watermarked: false };
+    }
+    return applyImageWatermark(input, contentType);
+  } catch (error) {
+    console.warn("[watermark] Media processing failed — uploading original:", error);
+    if (isVideoFile(fileName, contentType) || isAudioFile(fileName, contentType)) {
+      return { buffer: input, contentType, watermarked: false };
+    }
+    const passthrough = await passthroughImage(input, contentType);
+    return { ...passthrough, watermarked: false };
   }
-  if (isAudioFile(fileName, contentType)) {
-    return { buffer: input, contentType: contentType || "audio/mp4" };
-  }
-  return applyImageWatermark(input, contentType);
 }
 
 export function isVideoMedia(fileName: string, contentType: string): boolean {

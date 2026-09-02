@@ -9,6 +9,8 @@ import { HomeListingsMap } from "@/components/home/home-listings-map";
 import { HomeListingsSection } from "@/components/home/home-listings-section";
 import type { HomeTab } from "@/components/public-header";
 import { listProperties } from "@/lib/properties.functions";
+import { listPropertiesForMap } from "@/lib/maps.functions";
+import type { MapListing } from "@/lib/maps.functions";
 import { BRAND } from "@/lib/constants";
 import { z } from "zod";
 
@@ -18,6 +20,25 @@ const homeSearchSchema = z.object({
 
 export const Route = createFileRoute("/")({
   validateSearch: (s) => homeSearchSchema.parse(s),
+  loader: async () => {
+    const empty = { rows: [] as Awaited<ReturnType<typeof listProperties>>["rows"], total: 0 };
+    let initialProperties = empty;
+    let initialMapProperties: MapListing[] = [];
+
+    try {
+      initialProperties = await listProperties({ data: { limit: 100 } });
+    } catch (error) {
+      console.error("[home] Failed to preload listings:", error);
+    }
+
+    try {
+      initialMapProperties = await listPropertiesForMap();
+    } catch (error) {
+      console.error("[home] Failed to preload map listings:", error);
+    }
+
+    return { initialProperties, initialMapProperties };
+  },
   head: () => ({
     meta: [
       { title: `${BRAND.name} — find the right home in Kenya` },
@@ -38,6 +59,7 @@ function propertyImage(p: { hero_image: string | null; images: string[] | null }
 
 function Index() {
   const { tab: urlTab } = Route.useSearch();
+  const { initialProperties, initialMapProperties } = Route.useLoaderData();
   const navigate = Route.useNavigate();
   const [homeTab, setHomeTab] = useState<HomeTab>(urlTab ?? "all");
   const fetchProperties = useServerFn(listProperties);
@@ -51,9 +73,11 @@ function Index() {
     navigate({ search: { tab } });
   }
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError } = useQuery({
     queryKey: ["properties", "home-all"],
     queryFn: () => fetchProperties({ data: { limit: 100 } }),
+    initialData: initialProperties,
+    staleTime: 60_000,
   });
 
   const all = data?.rows ?? [];
@@ -98,10 +122,15 @@ function Index() {
 
       <section className="relative z-10 -mt-5 px-3 pb-8 safe-bottom pt-0 sm:-mt-6 sm:px-6 sm:pb-10 lg:px-8">
         <div className="mx-auto max-w-[1440px] overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-md">
-          <HomeListingsMap homeTab={homeTab} embedded />
+          <HomeListingsMap
+            homeTab={homeTab}
+            embedded
+            initialProperties={initialMapProperties}
+          />
           <HomeListingsSection
             listings={cardListings}
-            isLoading={isLoading}
+            isLoading={isLoading && all.length === 0}
+            loadFailed={isError && all.length === 0}
             allCount={all.length}
             homeTab={homeTab}
             sectionTitle={sectionTitle}

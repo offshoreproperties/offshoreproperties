@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo } from "react";
 import { PropertiesMap } from "@/components/properties-map";
-import { listPropertiesForMap } from "@/lib/maps.functions";
+import { listPropertiesForMap, type MapListing } from "@/lib/maps.functions";
 import type { HomeTab } from "@/components/public-header";
 import { Map, ArrowUpRight } from "lucide-react";
 
@@ -11,13 +11,19 @@ type HomeListingsMapProps = {
   homeTab: HomeTab;
   /** Renders inside a shared market card (no outer section wrapper). */
   embedded?: boolean;
+  initialProperties?: MapListing[];
 };
 
-export function HomeListingsMap({ homeTab, embedded = false }: HomeListingsMapProps) {
+export function HomeListingsMap({
+  homeTab,
+  embedded = false,
+  initialProperties = [],
+}: HomeListingsMapProps) {
   const fetchMap = useServerFn(listPropertiesForMap);
-  const { data: properties = [], isLoading } = useQuery({
+  const { data: properties = initialProperties, isLoading } = useQuery({
     queryKey: ["home-map-properties"],
     queryFn: () => fetchMap(),
+    initialData: initialProperties.length ? initialProperties : undefined,
     staleTime: 5 * 60_000,
   });
 

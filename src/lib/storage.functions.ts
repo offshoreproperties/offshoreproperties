@@ -66,16 +66,25 @@ export const uploadPropertyImage = createServerFn({ method: "POST" })
       );
     }
 
-    const { buffer, contentType } = await applyMediaWatermark(
-      raw,
-      data.fileName,
-      data.contentType,
-    );
+    let buffer: Buffer;
+    let contentType: string;
+    let watermarked = false;
+
+    try {
+      const result = await applyMediaWatermark(raw, data.fileName, data.contentType);
+      buffer = result.buffer;
+      contentType = result.contentType;
+      watermarked = result.watermarked;
+    } catch (error) {
+      console.error("[upload] Watermark step failed, storing original file:", error);
+      buffer = raw;
+      contentType = data.contentType;
+    }
 
     const { error } = await supabaseAdmin.storage.from("property-images").upload(path, buffer, {
       contentType,
       upsert: false,
-      metadata: { watermarked: "true" },
+      metadata: { watermarked: watermarked ? "true" : "false" },
     });
 
     if (error) throw new Error(error.message);
