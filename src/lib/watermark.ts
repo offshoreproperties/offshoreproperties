@@ -9,8 +9,14 @@ import sharp from "sharp";
 
 /** Fraction of the shorter image side used for watermark width */
 const IMAGE_WM_SCALE = 0.32;
+/** Slightly larger when replacing an older baked-in watermark */
+const IMAGE_WM_REAPPLY_SCALE = 0.36;
 /** Overall watermark opacity (0–1) */
 const IMAGE_WM_OPACITY = 0.44;
+/** Stronger opacity when replacing an older watermark */
+const IMAGE_WM_REAPPLY_OPACITY = 0.52;
+/** Bump when storage metadata is stale — re-run batch script after logo changes */
+export const WATERMARK_VERSION = "2";
 /** Center logo opacity for video overlay (0–1) */
 const VIDEO_WM_ALPHA = 0.36;
 const VIDEO_EXTENSIONS = new Set(["mp4", "webm", "mov", "m4v", "3gp", "3g2", "avi", "mkv"]);
@@ -28,6 +34,7 @@ function resolveWatermarkPngPath(): string | null {
     bundled,
     join(process.cwd(), "src", "assets", "brand", "offshore-logo.png"),
     join(process.cwd(), "public", "offshore-logo.png"),
+    join(process.cwd(), "public", "Offshore Logo (1).png"),
   ];
 
   for (const candidate of candidates) {
@@ -44,12 +51,12 @@ function resolveWatermarkPngPath(): string | null {
   return null;
 }
 
-async function getWatermarkPng(targetWidth: number): Promise<Buffer | null> {
+async function getWatermarkPng(targetWidth: number, opacity = IMAGE_WM_OPACITY): Promise<Buffer | null> {
   const path = resolveWatermarkPngPath();
   if (!path) return null;
 
   const width = Math.max(120, Math.round(targetWidth));
-  const alpha = Math.round(255 * IMAGE_WM_OPACITY);
+  const alpha = Math.round(255 * opacity);
   return sharp(path)
     .resize(width)
     .ensureAlpha()
@@ -113,16 +120,53 @@ async function passthroughImage(
   };
 }
 
-export async function applyImageWatermark(
-  input: Buffer,
-  contentType: string,
-): Promise<{ buffer: Buffer; contentType: string; watermarked: boolean }> {
+async function softenExistingWatermarkZone(input: Buffer, contentType: string): Promise<Buffer> {
   const image = sharp(input, { animated: contentType === "image/gif" });
   const meta = await image.metadata();
   const width = meta.width ?? 1200;
   const height = meta.height ?? 800;
-  const wmWidth = Math.round(Math.min(width, height) * IMAGE_WM_SCALE);
-  const watermark = await getWatermarkPng(wmWidth);
+  const patchW = Math.round(Math.min(width, height) * IMAGE_WM_REAPPLY_SCALE * 1.1);
+  const patchH = Math.round(patchW * 0.55);
+
+  const patch = await sharp({
+    create: {
+      width: patchW,
+      height: patchH,
+      channels: 4,
+      background: { r: 255, g: 255, b: 255, alpha: 0.38 },
+    },
+  })
+    .blur(12)
+    .png()
+    .toBuffer();
+
+  return image.composite([{ input: patch, gravity: "center", blend: "over" }]).toBuffer();
+}
+
+export async function applyImageWatermark(
+  input: Buffer,
+  contentType: string,
+  options?: { replaceExisting?: boolean },
+): Promise<{ buffer: Buffer; contentType: string; watermarked: boolean }> {
+  const replaceExisting = options?.replaceExisting === true;
+  const scale = replaceExisting ? IMAGE_WM_REAPPLY_SCALE : IMAGE_WM_SCALE;
+  const opacity = replaceExisting ? IMAGE_WM_REAPPLY_OPACITY : IMAGE_WM_OPACITY;
+
+  let source = input;
+  if (replaceExisting) {
+    try {
+      source = await softenExistingWatermarkZone(input, contentType);
+    } catch {
+      source = input;
+    }
+  }
+
+  const image = sharp(source, { animated: contentType === "image/gif" });
+  const meta = await image.metadata();
+  const width = meta.width ?? 1200;
+  const height = meta.height ?? 800;
+  const wmWidth = Math.round(Math.min(width, height) * scale);
+  const watermark = await getWatermarkPng(wmWidth, opacity);
 
   if (!watermark) {
     const passthrough = await passthroughImage(input, contentType);
@@ -183,12 +227,17 @@ function runFfmpeg(args: string[]): Promise<void> {
 export async function applyVideoWatermark(
   input: Buffer,
   fileName: string,
+  options?: { replaceExisting?: boolean },
 ): Promise<{ buffer: Buffer; contentType: string; watermarked: boolean }> {
+  const replaceExisting = options?.replaceExisting === true;
+  const opacity = replaceExisting ? IMAGE_WM_REAPPLY_OPACITY : VIDEO_WM_ALPHA;
+  const wmSize = replaceExisting ? 480 : 420;
+
   const ext = fileName.split(".").pop()?.toLowerCase() || "mp4";
   const contentType =
     ext === "webm" ? "video/webm" : ext === "mov" ? "video/quicktime" : "video/mp4";
 
-  const wmPng = await getWatermarkPng(420);
+  const wmPng = await getWatermarkPng(wmSize, opacity);
   if (!wmPng || !ffmpegPath) {
     return { buffer: input, contentType, watermarked: false };
   }
@@ -202,7 +251,7 @@ export async function applyVideoWatermark(
     await writeFile(inPath, input);
     await writeFile(wmPath, wmPng);
 
-    const filter = `[1]format=rgba,colorchannelmixer=aa=${VIDEO_WM_ALPHA}[wm];[0][wm]overlay=(W-w)/2:(H-h)/2:format=auto`;
+    const filter = `[1]format=rgba,colorchannelmixer=aa=${opacity}[wm];[0][wm]overlay=(W-w)/2:(H-h)/2:format=auto`;
 
     await runFfmpeg([
       "-hide_banner",
@@ -242,6 +291,7 @@ export async function applyMediaWatermark(
   input: Buffer,
   fileName: string,
   contentType: string,
+  options?: { replaceExisting?: boolean },
 ): Promise<{ buffer: Buffer; contentType: string; watermarked: boolean }> {
   const normalized = contentType.toLowerCase();
   if (normalized === "image/heic" || normalized === "image/heif") {
@@ -250,12 +300,12 @@ export async function applyMediaWatermark(
 
   try {
     if (isVideoFile(fileName, contentType)) {
-      return applyVideoWatermark(input, fileName);
+      return applyVideoWatermark(input, fileName, options);
     }
     if (isAudioFile(fileName, contentType)) {
       return { buffer: input, contentType: contentType || "audio/mp4", watermarked: false };
     }
-    return applyImageWatermark(input, contentType);
+    return applyImageWatermark(input, contentType, options);
   } catch (error) {
     console.warn("[watermark] Media processing failed — uploading original:", error);
     if (isVideoFile(fileName, contentType) || isAudioFile(fileName, contentType)) {

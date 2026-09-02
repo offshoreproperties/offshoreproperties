@@ -324,6 +324,34 @@
     min-width: 2.75rem;
   }
 
+  /* Maasai shuka stripe — Property assistant panel accent */
+  .maasai-shuka-bar {
+    height: 4px;
+    background: repeating-linear-gradient(
+      90deg,
+      #9b1b30 0px,
+      #9b1b30 12px,
+      #0a0a0a 12px,
+      #0a0a0a 24px,
+      #f5f0e6 24px,
+      #f5f0e6 28px,
+      #9b1b30 28px,
+      #9b1b30 40px
+    );
+  }
+
+  .maasai-panel-bg {
+    background:
+      radial-gradient(ellipse 120% 80% at 100% 0%, rgba(155, 27, 48, 0.22), transparent 55%),
+      radial-gradient(ellipse 80% 60% at 0% 100%, rgba(196, 92, 38, 0.12), transparent 50%),
+      linear-gradient(180deg, #0c0a09 0%, #1a0f0f 45%, #0f0d0c 100%);
+  }
+
+  .maasai-bead-dot {
+    @apply h-1.5 w-1.5 shrink-0 rounded-full;
+    background: linear-gradient(135deg, #c1272d 0%, #d4a017 50%, #1e56a0 100%);
+  }
+
   /* Sticky bottom action bar — property detail, admin forms */
   .mobile-action-bar {
     @apply fixed inset-x-0 bottom-0 z-30 border-t border-neutral-200 bg-white/95 px-4 py-3 backdrop-blur-lg;

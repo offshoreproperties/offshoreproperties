@@ -3,7 +3,6 @@ import { Mail, MapPin, MessageCircle, Phone } from "lucide-react";
 import { BRAND } from "@/lib/constants";
 import { buildWhatsAppUrl } from "@/lib/whatsapp";
 import { BrandLogo } from "@/components/brand-logo";
-import { cn } from "@/lib/utils";
 
 const EXPLORE_LINKS = [
   { to: "/properties" as const, label: "All listings" },
@@ -57,23 +56,9 @@ export function SiteFooter() {
     <footer className="border-t border-slate-800/80 bg-gradient-to-b from-slate-950 via-slate-950 to-slate-900 text-slate-300">
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12 lg:py-14">
         <div className="grid gap-8 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,2fr)] lg:gap-12">
-          {/* Brand + mobile CTA */}
           <div className="space-y-4 border-b border-white/10 pb-6 lg:border-b-0 lg:pb-0">
             <BrandLogo size="compact" imgClassName="h-10 sm:h-11" />
             <p className="max-w-sm text-sm leading-relaxed text-slate-400">{BRAND.tagline}</p>
-
-            <a
-              href={whatsappHref}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={cn(
-                "inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-white shadow-lg transition-all",
-                "bg-[#128C7E] hover:bg-[#0f7a6e] sm:w-auto sm:rounded-full sm:px-5 sm:py-2.5",
-              )}
-            >
-              <MessageCircle className="h-4 w-4 shrink-0" />
-              Chat on WhatsApp
-            </a>
           </div>
 
           {/* Links + contact */}

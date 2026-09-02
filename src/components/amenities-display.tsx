@@ -40,7 +40,7 @@ export function AmenitiesDisplay({
         const Icon = group.icon;
         return (
           <section key={group.id}>
-            <h3 className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-neutral-500">
+            <h3 className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
               <span className="flex h-6 w-6 items-center justify-center rounded-md bg-blue-50 text-blue-600">
                 <Icon className="h-3.5 w-3.5" aria-hidden />
               </span>
@@ -50,7 +50,7 @@ export function AmenitiesDisplay({
               {group.items.map((item) => (
                 <li
                   key={item}
-                  className="flex items-center gap-2 rounded-lg border border-neutral-100 bg-neutral-50/80 px-3 py-2.5 text-sm text-neutral-800"
+                  className="flex items-center gap-2 rounded-lg border border-slate-100 bg-slate-50 px-3 py-2 text-sm text-slate-800"
                 >
                   <Check className="h-4 w-4 shrink-0 text-blue-600" aria-hidden />
                   <span>{item}</span>

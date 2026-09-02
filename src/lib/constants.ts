@@ -6,7 +6,7 @@ export const SITE_URL =
 export const BRAND = {
   name: "Offshore Properties",
   tagline: "Kenyan property, explained properly — by people who know the market.",
-  email: "hello@offshoreproperties.com",
+  email: "info@offshoreproperties.co.ke",
   phone: "+254 702 447 447",
   phone2: "+254 781 310 331",
   whatsapp: "+254702447447",

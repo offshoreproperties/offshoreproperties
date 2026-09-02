@@ -239,17 +239,19 @@ export function AiSearchField({
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetContent
           side="right"
-          className="flex h-dvh max-h-dvh w-full max-w-full flex-col gap-0 overflow-hidden border-neutral-200 bg-neutral-50 p-0 sm:max-w-md"
+          className="maasai-panel-bg flex h-dvh max-h-dvh w-full max-w-full flex-col gap-0 overflow-hidden border-l border-red-950/60 p-0 text-amber-50 sm:max-w-md [&>button]:text-amber-50 [&>button]:hover:bg-red-950/60 [&>button]:hover:opacity-100"
         >
+          <div className="maasai-shuka-bar shrink-0" aria-hidden />
+
           {/* Header — fixed */}
-          <SheetHeader className="shrink-0 space-y-1 border-b border-neutral-200 bg-white px-4 pb-4 pt-[max(1rem,env(safe-area-inset-top))] pr-14 text-left">
-            <SheetTitle className="flex items-center gap-3 text-base font-bold text-neutral-900 sm:text-lg">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 to-cyan-500 text-white shadow-md shadow-blue-600/25">
+          <SheetHeader className="shrink-0 space-y-1 border-b border-red-900/40 bg-black/25 px-4 pb-4 pt-4 pr-14 text-left backdrop-blur-sm">
+            <SheetTitle className="flex items-center gap-3 text-base font-bold text-amber-50 sm:text-lg">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#9b1b30] via-[#c1272d] to-[#7a1525] text-amber-50 shadow-lg shadow-red-950/50 ring-2 ring-[#d4a017]/40">
                 <AiAssistantIcon className="h-5 w-5" />
               </span>
               Property assistant
             </SheetTitle>
-            <SheetDescription className="text-left text-sm leading-relaxed text-neutral-500">
+            <SheetDescription className="text-left text-sm leading-relaxed text-amber-100/65">
               Ask about areas, budget, or lifestyle — I&apos;ll match listings and explain why they fit.
             </SheetDescription>
           </SheetHeader>
@@ -257,27 +259,27 @@ export function AiSearchField({
           {/* Messages — scrollable */}
           <div
             ref={scrollRef}
-            className="scrollbar-offshore min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain px-4 py-4"
+            className="scrollbar-dark min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain px-4 py-4"
           >
             {turns.length === 0 && !loading && (
               <div className="space-y-4">
-                <div className="rounded-2xl border border-dashed border-neutral-200 bg-white px-4 py-5 text-center">
-                  <Sparkles className="mx-auto h-6 w-6 text-blue-500" aria-hidden />
-                  <p className="mt-2 text-sm font-medium text-neutral-800">Try asking something like</p>
+                <div className="rounded-2xl border border-dashed border-red-800/50 bg-black/30 px-4 py-5 text-center backdrop-blur-sm">
+                  <Sparkles className="mx-auto h-6 w-6 text-[#d4a017]" aria-hidden />
+                  <p className="mt-2 text-sm font-medium text-amber-50">Try asking something like</p>
                   <div className="mt-3 flex flex-wrap justify-center gap-2">
                     {QUICK_PROMPTS.map((prompt) => (
                       <button
                         key={prompt}
                         type="button"
                         onClick={() => void runSearch(prompt, true)}
-                        className="rounded-full border border-neutral-200 bg-neutral-50 px-3 py-2 text-xs font-medium text-neutral-700 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700"
+                        className="rounded-full border border-red-800/60 bg-red-950/40 px-3 py-2 text-xs font-medium text-amber-100/90 transition hover:border-[#d4a017]/50 hover:bg-red-900/50 hover:text-amber-50"
                       >
                         {prompt}
                       </button>
                     ))}
                   </div>
                 </div>
-                <LocationBrowse compact layout="wrap" onSelect={(loc) => void runSearch(`Show me properties in ${loc}`, true)} />
+                <LocationBrowse compact variant="dark" layout="wrap" onSelect={(loc) => void runSearch(`Show me properties in ${loc}`, true)} />
               </div>
             )}
 
@@ -285,20 +287,20 @@ export function AiSearchField({
               {turns.map((turn) =>
                 turn.role === "user" ? (
                   <div key={turn.id} className="flex justify-end">
-                    <div className="max-w-[85%] rounded-2xl rounded-tr-md bg-blue-600 px-4 py-2.5 text-sm leading-relaxed text-white shadow-sm">
+                    <div className="max-w-[85%] rounded-2xl rounded-tr-md bg-gradient-to-br from-[#9b1b30] to-[#7a1525] px-4 py-2.5 text-sm leading-relaxed text-amber-50 shadow-md shadow-black/30 ring-1 ring-red-400/20">
                       {turn.text}
                     </div>
                   </div>
                 ) : (
                   <div key={turn.id} className="flex justify-start">
                     <div className="max-w-[92%] space-y-3">
-                      <div className="rounded-2xl rounded-tl-md border border-neutral-200 bg-white px-4 py-3 text-sm shadow-sm">
-                        <AiReplyText text={turn.text} />
+                      <div className="rounded-2xl rounded-tl-md border border-red-900/40 bg-black/35 px-4 py-3 text-sm shadow-sm backdrop-blur-sm">
+                        <AiReplyText text={turn.text} variant="dark" />
                       </div>
 
                       {turn.matches && turn.matches.length > 0 && (
                         <div className="space-y-2">
-                          <p className="px-1 text-[11px] font-semibold uppercase tracking-wider text-blue-600">
+                          <p className="px-1 text-[11px] font-semibold uppercase tracking-wider text-[#d4a017]">
                             Matches ({turn.matches.length})
                           </p>
                           {turn.matches.map((m) => (
@@ -307,28 +309,28 @@ export function AiSearchField({
                               to="/properties/$slug"
                               params={{ slug: m.slug ?? m.id }}
                               onClick={() => setOpen(false)}
-                              className="flex gap-3 rounded-xl border border-neutral-200 bg-white p-3 shadow-sm transition hover:border-blue-200 hover:shadow-md active:scale-[0.99]"
+                              className="flex gap-3 rounded-xl border border-red-900/40 bg-black/40 p-3 shadow-sm transition hover:border-[#d4a017]/40 hover:bg-black/55 active:scale-[0.99]"
                             >
                               {m.hero_image ? (
                                 <img
                                   src={m.hero_image}
                                   alt=""
                                   loading="lazy"
-                                  className="h-16 w-16 shrink-0 rounded-lg object-cover"
+                                  className="h-16 w-16 shrink-0 rounded-lg object-cover ring-1 ring-red-900/30"
                                 />
                               ) : (
-                                <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg bg-neutral-100 text-[10px] text-neutral-400">
+                                <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg bg-red-950/50 text-[10px] text-amber-100/50">
                                   No photo
                                 </div>
                               )}
                               <div className="min-w-0 flex-1">
-                                <p className="font-semibold leading-snug text-neutral-900">{m.title}</p>
-                                <p className="mt-0.5 text-sm font-medium text-blue-600">
+                                <p className="font-semibold leading-snug text-amber-50">{m.title}</p>
+                                <p className="mt-0.5 text-sm font-medium text-[#f0c674]">
                                   {formatPrice(Number(m.price), m.currency, m.listing_type)}
                                 </p>
-                                {m.city && <p className="text-xs text-neutral-500">{m.city}</p>}
+                                {m.city && <p className="text-xs text-amber-100/55">{m.city}</p>}
                               </div>
-                              <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-neutral-300" aria-hidden />
+                              <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-red-800/80" aria-hidden />
                             </Link>
                           ))}
                           <Link
@@ -339,7 +341,7 @@ export function AiSearchField({
                               ...(turn.matchSlugs?.length ? { slugs: turn.matchSlugs.join(",") } : {}),
                             }}
                             onClick={() => setOpen(false)}
-                            className="flex min-h-11 items-center justify-center rounded-xl bg-neutral-900 px-4 text-sm font-semibold text-white transition hover:bg-neutral-800"
+                            className="flex min-h-11 items-center justify-center rounded-xl bg-gradient-to-r from-[#9b1b30] to-[#7a1525] px-4 text-sm font-semibold text-amber-50 shadow-md transition hover:from-[#b01f38] hover:to-[#8b1830]"
                           >
                             View all matches
                           </Link>
@@ -351,7 +353,7 @@ export function AiSearchField({
                           to="/properties"
                           search={{ q: lastQuery }}
                           onClick={() => setOpen(false)}
-                          className="flex min-h-11 items-center justify-center rounded-xl border border-neutral-200 bg-white px-4 text-sm font-medium text-blue-600 transition hover:bg-blue-50"
+                          className="flex min-h-11 items-center justify-center rounded-xl border border-red-800/50 bg-black/30 px-4 text-sm font-medium text-amber-100 transition hover:border-[#d4a017]/40 hover:bg-black/45"
                         >
                           Browse all listings
                         </Link>
@@ -363,20 +365,20 @@ export function AiSearchField({
 
               {loading && (
                 <div className="flex justify-start">
-                  <div className="flex items-center gap-3 rounded-2xl rounded-tl-md border border-neutral-200 bg-white px-4 py-3 shadow-sm">
-                    <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
-                    <span className="text-sm text-neutral-600">Checking our listings…</span>
+                  <div className="flex items-center gap-3 rounded-2xl rounded-tl-md border border-red-900/40 bg-black/35 px-4 py-3 shadow-sm backdrop-blur-sm">
+                    <Loader2 className="h-4 w-4 animate-spin text-[#d4a017]" />
+                    <span className="text-sm text-amber-100/75">Checking our listings…</span>
                   </div>
                 </div>
               )}
             </div>
 
             {turns.length > 0 && !loading && (
-              <div className="mt-6 border-t border-neutral-200 pt-5">
-                <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-neutral-500">
+              <div className="mt-6 border-t border-red-900/40 pt-5">
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-amber-100/50">
                   Explore by area
                 </p>
-                <LocationBrowse compact layout="wrap" onSelect={(loc) => void runSearch(`Show me properties in ${loc}`, true)} />
+                <LocationBrowse compact variant="dark" layout="wrap" onSelect={(loc) => void runSearch(`Show me properties in ${loc}`, true)} />
               </div>
             )}
 
@@ -384,7 +386,7 @@ export function AiSearchField({
           </div>
 
           {/* Input — fixed footer */}
-          <div className="shrink-0 border-t border-neutral-200 bg-white px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+          <div className="shrink-0 border-t border-red-900/40 bg-black/40 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-md">
             <form onSubmit={handleChatSubmit} className="flex items-center gap-2">
               <input
                 ref={chatInputRef}
@@ -393,14 +395,14 @@ export function AiSearchField({
                 onChange={(e) => setChatInput(e.target.value)}
                 placeholder="Ask a follow-up…"
                 disabled={loading}
-                className="min-h-11 flex-1 rounded-full border border-neutral-200 bg-neutral-50 px-4 text-base text-neutral-900 placeholder:text-neutral-400 focus:border-blue-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 disabled:opacity-60 sm:text-sm"
+                className="min-h-11 flex-1 rounded-full border border-red-900/50 bg-red-950/30 px-4 text-base text-amber-50 placeholder:text-amber-100/40 focus:border-[#d4a017]/60 focus:bg-red-950/50 focus:outline-none focus:ring-2 focus:ring-[#d4a017]/25 disabled:opacity-60 sm:text-sm"
                 aria-label="Message property assistant"
               />
               <Button
                 type="submit"
                 size="icon"
                 disabled={loading || !chatInput.trim()}
-                className="h-11 w-11 shrink-0 rounded-full bg-blue-600 hover:bg-blue-700 disabled:opacity-40"
+                className="h-11 w-11 shrink-0 rounded-full bg-gradient-to-br from-[#9b1b30] to-[#7a1525] text-amber-50 shadow-md hover:from-[#b01f38] hover:to-[#8b1830] disabled:opacity-40"
                 aria-label="Send message"
               >
                 {loading ? (

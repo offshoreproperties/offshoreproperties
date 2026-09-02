@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { requireAdminAuth } from "@/integrations/supabase/admin-middleware";
-import { applyMediaWatermark, isAudioMedia, isVideoMedia } from "@/lib/watermark";
+import { applyMediaWatermark, isAudioMedia, isVideoMedia, WATERMARK_VERSION } from "@/lib/watermark";
 
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
 const MAX_VIDEO_BYTES = 80 * 1024 * 1024;
@@ -146,7 +146,7 @@ export const finalizePropertyUpload = createServerFn({ method: "POST" })
       const { error: upError } = await supabaseAdmin.storage.from("property-images").upload(data.path, buffer, {
         contentType,
         upsert: true,
-        metadata: { watermarked: "true" },
+        metadata: { watermarked: "true", watermarkVersion: WATERMARK_VERSION },
       });
       if (upError) {
         console.error("[upload] watermark re-upload failed:", upError);
@@ -213,7 +213,7 @@ export const uploadPropertyImage = createServerFn({ method: "POST" })
     const { error } = await supabaseAdmin.storage.from("property-images").upload(path, buffer, {
       contentType,
       upsert: false,
-      metadata: { watermarked: watermarked ? "true" : "false" },
+      metadata: { watermarked: watermarked ? "true" : "false", watermarkVersion: watermarked ? WATERMARK_VERSION : "0" },
     });
 
     if (error) {

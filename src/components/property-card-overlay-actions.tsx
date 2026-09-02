@@ -35,7 +35,7 @@ function OverlayBtn({
       disabled={disabled}
       onClick={onClick}
       className={cn(
-        "flex h-11 w-11 items-center justify-center rounded-full bg-white/95 text-neutral-700 shadow-md ring-1 ring-black/5 backdrop-blur-sm transition hover:scale-105 hover:bg-white active:scale-95 disabled:opacity-60",
+        "flex h-8 w-8 items-center justify-center rounded-full bg-white/95 text-neutral-700 shadow-md ring-1 ring-black/5 backdrop-blur-sm transition hover:scale-105 hover:bg-white active:scale-95 disabled:opacity-60 sm:h-9 sm:w-9",
         active && activeClass,
       )}
     >
@@ -75,7 +75,7 @@ export function PropertyCardOverlayActions({
 
   return (
     <div
-      className={cn("absolute right-2 top-2 z-20 flex flex-col gap-1.5", className)}
+      className={cn("absolute right-2 top-2 z-20 flex flex-row items-center gap-1", className)}
       onClick={(e) => e.stopPropagation()}
       onKeyDown={(e) => e.stopPropagation()}
     >
@@ -86,7 +86,7 @@ export function PropertyCardOverlayActions({
         disabled={likePending}
         onClick={toggleLike}
       >
-        <Heart className={cn("h-4 w-4", liked && "fill-current")} />
+        <Heart className={cn("h-3 w-3 sm:h-3.5 sm:w-3.5", liked && "fill-current")} />
       </OverlayBtn>
       <OverlayBtn
         label={saved ? "Remove from shortlist" : "Save to shortlist"}
@@ -95,10 +95,10 @@ export function PropertyCardOverlayActions({
         disabled={savePending}
         onClick={toggleSave}
       >
-        <Bookmark className={cn("h-4 w-4", saved && "fill-current")} />
+        <Bookmark className={cn("h-3 w-3 sm:h-3.5 sm:w-3.5", saved && "fill-current")} />
       </OverlayBtn>
       <OverlayBtn label="Share" onClick={handleShare}>
-        <Share2 className={cn("h-4 w-4", shareOk && "text-emerald-600")} />
+        <Share2 className={cn("h-3 w-3 sm:h-3.5 sm:w-3.5", shareOk && "text-emerald-600")} />
       </OverlayBtn>
     </div>
   );

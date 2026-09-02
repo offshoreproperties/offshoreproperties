@@ -93,9 +93,11 @@ function NavButton({
 export function PropertyImageGallery({
   images,
   title,
+  edgeToEdge = false,
 }: {
   images: string[];
   title: string;
+  edgeToEdge?: boolean;
 }) {
   const [active, setActive] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -137,8 +139,13 @@ export function PropertyImageGallery({
 
   if (images.length === 0) {
     return (
-      <div className="bg-white">
-        <div className="flex aspect-[4/3] w-full max-h-[min(52dvh,52vh,480px)] items-center justify-center rounded-lg bg-neutral-100 text-sm text-neutral-400">
+      <div className={cn(edgeToEdge ? "" : "bg-white")}>
+        <div
+          className={cn(
+            "flex aspect-[4/3] w-full items-center justify-center bg-slate-100 text-sm text-slate-400",
+            edgeToEdge ? "max-h-[min(56dvh,420px)] sm:mx-auto sm:max-h-[min(58dvh,520px)] sm:rounded-2xl" : "max-h-[min(52dvh,480px)] rounded-lg",
+          )}
+        >
           No photos available
         </div>
       </div>
@@ -161,16 +168,25 @@ export function PropertyImageGallery({
 
   return (
     <>
-      <div className="bg-white">
+      <div className={cn(edgeToEdge ? "" : "bg-white")}>
         <div className="w-full">
-          {/* Main image — full column width, click to expand */}
           <button
             type="button"
             onClick={() => setLightboxOpen(true)}
-            className="group relative w-full overflow-hidden rounded-lg bg-neutral-100 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+            className={cn(
+              "group relative w-full overflow-hidden bg-slate-100 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600",
+              edgeToEdge ? "sm:rounded-2xl" : "rounded-lg",
+            )}
             aria-label={`View ${title} photos full screen`}
           >
-            <div className="aspect-[4/3] w-full max-h-[min(52dvh,52vh,480px)] sm:max-h-[min(58dvh,58vh,520px)]">
+            <div
+              className={cn(
+                "aspect-[4/3] w-full",
+                edgeToEdge
+                  ? "max-h-[min(56dvh,420px)] sm:max-h-[min(58dvh,520px)]"
+                  : "max-h-[min(52dvh,52vh,480px)] sm:max-h-[min(58dvh,58vh,520px)]",
+              )}
+            >
               <MediaPreview
                 key={images[active]}
                 src={images[active]}
@@ -204,7 +220,12 @@ export function PropertyImageGallery({
           </button>
 
           {images.length > 1 && (
-            <div className="mt-2 flex gap-1.5 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <div
+              className={cn(
+                "mt-2 flex gap-1.5 overflow-x-auto px-4 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
+                edgeToEdge ? "sm:px-0" : "",
+              )}
+            >
               {images.map((src, i) => thumbBtn(src, i))}
             </div>
           )}
