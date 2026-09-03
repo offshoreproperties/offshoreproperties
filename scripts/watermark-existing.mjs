@@ -20,7 +20,7 @@ import ffmpegPath from "ffmpeg-static";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const BUCKET = "property-images";
-const WATERMARK_VERSION = "3";
+const WATERMARK_VERSION = "4";
 const dryRun = process.argv.includes("--dry-run");
 const force = process.argv.includes("--force");
 
@@ -67,16 +67,26 @@ const db = createClient(url, key, { auth: { persistSession: false } });
 const IMAGE_EXT = new Set(["jpg", "jpeg", "png", "webp", "gif"]);
 const VIDEO_EXT = new Set(["mp4", "webm", "mov", "m4v"]);
 
-const IMAGE_WM_SCALE = 0.28;
-const IMAGE_WM_REAPPLY_SCALE = 0.32;
-const IMAGE_WM_OPACITY = 0.4;
-const IMAGE_WM_REAPPLY_OPACITY = 0.48;
+const IMAGE_WM_SCALE = 0.26;
+const IMAGE_WM_CLEAR_SCALE = 0.48;
+const IMAGE_WM_REAPPLY_SCALE = 0.26;
+const IMAGE_WM_OPACITY = 0.38;
+const IMAGE_WM_REAPPLY_OPACITY = 0.38;
 
-async function watermarkPng(width, opacity) {
-  const w = Math.max(120, width);
+async function watermarkPng(width, opacity, maxWidth, maxHeight) {
+  const w = Math.max(48, Math.round(width));
   const alpha = Math.round(255 * opacity);
+  const capW = maxWidth != null ? Math.max(24, maxWidth - 4) : w;
+  const capH = maxHeight != null ? Math.max(24, maxHeight - 4) : 10_000;
+  const fitW = Math.min(w, capW, capH);
   return sharp(WATERMARK_PNG)
-    .resize(w)
+    .trim({ threshold: 8 })
+    .resize({
+      width: fitW,
+      height: capH,
+      fit: "inside",
+      withoutEnlargement: false,
+    })
     .ensureAlpha()
     .composite([
       {
@@ -90,32 +100,98 @@ async function watermarkPng(width, opacity) {
     .toBuffer();
 }
 
-/** Soften old center watermark by blurring the photo — never a gray/white plate. */
-async function softenExistingWatermarkZone(buffer, ext) {
+/** Remove stacked center watermarks / grey plates using surrounding pixels. */
+async function clearExistingWatermarkZone(buffer, ext) {
   const meta = await sharp(buffer, { animated: ext === "gif" }).metadata();
   const width = meta.width ?? 1200;
   const height = meta.height ?? 800;
-  const patchW = Math.min(width, Math.round(Math.min(width, height) * IMAGE_WM_REAPPLY_SCALE * 1.35));
-  const patchH = Math.min(height, Math.round(patchW * 0.7));
+  const shortSide = Math.min(width, height);
+
+  const patchW = Math.min(width, Math.round(shortSide * IMAGE_WM_CLEAR_SCALE));
+  const patchH = Math.min(height, Math.round(shortSide * IMAGE_WM_CLEAR_SCALE * 0.78));
   const left = Math.max(0, Math.round((width - patchW) / 2));
   const top = Math.max(0, Math.round((height - patchH) / 2));
+  const band = Math.max(24, Math.round(shortSide * 0.1));
+  const strips = [];
 
-  const blurredCenter = await sharp(buffer, { animated: ext === "gif" })
-    .extract({ left, top, width: patchW, height: patchH })
-    .blur(28)
-    .modulate({ brightness: 1.02 })
-    .png()
-    .toBuffer();
+  async function pushStrip(region) {
+    if (region.width < 4 || region.height < 4) return;
+    const buf = await sharp(buffer, { animated: ext === "gif" })
+      .extract(region)
+      .resize(patchW, patchH, { fit: "fill" })
+      .blur(18)
+      .png()
+      .toBuffer();
+    strips.push(buf);
+  }
 
+  await pushStrip({
+    left,
+    top: Math.max(0, top - band),
+    width: patchW,
+    height: Math.min(band, top),
+  });
+  await pushStrip({
+    left,
+    top: Math.min(height - 1, top + patchH),
+    width: patchW,
+    height: Math.min(band, height - (top + patchH)),
+  });
+  await pushStrip({
+    left: Math.max(0, left - band),
+    top,
+    width: Math.min(band, left),
+    height: patchH,
+  });
+  await pushStrip({
+    left: Math.min(width - 1, left + patchW),
+    top,
+    width: Math.min(band, width - (left + patchW)),
+    height: patchH,
+  });
+
+  if (!strips.length) {
+    strips.push(
+      await sharp(buffer, { animated: ext === "gif" })
+        .blur(40)
+        .extract({ left, top, width: patchW, height: patchH })
+        .png()
+        .toBuffer(),
+    );
+  }
+
+  let heal = strips[0];
+  for (let i = 1; i < strips.length; i++) {
+    const opacity = Math.round(255 / (i + 1));
+    const faded = await sharp(strips[i])
+      .ensureAlpha()
+      .composite([
+        {
+          input: Buffer.from([255, 255, 255, opacity]),
+          raw: { width: 1, height: 1, channels: 4 },
+          tile: true,
+          blend: "dest-in",
+        },
+      ])
+      .png()
+      .toBuffer();
+    heal = await sharp(heal).composite([{ input: faded, blend: "over" }]).png().toBuffer();
+  }
+
+  heal = await sharp(heal).blur(12).png().toBuffer();
+
+  const featherRadius = Math.max(12, Math.round(Math.min(patchW, patchH) * 0.12));
+  const coreW = Math.max(1, patchW - featherRadius * 2);
+  const coreH = Math.max(1, patchH - featherRadius * 2);
   const featherCore = await sharp({
     create: {
-      width: Math.max(1, Math.round(patchW * 0.72)),
-      height: Math.max(1, Math.round(patchH * 0.72)),
+      width: coreW,
+      height: coreH,
       channels: 4,
       background: { r: 255, g: 255, b: 255, alpha: 1 },
     },
   })
-    .blur(Math.max(8, Math.round(Math.min(patchW, patchH) * 0.08)))
+    .blur(featherRadius)
     .png()
     .toBuffer();
 
@@ -131,14 +207,14 @@ async function softenExistingWatermarkZone(buffer, ext) {
     .png()
     .toBuffer();
 
-  const featheredBlur = await sharp(blurredCenter)
+  const featheredHeal = await sharp(heal)
     .ensureAlpha()
     .composite([{ input: feather, blend: "dest-in" }])
     .png()
     .toBuffer();
 
   return sharp(buffer, { animated: ext === "gif" })
-    .composite([{ input: featheredBlur, left, top, blend: "over" }])
+    .composite([{ input: featheredHeal, left, top, blend: "over" }])
     .toBuffer();
 }
 
@@ -146,7 +222,7 @@ async function watermarkImage(buffer, ext, replaceExisting) {
   let source = buffer;
   if (replaceExisting) {
     try {
-      source = await softenExistingWatermarkZone(buffer, ext);
+      source = await clearExistingWatermarkZone(buffer, ext);
     } catch {
       source = buffer;
     }
@@ -158,7 +234,7 @@ async function watermarkImage(buffer, ext, replaceExisting) {
   const meta = await image.metadata();
   const w = meta.width ?? 1200;
   const h = meta.height ?? 800;
-  const wm = await watermarkPng(Math.round(Math.min(w, h) * scale), opacity);
+  const wm = await watermarkPng(Math.min(w, h) * scale, opacity, w, h);
   let pipeline = image.composite([{ input: wm, gravity: "center", blend: "over" }]);
   if (ext === "png") pipeline = pipeline.png();
   else if (ext === "webp") pipeline = pipeline.webp({ quality: 88 });
@@ -291,20 +367,24 @@ async function main() {
       continue;
     }
 
-    const output = isVideo
-      ? await watermarkVideo(input, ext, replaceExisting)
-      : await watermarkImage(input, ext, replaceExisting);
-    const { error: upErr } = await db.storage.from(BUCKET).upload(path, output, {
-      contentType: contentTypeFor(ext),
-      upsert: true,
-      metadata: { watermarked: "true", watermarkVersion: WATERMARK_VERSION },
-    });
-    if (upErr) {
-      console.error(`upload failed: ${path}`, upErr.message);
-      continue;
+    try {
+      const output = isVideo
+        ? await watermarkVideo(input, ext, replaceExisting)
+        : await watermarkImage(input, ext, replaceExisting);
+      const { error: upErr } = await db.storage.from(BUCKET).upload(path, output, {
+        contentType: contentTypeFor(ext),
+        upsert: true,
+        metadata: { watermarked: "true", watermarkVersion: WATERMARK_VERSION },
+      });
+      if (upErr) {
+        console.error(`upload failed: ${path}`, upErr.message);
+        continue;
+      }
+      done++;
+      console.log(`  ✓ watermarked (v${WATERMARK_VERSION})`);
+    } catch (err) {
+      console.error(`failed: ${path}`, err instanceof Error ? err.message : err);
     }
-    done++;
-    console.log(`  ✓ watermarked (v${WATERMARK_VERSION})`);
   }
 
   console.log(`\nDone. Processed: ${done}, skipped: ${skipped}, total listed: ${paths.length}`);

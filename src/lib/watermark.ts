@@ -8,15 +8,17 @@ import ffmpegPath from "ffmpeg-static";
 import sharp from "sharp";
 
 /** Fraction of the shorter image side used for watermark width */
-const IMAGE_WM_SCALE = 0.28;
-/** Slightly larger when replacing an older baked-in watermark */
-const IMAGE_WM_REAPPLY_SCALE = 0.32;
-/** Overall watermark opacity (0–1) — keep soft so logo never reads as a solid plate */
-const IMAGE_WM_OPACITY = 0.4;
-/** Slightly stronger when covering an older watermark */
-const IMAGE_WM_REAPPLY_OPACITY = 0.48;
-/** Bump when storage metadata is stale — re-run batch script after logo/softener changes */
-export const WATERMARK_VERSION = "3";
+const IMAGE_WM_SCALE = 0.26;
+/** Cover zone when removing stacked old marks (must be larger than any prior stamp) */
+const IMAGE_WM_CLEAR_SCALE = 0.48;
+/** Fresh stamp size after a clear pass */
+const IMAGE_WM_REAPPLY_SCALE = 0.26;
+/** Overall watermark opacity (0–1) */
+const IMAGE_WM_OPACITY = 0.38;
+/** Same opacity after clear — never stack darker/double */
+const IMAGE_WM_REAPPLY_OPACITY = 0.38;
+/** Bump when storage metadata is stale — re-run batch script after logo/clear changes */
+export const WATERMARK_VERSION = "4";
 /** Center logo opacity for video overlay (0–1) */
 const VIDEO_WM_ALPHA = 0.34;
 const VIDEO_EXTENSIONS = new Set(["mp4", "webm", "mov", "m4v", "3gp", "3g2", "avi", "mkv"]);
@@ -51,14 +53,31 @@ function resolveWatermarkPngPath(): string | null {
   return null;
 }
 
-async function getWatermarkPng(targetWidth: number, opacity = IMAGE_WM_OPACITY): Promise<Buffer | null> {
+async function getWatermarkPng(
+  targetWidth: number,
+  opacity = IMAGE_WM_OPACITY,
+  maxWidth?: number,
+  maxHeight?: number,
+): Promise<Buffer | null> {
   const path = resolveWatermarkPngPath();
   if (!path) return null;
 
-  const width = Math.max(120, Math.round(targetWidth));
+  const width = Math.max(48, Math.round(targetWidth));
   const alpha = Math.round(255 * opacity);
+  const fitW =
+    maxWidth != null && maxHeight != null
+      ? Math.max(24, Math.min(width, maxWidth - 4, maxHeight - 4))
+      : width;
+  const fitH = maxHeight != null ? Math.max(24, maxHeight - 4) : undefined;
+  // Trim transparent padding so the visible mark matches the requested width.
   return sharp(path)
-    .resize(width)
+    .trim({ threshold: 8 })
+    .resize({
+      width: fitW,
+      ...(fitH != null ? { height: fitH } : {}),
+      fit: "inside",
+      withoutEnlargement: false,
+    })
     .ensureAlpha()
     .composite([
       {
@@ -121,27 +140,107 @@ async function passthroughImage(
 }
 
 /**
- * Soften an older center watermark by blurring the photo itself in that zone
- * (never a solid gray/white plate — that left a visible rectangle on listings).
+ * Remove stacked center watermarks / grey plates by healing from surrounding pixels
+ * (never blur the watermark itself — that left a milky box + ghost logo).
  */
-async function softenExistingWatermarkZone(input: Buffer, contentType: string): Promise<Buffer> {
-  const image = sharp(input, { animated: contentType === "image/gif" });
-  const meta = await image.metadata();
+async function clearExistingWatermarkZone(input: Buffer, contentType: string): Promise<Buffer> {
+  const meta = await sharp(input, { animated: contentType === "image/gif" }).metadata();
   const width = meta.width ?? 1200;
   const height = meta.height ?? 800;
-  const patchW = Math.min(width, Math.round(Math.min(width, height) * IMAGE_WM_REAPPLY_SCALE * 1.35));
-  const patchH = Math.min(height, Math.round(patchW * 0.7));
+  const shortSide = Math.min(width, height);
+
+  const patchW = Math.min(width, Math.round(shortSide * IMAGE_WM_CLEAR_SCALE));
+  const patchH = Math.min(height, Math.round(shortSide * IMAGE_WM_CLEAR_SCALE * 0.78));
   const left = Math.max(0, Math.round((width - patchW) / 2));
   const top = Math.max(0, Math.round((height - patchH) / 2));
 
-  const blurredCenter = await sharp(input, { animated: contentType === "image/gif" })
-    .extract({ left, top, width: patchW, height: patchH })
-    .blur(28)
-    .modulate({ brightness: 1.02 })
+  const band = Math.max(24, Math.round(shortSide * 0.1));
+  const strips: Buffer[] = [];
+
+  const pushStrip = async (region: { left: number; top: number; width: number; height: number }) => {
+    if (region.width < 4 || region.height < 4) return;
+    const buf = await sharp(input, { animated: contentType === "image/gif" })
+      .extract(region)
+      .resize(patchW, patchH, { fit: "fill" })
+      .blur(18)
+      .png()
+      .toBuffer();
+    strips.push(buf);
+  };
+
+  // Prefer clean surroundings — never the watermarked core.
+  await pushStrip({
+    left,
+    top: Math.max(0, top - band),
+    width: patchW,
+    height: Math.min(band, top),
+  });
+  await pushStrip({
+    left,
+    top: Math.min(height - 1, top + patchH),
+    width: patchW,
+    height: Math.min(band, height - (top + patchH)),
+  });
+  await pushStrip({
+    left: Math.max(0, left - band),
+    top,
+    width: Math.min(band, left),
+    height: patchH,
+  });
+  await pushStrip({
+    left: Math.min(width - 1, left + patchW),
+    top,
+    width: Math.min(band, width - (left + patchW)),
+    height: patchH,
+  });
+
+  if (!strips.length) {
+    // Extreme edge case: fill from a heavy full-frame blur crop.
+    const fallback = await sharp(input, { animated: contentType === "image/gif" })
+      .blur(40)
+      .extract({ left, top, width: patchW, height: patchH })
+      .png()
+      .toBuffer();
+    strips.push(fallback);
+  }
+
+  // Average surrounding strips into one heal patch.
+  let heal = strips[0];
+  for (let i = 1; i < strips.length; i++) {
+    const opacity = Math.round(255 / (i + 1));
+    const faded = await sharp(strips[i])
+      .ensureAlpha()
+      .composite([
+        {
+          input: Buffer.from([255, 255, 255, opacity]),
+          raw: { width: 1, height: 1, channels: 4 },
+          tile: true,
+          blend: "dest-in",
+        },
+      ])
+      .png()
+      .toBuffer();
+    heal = await sharp(heal).composite([{ input: faded, blend: "over" }]).png().toBuffer();
+  }
+
+  heal = await sharp(heal).blur(12).png().toBuffer();
+
+  // Soft feather — no hard rectangle edge.
+  const featherRadius = Math.max(12, Math.round(Math.min(patchW, patchH) * 0.12));
+  const coreW = Math.max(1, patchW - featherRadius * 2);
+  const coreH = Math.max(1, patchH - featherRadius * 2);
+  const featherCore = await sharp({
+    create: {
+      width: coreW,
+      height: coreH,
+      channels: 4,
+      background: { r: 255, g: 255, b: 255, alpha: 1 },
+    },
+  })
+    .blur(featherRadius)
     .png()
     .toBuffer();
 
-  // Soft feather: full opacity in the middle, transparent at edges so no hard box.
   const feather = await sharp({
     create: {
       width: patchW,
@@ -150,34 +249,18 @@ async function softenExistingWatermarkZone(input: Buffer, contentType: string): 
       background: { r: 0, g: 0, b: 0, alpha: 0 },
     },
   })
-    .composite([
-      {
-        input: await sharp({
-          create: {
-            width: Math.max(1, Math.round(patchW * 0.72)),
-            height: Math.max(1, Math.round(patchH * 0.72)),
-            channels: 4,
-            background: { r: 255, g: 255, b: 255, alpha: 1 },
-          },
-        })
-          .blur(Math.max(8, Math.round(Math.min(patchW, patchH) * 0.08)))
-          .png()
-          .toBuffer(),
-        gravity: "center",
-        blend: "over",
-      },
-    ])
+    .composite([{ input: featherCore, gravity: "center", blend: "over" }])
     .png()
     .toBuffer();
 
-  const featheredBlur = await sharp(blurredCenter)
+  const featheredHeal = await sharp(heal)
     .ensureAlpha()
     .composite([{ input: feather, blend: "dest-in" }])
     .png()
     .toBuffer();
 
   return sharp(input, { animated: contentType === "image/gif" })
-    .composite([{ input: featheredBlur, left, top, blend: "over" }])
+    .composite([{ input: featheredHeal, left, top, blend: "over" }])
     .toBuffer();
 }
 
@@ -193,9 +276,10 @@ export async function applyImageWatermark(
   let source = input;
   if (replaceExisting) {
     try {
-      source = await softenExistingWatermarkZone(input, contentType);
+      // Clear old/stacked marks first, then stamp exactly one clean logo.
+      source = await clearExistingWatermarkZone(input, contentType);
     } catch (err) {
-      console.warn("[watermark] soften skipped:", err);
+      console.warn("[watermark] clear skipped:", err);
       source = input;
     }
   }
@@ -205,7 +289,7 @@ export async function applyImageWatermark(
   const width = meta.width ?? 1200;
   const height = meta.height ?? 800;
   const wmWidth = Math.round(Math.min(width, height) * scale);
-  const watermark = await getWatermarkPng(wmWidth, opacity);
+  const watermark = await getWatermarkPng(wmWidth, opacity, width, height);
 
   if (!watermark) {
     const passthrough = await passthroughImage(input, contentType);
