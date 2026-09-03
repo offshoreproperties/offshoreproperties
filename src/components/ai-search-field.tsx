@@ -19,9 +19,9 @@ import { FadeRotator } from "@/components/fade-phrases";
 import { LocationBrowse } from "@/components/location-browse";
 
 const AI_PROMPTS = [
-  "3-bed in Karen with a pool, around Kshs 50M",
+  "3-bed in Karen with a pool, around KES 50M",
   "family apartment in Kilimani, walking distance to Yaya",
-  "2-bed rental in Westlands under Kshs 120k",
+  "2-bed rental in Westlands under KES 120k",
   "garden home in Runda for a family of four",
   "what's available in Lavington for rent?",
   "land around Kiambu for building",

@@ -6,7 +6,7 @@ function formatKesAmount(price: number): string {
 
 export function formatPrice(price: number, currency = DEFAULT_CURRENCY, listingType = "sale") {
   if (currency === "KES") {
-    const base = `Kshs ${formatKesAmount(price)}`;
+    const base = `KES ${formatKesAmount(price)}`;
     if (listingType === "rent") return `${base}/mo`;
     if (listingType === "short_let") return `${base}/night`;
     return base;
@@ -24,7 +24,7 @@ export function formatPrice(price: number, currency = DEFAULT_CURRENCY, listingT
 
 /** Short price label for map pins */
 export function formatPriceCompact(price: number, currency = DEFAULT_CURRENCY, listingType = "sale") {
-  const prefix = currency === "KES" ? "Kshs " : currency === "USD" ? "$" : `${currency} `;
+  const prefix = currency === "KES" ? "KES " : currency === "USD" ? "$" : `${currency} `;
   let body: string;
   if (price >= 1_000_000_000) body = `${(price / 1_000_000_000).toFixed(1).replace(/\.0$/, "")}B`;
   else if (price >= 1_000_000) body = `${(price / 1_000_000).toFixed(1).replace(/\.0$/, "")}M`;

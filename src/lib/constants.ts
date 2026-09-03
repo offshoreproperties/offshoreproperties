@@ -24,27 +24,27 @@ export const DEFAULT_CURRENCY = "KES" as const;
 
 export const KES_PRICE_OPTIONS = [
   { label: "Any price", value: "" },
-  { label: "Kshs 100,000", value: "100000" },
-  { label: "Kshs 200,000", value: "200000" },
-  { label: "Kshs 500,000", value: "500000" },
-  { label: "Kshs 1,000,000", value: "1000000" },
-  { label: "Kshs 5,000,000", value: "5000000" },
-  { label: "Kshs 10,000,000", value: "10000000" },
-  { label: "Kshs 25,000,000", value: "25000000" },
-  { label: "Kshs 50,000,000", value: "50000000" },
-  { label: "Kshs 100,000,000", value: "100000000" },
+  { label: "KES 100,000", value: "100000" },
+  { label: "KES 200,000", value: "200000" },
+  { label: "KES 500,000", value: "500000" },
+  { label: "KES 1,000,000", value: "1000000" },
+  { label: "KES 5,000,000", value: "5000000" },
+  { label: "KES 10,000,000", value: "10000000" },
+  { label: "KES 25,000,000", value: "25000000" },
+  { label: "KES 50,000,000", value: "50000000" },
+  { label: "KES 100,000,000", value: "100000000" },
 ] as const;
 
 /** Monthly rent budgets for rental / short-let searches */
 export const KES_RENT_PRICE_OPTIONS = [
   { label: "Any budget", value: "" },
-  { label: "Up to Kshs 50k / mo", value: "50000" },
-  { label: "Up to Kshs 80k / mo", value: "80000" },
-  { label: "Up to Kshs 120k / mo", value: "120000" },
-  { label: "Up to Kshs 200k / mo", value: "200000" },
-  { label: "Up to Kshs 350k / mo", value: "350000" },
-  { label: "Up to Kshs 500k / mo", value: "500000" },
-  { label: "Up to Kshs 1M / mo", value: "1000000" },
+  { label: "Up to KES 50k / mo", value: "50000" },
+  { label: "Up to KES 80k / mo", value: "80000" },
+  { label: "Up to KES 120k / mo", value: "120000" },
+  { label: "Up to KES 200k / mo", value: "200000" },
+  { label: "Up to KES 350k / mo", value: "350000" },
+  { label: "Up to KES 500k / mo", value: "500000" },
+  { label: "Up to KES 1M / mo", value: "1000000" },
 ] as const;
 
 /**

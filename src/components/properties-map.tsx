@@ -323,13 +323,13 @@ export function PropertiesMap({
           <div className="mt-3 flex flex-wrap items-center gap-4 text-xs text-neutral-600">
             {showPricePins ? (
               <span className="flex items-center gap-1.5">
-                <span className="rounded-full bg-[#2563eb] px-2 py-0.5 text-[10px] font-bold text-white">Kshs 12M</span>
+                <span className="rounded-full bg-[#2563eb] px-2 py-0.5 text-[10px] font-bold text-white">KES 12M</span>
                 Exact location
               </span>
             ) : null}
             {showPricePins ? (
               <span className="flex items-center gap-1.5">
-                <span className="rounded-full bg-neutral-700 px-2 py-0.5 text-[10px] font-bold text-white">~Kshs 12M</span>
+                <span className="rounded-full bg-neutral-700 px-2 py-0.5 text-[10px] font-bold text-white">~KES 12M</span>
                 Approximate area
               </span>
             ) : null}
