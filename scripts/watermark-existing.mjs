@@ -20,7 +20,7 @@ import ffmpegPath from "ffmpeg-static";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const BUCKET = "property-images";
-const WATERMARK_VERSION = "4";
+const WATERMARK_VERSION = "5";
 const dryRun = process.argv.includes("--dry-run");
 const force = process.argv.includes("--force");
 
@@ -67,11 +67,11 @@ const db = createClient(url, key, { auth: { persistSession: false } });
 const IMAGE_EXT = new Set(["jpg", "jpeg", "png", "webp", "gif"]);
 const VIDEO_EXT = new Set(["mp4", "webm", "mov", "m4v"]);
 
-const IMAGE_WM_SCALE = 0.26;
-const IMAGE_WM_CLEAR_SCALE = 0.48;
-const IMAGE_WM_REAPPLY_SCALE = 0.26;
-const IMAGE_WM_OPACITY = 0.38;
-const IMAGE_WM_REAPPLY_OPACITY = 0.38;
+const IMAGE_WM_SCALE = 0.24;
+const IMAGE_WM_CLEAR_SCALE = 0.72;
+const IMAGE_WM_REAPPLY_SCALE = 0.24;
+const IMAGE_WM_OPACITY = 0.36;
+const IMAGE_WM_REAPPLY_OPACITY = 0.36;
 
 async function watermarkPng(width, opacity, maxWidth, maxHeight) {
   const w = Math.max(48, Math.round(width));
@@ -100,18 +100,18 @@ async function watermarkPng(width, opacity, maxWidth, maxHeight) {
     .toBuffer();
 }
 
-/** Remove stacked center watermarks / grey plates using surrounding pixels. */
+/** Fully cover stacked center watermarks / grey plates. */
 async function clearExistingWatermarkZone(buffer, ext) {
   const meta = await sharp(buffer, { animated: ext === "gif" }).metadata();
   const width = meta.width ?? 1200;
   const height = meta.height ?? 800;
   const shortSide = Math.min(width, height);
 
-  const patchW = Math.min(width, Math.round(shortSide * IMAGE_WM_CLEAR_SCALE));
-  const patchH = Math.min(height, Math.round(shortSide * IMAGE_WM_CLEAR_SCALE * 0.78));
+  const patchW = Math.min(width, Math.max(32, Math.round(shortSide * IMAGE_WM_CLEAR_SCALE)));
+  const patchH = Math.min(height, Math.max(32, Math.round(shortSide * IMAGE_WM_CLEAR_SCALE * 0.82)));
   const left = Math.max(0, Math.round((width - patchW) / 2));
   const top = Math.max(0, Math.round((height - patchH) / 2));
-  const band = Math.max(24, Math.round(shortSide * 0.1));
+  const band = Math.max(32, Math.round(shortSide * 0.14));
   const strips = [];
 
   async function pushStrip(region) {
@@ -119,7 +119,7 @@ async function clearExistingWatermarkZone(buffer, ext) {
     const buf = await sharp(buffer, { animated: ext === "gif" })
       .extract(region)
       .resize(patchW, patchH, { fit: "fill" })
-      .blur(18)
+      .blur(22)
       .png()
       .toBuffer();
     strips.push(buf);
@@ -153,21 +153,20 @@ async function clearExistingWatermarkZone(buffer, ext) {
   if (!strips.length) {
     strips.push(
       await sharp(buffer, { animated: ext === "gif" })
-        .blur(40)
+        .blur(50)
         .extract({ left, top, width: patchW, height: patchH })
         .png()
         .toBuffer(),
     );
   }
 
-  let heal = strips[0];
+  let heal = await sharp(strips[0]).removeAlpha().png().toBuffer();
   for (let i = 1; i < strips.length; i++) {
-    const opacity = Math.round(255 / (i + 1));
     const faded = await sharp(strips[i])
       .ensureAlpha()
       .composite([
         {
-          input: Buffer.from([255, 255, 255, opacity]),
+          input: Buffer.from([255, 255, 255, 90]),
           raw: { width: 1, height: 1, channels: 4 },
           tile: true,
           blend: "dest-in",
@@ -178,24 +177,10 @@ async function clearExistingWatermarkZone(buffer, ext) {
     heal = await sharp(heal).composite([{ input: faded, blend: "over" }]).png().toBuffer();
   }
 
-  heal = await sharp(heal).blur(12).png().toBuffer();
-
-  const featherRadius = Math.max(12, Math.round(Math.min(patchW, patchH) * 0.12));
-  const coreW = Math.max(1, patchW - featherRadius * 2);
-  const coreH = Math.max(1, patchH - featherRadius * 2);
-  const featherCore = await sharp({
-    create: {
-      width: coreW,
-      height: coreH,
-      channels: 4,
-      background: { r: 255, g: 255, b: 255, alpha: 1 },
-    },
-  })
-    .blur(featherRadius)
-    .png()
-    .toBuffer();
-
-  const feather = await sharp({
+  const featherRadius = Math.max(10, Math.round(Math.min(patchW, patchH) * 0.06));
+  const coreW = Math.max(8, patchW - featherRadius * 2);
+  const coreH = Math.max(8, patchH - featherRadius * 2);
+  const mask = await sharp({
     create: {
       width: patchW,
       height: patchH,
@@ -203,18 +188,36 @@ async function clearExistingWatermarkZone(buffer, ext) {
       background: { r: 0, g: 0, b: 0, alpha: 0 },
     },
   })
-    .composite([{ input: featherCore, gravity: "center", blend: "over" }])
+    .composite([
+      {
+        input: await sharp({
+          create: {
+            width: coreW,
+            height: coreH,
+            channels: 4,
+            background: { r: 255, g: 255, b: 255, alpha: 1 },
+          },
+        })
+          .blur(featherRadius)
+          .png()
+          .toBuffer(),
+        gravity: "center",
+        blend: "over",
+      },
+    ])
     .png()
     .toBuffer();
 
-  const featheredHeal = await sharp(heal)
+  const healOpaque = await sharp(heal)
+    .resize(patchW, patchH, { fit: "fill" })
+    .blur(8)
     .ensureAlpha()
-    .composite([{ input: feather, blend: "dest-in" }])
+    .composite([{ input: mask, blend: "dest-in" }])
     .png()
     .toBuffer();
 
   return sharp(buffer, { animated: ext === "gif" })
-    .composite([{ input: featheredHeal, left, top, blend: "over" }])
+    .composite([{ input: healOpaque, left, top, blend: "over" }])
     .toBuffer();
 }
 
@@ -223,6 +226,7 @@ async function watermarkImage(buffer, ext, replaceExisting) {
   if (replaceExisting) {
     try {
       source = await clearExistingWatermarkZone(buffer, ext);
+      source = await clearExistingWatermarkZone(source, ext);
     } catch {
       source = buffer;
     }
