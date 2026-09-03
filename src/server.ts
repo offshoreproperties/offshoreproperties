@@ -25,7 +25,8 @@ const CSP = [
   "img-src 'self' https: data: blob: https://maps.googleapis.com https://maps.gstatic.com",
   "font-src 'self' https://fonts.gstatic.com data:",
   "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://ai.gateway.lovable.dev https://*.googleapis.com https://maps.googleapis.com https://*.gstatic.com https://api.openai.com https://api.anthropic.com",
-  "frame-src https://www.google.com https://maps.google.com https://www.openstreetmap.org",
+  // OSM is the fallback map when Google Maps is unavailable (admin picker + property maps)
+  "frame-src 'self' https://www.google.com https://maps.google.com https://www.openstreetmap.org https://openstreetmap.org",
   "worker-src 'self' blob:",
   "object-src 'none'",
   "base-uri 'self'",
@@ -40,9 +41,14 @@ const SECURITY_HEADERS: Record<string, string> = {
   "Content-Security-Policy": CSP,
 };
 
+/** Always apply our CSP — earlier middleware may set a Google-only frame-src that blocks OSM. */
 function applySecurityHeaders(response: Response): Response {
   const headers = new Headers(response.headers);
   for (const [key, value] of Object.entries(SECURITY_HEADERS)) {
+    if (key === "Content-Security-Policy") {
+      headers.set(key, value);
+      continue;
+    }
     if (!headers.has(key)) headers.set(key, value);
   }
   return new Response(response.body, {
