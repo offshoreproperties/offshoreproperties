@@ -13,11 +13,12 @@ import {
 import { formatPrice, formatArea, propertyTypeLabel, statusLabel } from "@/lib/format";
 import { BRAND } from "@/lib/constants";
 import { propertyWhatsAppUrl, type PropertyWhatsAppContext } from "@/lib/whatsapp";
+import { BrandPhoneList } from "@/components/contact-phone-row";
 import { WhatsAppButton } from "@/components/whatsapp-button";
 import { EnquiryForm } from "@/components/enquiry-form";
 import { ViewingForm } from "@/components/viewing-form";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Bed, Bath, Maximize, MapPin, ArrowLeft, Map, Phone } from "lucide-react";
+import { Bed, Bath, Maximize, MapPin, ArrowLeft, Map } from "lucide-react";
 import { PropertyLocationMap } from "@/components/maps/property-location-map";
 import { PropertyAiAdvisor } from "@/components/property-ai-advisor";
 import { ListingBadgesDisplay } from "@/components/listing-badges-display";
@@ -150,27 +151,12 @@ function PropertyContactPanel({
         </Tabs>
 
         <div className="mt-5 border-t border-slate-100 pt-4">
-          <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Or call us</p>
-          <ul className="mt-2 space-y-1">
-            <li>
-              <a
-                href={`tel:${BRAND.phone.replace(/\s/g, "")}`}
-                className="flex min-h-10 items-center gap-2 text-sm text-slate-700 hover:text-blue-600"
-              >
-                <Phone className="h-4 w-4 shrink-0 text-slate-400" />
-                {BRAND.phone}
-              </a>
-            </li>
-            <li>
-              <a
-                href={`tel:${BRAND.phone2.replace(/\s/g, "")}`}
-                className="flex min-h-10 items-center gap-2 text-sm text-slate-700 hover:text-blue-600"
-              >
-                <Phone className="h-4 w-4 shrink-0 text-slate-400" />
-                {BRAND.phone2}
-              </a>
-            </li>
-          </ul>
+          <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Call or WhatsApp</p>
+          <BrandPhoneList
+            className="mt-2 space-y-1"
+            iconClassName="h-4 w-4 text-slate-400"
+            linkClassName="min-h-10 text-sm text-slate-700 hover:text-blue-600"
+          />
           {compact && (
             <div className="mt-4">
               <WhatsAppButton href={whatsappUrl} label="Chat on WhatsApp" variant="outline" />

@@ -10,6 +10,7 @@ export const BRAND = {
   phone: "+254 702 447 447",
   phone2: "+254 781 310 331",
   whatsapp: "+254702447447",
+  whatsapp2: "+254781310331",
   logoSrc: "/offshore-logo.png",
   ogImageSrc: "/og-image.jpg",
 } as const;

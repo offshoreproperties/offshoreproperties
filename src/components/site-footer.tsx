@@ -1,8 +1,8 @@
 import { Link } from "@tanstack/react-router";
-import { Mail, MapPin, MessageCircle, Phone } from "lucide-react";
+import { Mail, MapPin } from "lucide-react";
 import { BRAND } from "@/lib/constants";
-import { buildWhatsAppUrl } from "@/lib/whatsapp";
 import { BrandLogo } from "@/components/brand-logo";
+import { BrandPhoneList } from "@/components/contact-phone-row";
 
 const EXPLORE_LINKS = [
   { to: "/properties" as const, label: "All listings" },
@@ -48,10 +48,6 @@ function FooterSection({ title, children }: { title: string; children: React.Rea
 }
 
 export function SiteFooter() {
-  const whatsappHref = buildWhatsAppUrl(BRAND.whatsapp, [
-    `Hi — I found you on ${BRAND.name} and wanted to ask about what's available.`,
-  ]);
-
   return (
     <footer className="border-t border-slate-800/80 bg-gradient-to-b from-slate-950 via-slate-950 to-slate-900 text-slate-300">
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12 lg:py-14">
@@ -92,26 +88,11 @@ export function SiteFooter() {
                   <span className="whitespace-nowrap">{BRAND.email}</span>
                 </a>
               </li>
-              <li>
-                <a
-                  href={whatsappHref}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2 py-1 text-sm text-[#6ee7b7] transition-colors hover:text-[#a7f3d0] sm:py-1.5"
-                >
-                  <MessageCircle className="h-3.5 w-3.5 shrink-0" />
-                  {BRAND.phone}
-                </a>
-              </li>
-              <li>
-                <a
-                  href={`tel:${BRAND.phone2.replace(/\s/g, "")}`}
-                  className="flex items-center gap-2 py-1 text-sm text-slate-400 transition-colors hover:text-white sm:py-1.5"
-                >
-                  <Phone className="h-3.5 w-3.5 shrink-0 text-slate-500" />
-                  {BRAND.phone2}
-                </a>
-              </li>
+              <BrandPhoneList
+                asItems
+                iconClassName="text-slate-500"
+                linkClassName="text-sm text-slate-400 transition-colors hover:text-white sm:py-1.5"
+              />
               </FooterSection>
             </div>
           </div>

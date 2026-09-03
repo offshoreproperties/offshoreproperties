@@ -4,8 +4,9 @@ import { SectionHeading } from "@/components/section-heading";
 import { EnquiryForm } from "@/components/enquiry-form";
 import { BRAND } from "@/lib/constants";
 import { buildWhatsAppUrl } from "@/lib/whatsapp";
-import { Mail, Phone, MapPin } from "lucide-react";
+import { Mail, MapPin } from "lucide-react";
 import { WhatsAppButton } from "@/components/whatsapp-button";
+import { BrandPhoneList } from "@/components/contact-phone-row";
 
 export const Route = createFileRoute("/contact")({
   head: () => ({
@@ -39,24 +40,11 @@ function ContactPage() {
                   {BRAND.email}
                 </a>
               </li>
-              <li>
-                <a
-                  href={`tel:${BRAND.phone.replace(/\s/g, "")}`}
-                  className="flex min-h-[48px] items-center gap-3 rounded-lg px-1 text-neutral-600 hover:text-neutral-900"
-                >
-                  <Phone className="h-5 w-5 shrink-0 text-[#2563eb]" />
-                  {BRAND.phone}
-                </a>
-              </li>
-              <li>
-                <a
-                  href={`tel:${BRAND.phone2.replace(/\s/g, "")}`}
-                  className="flex min-h-[48px] items-center gap-3 rounded-lg px-1 text-neutral-600 hover:text-neutral-900"
-                >
-                  <Phone className="h-5 w-5 shrink-0 text-[#2563eb]" />
-                  {BRAND.phone2}
-                </a>
-              </li>
+              <BrandPhoneList
+                asItems
+                iconClassName="h-5 w-5 text-[#2563eb]"
+                linkClassName="min-h-[48px] text-sm text-neutral-600 hover:text-neutral-900"
+              />
               <li className="px-1 pt-2">
                 <WhatsAppButton
                   href={buildWhatsAppUrl(BRAND.whatsapp, [
