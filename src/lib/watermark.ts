@@ -8,17 +8,17 @@ import ffmpegPath from "ffmpeg-static";
 import sharp from "sharp";
 
 /** Fraction of the shorter image side used for watermark width */
-const IMAGE_WM_SCALE = 0.32;
+const IMAGE_WM_SCALE = 0.28;
 /** Slightly larger when replacing an older baked-in watermark */
-const IMAGE_WM_REAPPLY_SCALE = 0.36;
-/** Overall watermark opacity (0–1) */
-const IMAGE_WM_OPACITY = 0.44;
-/** Stronger opacity when replacing an older watermark */
-const IMAGE_WM_REAPPLY_OPACITY = 0.52;
-/** Bump when storage metadata is stale — re-run batch script after logo changes */
-export const WATERMARK_VERSION = "2";
+const IMAGE_WM_REAPPLY_SCALE = 0.32;
+/** Overall watermark opacity (0–1) — keep soft so logo never reads as a solid plate */
+const IMAGE_WM_OPACITY = 0.4;
+/** Slightly stronger when covering an older watermark */
+const IMAGE_WM_REAPPLY_OPACITY = 0.48;
+/** Bump when storage metadata is stale — re-run batch script after logo/softener changes */
+export const WATERMARK_VERSION = "3";
 /** Center logo opacity for video overlay (0–1) */
-const VIDEO_WM_ALPHA = 0.36;
+const VIDEO_WM_ALPHA = 0.34;
 const VIDEO_EXTENSIONS = new Set(["mp4", "webm", "mov", "m4v", "3gp", "3g2", "avi", "mkv"]);
 const AUDIO_EXTENSIONS = new Set(["m4a", "mp3", "aac", "wav", "ogg"]);
 
@@ -120,27 +120,65 @@ async function passthroughImage(
   };
 }
 
+/**
+ * Soften an older center watermark by blurring the photo itself in that zone
+ * (never a solid gray/white plate — that left a visible rectangle on listings).
+ */
 async function softenExistingWatermarkZone(input: Buffer, contentType: string): Promise<Buffer> {
   const image = sharp(input, { animated: contentType === "image/gif" });
   const meta = await image.metadata();
   const width = meta.width ?? 1200;
   const height = meta.height ?? 800;
-  const patchW = Math.round(Math.min(width, height) * IMAGE_WM_REAPPLY_SCALE * 1.1);
-  const patchH = Math.round(patchW * 0.55);
+  const patchW = Math.min(width, Math.round(Math.min(width, height) * IMAGE_WM_REAPPLY_SCALE * 1.35));
+  const patchH = Math.min(height, Math.round(patchW * 0.7));
+  const left = Math.max(0, Math.round((width - patchW) / 2));
+  const top = Math.max(0, Math.round((height - patchH) / 2));
 
-  const patch = await sharp({
+  const blurredCenter = await sharp(input, { animated: contentType === "image/gif" })
+    .extract({ left, top, width: patchW, height: patchH })
+    .blur(28)
+    .modulate({ brightness: 1.02 })
+    .png()
+    .toBuffer();
+
+  // Soft feather: full opacity in the middle, transparent at edges so no hard box.
+  const feather = await sharp({
     create: {
       width: patchW,
       height: patchH,
       channels: 4,
-      background: { r: 255, g: 255, b: 255, alpha: 0.38 },
+      background: { r: 0, g: 0, b: 0, alpha: 0 },
     },
   })
-    .blur(12)
+    .composite([
+      {
+        input: await sharp({
+          create: {
+            width: Math.max(1, Math.round(patchW * 0.72)),
+            height: Math.max(1, Math.round(patchH * 0.72)),
+            channels: 4,
+            background: { r: 255, g: 255, b: 255, alpha: 1 },
+          },
+        })
+          .blur(Math.max(8, Math.round(Math.min(patchW, patchH) * 0.08)))
+          .png()
+          .toBuffer(),
+        gravity: "center",
+        blend: "over",
+      },
+    ])
     .png()
     .toBuffer();
 
-  return image.composite([{ input: patch, gravity: "center", blend: "over" }]).toBuffer();
+  const featheredBlur = await sharp(blurredCenter)
+    .ensureAlpha()
+    .composite([{ input: feather, blend: "dest-in" }])
+    .png()
+    .toBuffer();
+
+  return sharp(input, { animated: contentType === "image/gif" })
+    .composite([{ input: featheredBlur, left, top, blend: "over" }])
+    .toBuffer();
 }
 
 export async function applyImageWatermark(

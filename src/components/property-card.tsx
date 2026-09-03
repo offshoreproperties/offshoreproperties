@@ -24,7 +24,17 @@ import { AmenitiesDisplay } from "@/components/amenities-display";
 import { cn } from "@/lib/utils";
 import { isVideoUrl, isAudioUrl } from "@/lib/media";
 
-function CardMedia({ src, alt, className }: { src: string; alt: string; className?: string }) {
+function CardMedia({
+  src,
+  alt,
+  className,
+  loading = "lazy",
+}: {
+  src: string;
+  alt: string;
+  className?: string;
+  loading?: "lazy" | "eager";
+}) {
   if (isVideoUrl(src)) {
     return <video src={src} className={className} muted playsInline loop preload="metadata" aria-label={alt} />;
   }
@@ -35,7 +45,7 @@ function CardMedia({ src, alt, className }: { src: string; alt: string; classNam
       </div>
     );
   }
-  return <img src={src} alt={alt} loading="lazy" className={className} />;
+  return <img src={src} alt={alt} loading={loading} decoding="async" className={className} />;
 }
 
 export type PropertyCardData = {
@@ -87,7 +97,8 @@ function ImageCarousel({ images, title }: { images: string[]; title: string }) {
   function scroll(dir: "left" | "right") {
     const el = scrollRef.current;
     if (!el) return;
-    const amount = el.clientWidth * 0.8;
+    // Full slide width — 0.8 left cards stuck half-scrolled between snaps.
+    const amount = el.clientWidth;
     el.scrollBy({ left: dir === "left" ? -amount : amount, behavior: "smooth" });
   }
 
@@ -114,11 +125,11 @@ function ImageCarousel({ images, title }: { images: string[]; title: string }) {
     <div className="relative">
       <div
         ref={scrollRef}
-        className="flex snap-x snap-mandatory overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="flex snap-x snap-mandatory overflow-x-auto overscroll-x-contain [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {images.map((src, i) => (
-          <div key={src} className="aspect-[4/3] w-full shrink-0 snap-center bg-neutral-100">
-            <CardMedia src={src} alt={`${title} ${i + 1}`} className="h-full w-full object-cover" />
+          <div key={src} className="aspect-[4/3] w-full min-w-full shrink-0 snap-start snap-always bg-neutral-100">
+            <CardMedia src={src} alt={`${title} ${i + 1}`} className="pointer-events-none h-full w-full select-none object-cover" loading={i === 0 ? "eager" : "lazy"} />
           </div>
         ))}
       </div>

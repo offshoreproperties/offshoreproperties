@@ -20,7 +20,7 @@ import ffmpegPath from "ffmpeg-static";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const BUCKET = "property-images";
-const WATERMARK_VERSION = "2";
+const WATERMARK_VERSION = "3";
 const dryRun = process.argv.includes("--dry-run");
 const force = process.argv.includes("--force");
 
@@ -67,10 +67,10 @@ const db = createClient(url, key, { auth: { persistSession: false } });
 const IMAGE_EXT = new Set(["jpg", "jpeg", "png", "webp", "gif"]);
 const VIDEO_EXT = new Set(["mp4", "webm", "mov", "m4v"]);
 
-const IMAGE_WM_SCALE = 0.32;
-const IMAGE_WM_REAPPLY_SCALE = 0.36;
-const IMAGE_WM_OPACITY = 0.44;
-const IMAGE_WM_REAPPLY_OPACITY = 0.52;
+const IMAGE_WM_SCALE = 0.28;
+const IMAGE_WM_REAPPLY_SCALE = 0.32;
+const IMAGE_WM_OPACITY = 0.4;
+const IMAGE_WM_REAPPLY_OPACITY = 0.48;
 
 async function watermarkPng(width, opacity) {
   const w = Math.max(120, width);
@@ -90,25 +90,56 @@ async function watermarkPng(width, opacity) {
     .toBuffer();
 }
 
+/** Soften old center watermark by blurring the photo — never a gray/white plate. */
 async function softenExistingWatermarkZone(buffer, ext) {
-  const image = sharp(buffer, { animated: ext === "gif" });
-  const meta = await image.metadata();
+  const meta = await sharp(buffer, { animated: ext === "gif" }).metadata();
   const width = meta.width ?? 1200;
   const height = meta.height ?? 800;
-  const patchW = Math.round(Math.min(width, height) * IMAGE_WM_REAPPLY_SCALE * 1.1);
-  const patchH = Math.round(patchW * 0.55);
-  const patch = await sharp({
+  const patchW = Math.min(width, Math.round(Math.min(width, height) * IMAGE_WM_REAPPLY_SCALE * 1.35));
+  const patchH = Math.min(height, Math.round(patchW * 0.7));
+  const left = Math.max(0, Math.round((width - patchW) / 2));
+  const top = Math.max(0, Math.round((height - patchH) / 2));
+
+  const blurredCenter = await sharp(buffer, { animated: ext === "gif" })
+    .extract({ left, top, width: patchW, height: patchH })
+    .blur(28)
+    .modulate({ brightness: 1.02 })
+    .png()
+    .toBuffer();
+
+  const featherCore = await sharp({
+    create: {
+      width: Math.max(1, Math.round(patchW * 0.72)),
+      height: Math.max(1, Math.round(patchH * 0.72)),
+      channels: 4,
+      background: { r: 255, g: 255, b: 255, alpha: 1 },
+    },
+  })
+    .blur(Math.max(8, Math.round(Math.min(patchW, patchH) * 0.08)))
+    .png()
+    .toBuffer();
+
+  const feather = await sharp({
     create: {
       width: patchW,
       height: patchH,
       channels: 4,
-      background: { r: 255, g: 255, b: 255, alpha: 0.38 },
+      background: { r: 0, g: 0, b: 0, alpha: 0 },
     },
   })
-    .blur(12)
+    .composite([{ input: featherCore, gravity: "center", blend: "over" }])
     .png()
     .toBuffer();
-  return image.composite([{ input: patch, gravity: "center", blend: "over" }]).toBuffer();
+
+  const featheredBlur = await sharp(blurredCenter)
+    .ensureAlpha()
+    .composite([{ input: feather, blend: "dest-in" }])
+    .png()
+    .toBuffer();
+
+  return sharp(buffer, { animated: ext === "gif" })
+    .composite([{ input: featheredBlur, left, top, blend: "over" }])
+    .toBuffer();
 }
 
 async function watermarkImage(buffer, ext, replaceExisting) {
