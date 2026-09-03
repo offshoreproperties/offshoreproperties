@@ -2,11 +2,12 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { requireAdminAuth } from "@/integrations/supabase/admin-middleware";
-import { applyMediaWatermark, isAudioMedia, isVideoMedia, WATERMARK_VERSION } from "@/lib/watermark";
 
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
 const MAX_VIDEO_BYTES = 80 * 1024 * 1024;
 const MAX_UPLOAD_BASE64_LENGTH = 14_000_000;
+/** Skip server-side watermark above this size to avoid Render OOM / HTML 500s. */
+const MAX_WATERMARK_BYTES = 8 * 1024 * 1024;
 
 const EXT_TO_MIME: Record<string, string> = {
   jpg: "image/jpeg",
@@ -56,6 +57,11 @@ function storagePath(fileName: string): string {
   return `${Date.now()}-${safeName.endsWith(`.${ext}`) ? safeName : `${safeName}.${ext}`}`;
 }
 
+function publicUrlFor(path: string): string {
+  const { data: urlData } = supabaseAdmin.storage.from("property-images").getPublicUrl(path);
+  return urlData.publicUrl;
+}
+
 const MetaSchema = z
   .object({
     fileName: z.string().min(1).max(200),
@@ -90,22 +96,47 @@ export const createPropertyUploadUrl = createServerFn({ method: "POST" })
       .from("property-images")
       .createSignedUploadUrl(path);
 
-    if (error || !signed) {
+    if (error || !signed?.signedUrl) {
       console.error("[upload] createSignedUploadUrl failed:", error);
-      throw new Error(error?.message || "Could not start upload — try again.");
+      throw new Error(
+        error?.message?.includes("not found")
+          ? "Storage bucket missing — contact support."
+          : error?.message || "Could not start upload — try again.",
+      );
     }
 
-    const { data: urlData } = supabaseAdmin.storage.from("property-images").getPublicUrl(path);
     return {
       signedUrl: signed.signedUrl,
       token: signed.token,
       path,
-      publicUrl: urlData.publicUrl,
+      publicUrl: publicUrlFor(path),
       contentType: data.contentType,
     };
   });
 
-/** Step 2 — optional watermark pass after direct upload. */
+async function tryWatermark(
+  raw: Buffer,
+  fileName: string,
+  contentType: string,
+): Promise<{ buffer: Buffer; contentType: string; watermarked: boolean }> {
+  if (raw.length > MAX_WATERMARK_BYTES) {
+    return { buffer: raw, contentType, watermarked: false };
+  }
+  try {
+    const { applyMediaWatermark } = await import("@/lib/watermark");
+    const result = await applyMediaWatermark(raw, fileName, contentType);
+    return {
+      buffer: result.buffer,
+      contentType: result.contentType,
+      watermarked: result.watermarked,
+    };
+  } catch (err) {
+    console.error("[upload] watermark failed, keeping original:", err);
+    return { buffer: raw, contentType, watermarked: false };
+  }
+}
+
+/** Step 2 — optional watermark pass after direct upload. Never fails the upload. */
 export const finalizePropertyUpload = createServerFn({ method: "POST" })
   .middleware([requireAdminAuth])
   .inputValidator((input: unknown) =>
@@ -118,46 +149,43 @@ export const finalizePropertyUpload = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data }) => {
-    const { data: blob, error: dlError } = await supabaseAdmin.storage
-      .from("property-images")
-      .download(data.path);
-
-    if (dlError || !blob) {
-      console.error("[upload] download for watermark failed:", dlError);
-      const { data: urlData } = supabaseAdmin.storage.from("property-images").getPublicUrl(data.path);
-      return { url: urlData.publicUrl, watermarked: false };
-    }
-
-    const raw = Buffer.from(await blob.arrayBuffer());
-    let buffer = raw;
-    let contentType = data.contentType;
-    let watermarked = false;
+    const fallbackUrl = publicUrlFor(data.path);
 
     try {
-      const result = await applyMediaWatermark(raw, data.fileName, data.contentType);
-      buffer = result.buffer;
-      contentType = result.contentType;
-      watermarked = result.watermarked;
-    } catch (err) {
-      console.error("[upload] watermark failed, keeping original:", err);
-    }
+      const { data: blob, error: dlError } = await supabaseAdmin.storage
+        .from("property-images")
+        .download(data.path);
 
-    if (watermarked) {
-      const { error: upError } = await supabaseAdmin.storage.from("property-images").upload(data.path, buffer, {
-        contentType,
-        upsert: true,
-        metadata: { watermarked: "true", watermarkVersion: WATERMARK_VERSION },
-      });
-      if (upError) {
-        console.error("[upload] watermark re-upload failed:", upError);
+      if (dlError || !blob) {
+        console.error("[upload] download for watermark failed:", dlError);
+        return { url: fallbackUrl, watermarked: false };
       }
-    }
 
-    const { data: urlData } = supabaseAdmin.storage.from("property-images").getPublicUrl(data.path);
-    return { url: urlData.publicUrl, watermarked };
+      const raw = Buffer.from(await blob.arrayBuffer());
+      const result = await tryWatermark(raw, data.fileName, data.contentType);
+
+      if (result.watermarked) {
+        const { WATERMARK_VERSION } = await import("@/lib/watermark");
+        const { error: upError } = await supabaseAdmin.storage
+          .from("property-images")
+          .upload(data.path, result.buffer, {
+            contentType: result.contentType,
+            upsert: true,
+            metadata: { watermarked: "true", watermarkVersion: WATERMARK_VERSION },
+          });
+        if (upError) {
+          console.error("[upload] watermark re-upload failed:", upError);
+        }
+      }
+
+      return { url: publicUrlFor(data.path), watermarked: result.watermarked };
+    } catch (err) {
+      console.error("[upload] finalize failed — returning original URL:", err);
+      return { url: fallbackUrl, watermarked: false };
+    }
   });
 
-/** Legacy base64 upload — kept for small payloads / fallback. */
+/** Legacy / fallback upload through our server (small images). */
 export const uploadPropertyImage = createServerFn({ method: "POST" })
   .middleware([requireAdminAuth])
   .inputValidator((input: unknown) => {
@@ -186,8 +214,8 @@ export const uploadPropertyImage = createServerFn({ method: "POST" })
 
     if (!raw.length) throw new Error("Empty file — choose a different photo or recording.");
 
-    const isVideo = isVideoMedia(data.fileName, data.contentType);
-    const isAudio = isAudioMedia(data.fileName, data.contentType);
+    const isVideo = data.contentType.startsWith("video/");
+    const isAudio = data.contentType.startsWith("audio/");
     const maxBytes = isVideo || isAudio ? MAX_VIDEO_BYTES : MAX_IMAGE_BYTES;
     if (raw.length > maxBytes) {
       throw new Error(
@@ -197,23 +225,24 @@ export const uploadPropertyImage = createServerFn({ method: "POST" })
       );
     }
 
-    let buffer: Buffer = raw;
-    let contentType: string = data.contentType;
-    let watermarked = false;
-
-    try {
-      const result = await applyMediaWatermark(raw, data.fileName, data.contentType);
-      buffer = result.buffer;
-      contentType = result.contentType;
-      watermarked = result.watermarked;
-    } catch (error) {
-      console.error("[upload] Watermark step failed, storing original file:", error);
+    const result = await tryWatermark(raw, data.fileName, data.contentType);
+    let watermarkVersion = "0";
+    if (result.watermarked) {
+      try {
+        const { WATERMARK_VERSION } = await import("@/lib/watermark");
+        watermarkVersion = WATERMARK_VERSION;
+      } catch {
+        watermarkVersion = "3";
+      }
     }
 
-    const { error } = await supabaseAdmin.storage.from("property-images").upload(path, buffer, {
-      contentType,
+    const { error } = await supabaseAdmin.storage.from("property-images").upload(path, result.buffer, {
+      contentType: result.contentType,
       upsert: false,
-      metadata: { watermarked: watermarked ? "true" : "false", watermarkVersion: watermarked ? WATERMARK_VERSION : "0" },
+      metadata: {
+        watermarked: result.watermarked ? "true" : "false",
+        watermarkVersion,
+      },
     });
 
     if (error) {
@@ -221,6 +250,5 @@ export const uploadPropertyImage = createServerFn({ method: "POST" })
       throw new Error(error.message || "Storage upload failed — try again in a moment.");
     }
 
-    const { data: urlData } = supabaseAdmin.storage.from("property-images").getPublicUrl(path);
-    return { url: urlData.publicUrl, path };
+    return { url: publicUrlFor(path), path };
   });

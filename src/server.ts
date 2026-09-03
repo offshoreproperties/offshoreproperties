@@ -25,7 +25,7 @@ const CSP = [
   "img-src 'self' https: data: blob: https://maps.googleapis.com https://maps.gstatic.com",
   "font-src 'self' https://fonts.gstatic.com data:",
   "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://ai.gateway.lovable.dev https://*.googleapis.com https://maps.googleapis.com https://*.gstatic.com https://api.openai.com https://api.anthropic.com",
-  "frame-src https://www.google.com https://maps.google.com",
+  "frame-src https://www.google.com https://maps.google.com https://www.openstreetmap.org",
   "worker-src 'self' blob:",
   "object-src 'none'",
   "base-uri 'self'",
@@ -35,7 +35,7 @@ const SECURITY_HEADERS: Record<string, string> = {
   "X-Content-Type-Options": "nosniff",
   "X-Frame-Options": "DENY",
   "Referrer-Policy": "strict-origin-when-cross-origin",
-  "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
+  "Permissions-Policy": "camera=(self), microphone=(self), geolocation=()",
   "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
   "Content-Security-Policy": CSP,
 };

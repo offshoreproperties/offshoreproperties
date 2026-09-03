@@ -194,7 +194,8 @@ export async function applyImageWatermark(
   if (replaceExisting) {
     try {
       source = await softenExistingWatermarkZone(input, contentType);
-    } catch {
+    } catch (err) {
+      console.warn("[watermark] soften skipped:", err);
       source = input;
     }
   }

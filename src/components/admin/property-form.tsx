@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
-import { createPropertyUploadUrl, finalizePropertyUpload } from "@/lib/storage.functions";
+import { createPropertyUploadUrl, finalizePropertyUpload, uploadPropertyImage } from "@/lib/storage.functions";
 import { geocodeAddress, reverseGeocodeCoordinates } from "@/lib/geocode.functions";
 import { checkGoogleMapsApi } from "@/lib/maps.functions";
 import { adminListAgents } from "@/lib/admin-agents.functions";
@@ -111,6 +111,7 @@ export function PropertyForm({
 }) {
   const createUploadUrl = useServerFn(createPropertyUploadUrl);
   const finalizeUpload = useServerFn(finalizePropertyUpload);
+  const uploadViaServer = useServerFn(uploadPropertyImage);
   const geocode = useServerFn(geocodeAddress);
   const reverseGeocode = useServerFn(reverseGeocodeCoordinates);
   const fetchAgents = useServerFn(adminListAgents);
@@ -270,47 +271,82 @@ export function PropertyForm({
       const contentType = resolvePropertyUploadMime(prepared);
       if (!contentType) throw new Error("Unsupported file type");
 
-      // Direct-to-Supabase upload (avoids huge base64 server-fn payloads)
-      const slot = await createUploadUrl({
-        data: {
-          fileName: prepared.name,
-          contentType,
-          fileSize: prepared.size,
-        },
-      });
+      const FALLBACK_MAX = 3.5 * 1024 * 1024;
 
-      const putRes = await fetch(slot.signedUrl, {
-        method: "PUT",
-        body: prepared,
-        headers: {
-          "Content-Type": contentType,
-          ...(slot.token ? { "x-upsert": "false" } : {}),
-        },
-      });
-
-      if (!putRes.ok) {
-        const detail = await putRes.text().catch(() => "");
-        throw new Error(
-          detail.includes("Payload too large")
-            ? "File too large for storage — try a smaller photo"
-            : `Storage rejected upload (${putRes.status})`,
-        );
-      }
-
-      try {
-        const { url } = await finalizeUpload({
+      async function uploadDirect(): Promise<string> {
+        const slot = await createUploadUrl({
           data: {
-            path: slot.path,
             fileName: prepared.name,
             contentType,
+            fileSize: prepared.size,
+          },
+        });
+
+        const putRes = await fetch(slot.signedUrl, {
+          method: "PUT",
+          body: prepared,
+          headers: {
+            "Content-Type": contentType,
+          },
+        });
+
+        if (!putRes.ok) {
+          const detail = await putRes.text().catch(() => "");
+          throw new Error(
+            detail.includes("Payload too large") || putRes.status === 413
+              ? "File too large for storage — try a smaller photo"
+              : `Storage rejected upload (${putRes.status})`,
+          );
+        }
+
+        try {
+          const { url } = await finalizeUpload({
+            data: {
+              path: slot.path,
+              fileName: prepared.name,
+              contentType,
+            },
+          });
+          return url || slot.publicUrl;
+        } catch {
+          return slot.publicUrl;
+        }
+      }
+
+      async function uploadFallback(): Promise<string> {
+        if (prepared.size > FALLBACK_MAX) {
+          throw new Error("Upload failed — try a smaller photo or re-login to admin.");
+        }
+        const buffer = await prepared.arrayBuffer();
+        const bytes = new Uint8Array(buffer);
+        let binary = "";
+        const chunk = 0x8000;
+        for (let i = 0; i < bytes.length; i += chunk) {
+          binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
+        }
+        const dataBase64 = btoa(binary);
+        const { url } = await uploadViaServer({
+          data: {
+            fileName: prepared.name,
+            contentType,
+            dataBase64,
           },
         });
         return url;
-      } catch {
-        return slot.publicUrl;
+      }
+
+      try {
+        return await uploadDirect();
+      } catch (directErr) {
+        console.warn("[upload] direct path failed, trying server fallback:", directErr);
+        try {
+          return await uploadFallback();
+        } catch (fallbackErr) {
+          throw fallbackErr instanceof Error ? fallbackErr : directErr;
+        }
       }
     },
-    [createUploadUrl, finalizeUpload],
+    [createUploadUrl, finalizeUpload, uploadViaServer],
   );
 
   async function handleFiles(files: FileList | File[] | null) {

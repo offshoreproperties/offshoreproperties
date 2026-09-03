@@ -9,7 +9,10 @@ export function sanitizeUserFacingError(message: string | undefined | null): str
     trimmed.includes("This page didn't load") ||
     trimmed.includes("Something went wrong on our end")
   ) {
-    return "Something went wrong — please refresh and try again.";
+    return "Upload or save failed on the server — please try again in a moment. If it keeps happening, re-login to admin.";
+  }
+  if (/unauthorized|admin login required|invalid admin/i.test(trimmed)) {
+    return "Admin session expired — please log in again.";
   }
   if (trimmed.length > 280) {
     return `${trimmed.slice(0, 280)}…`;
