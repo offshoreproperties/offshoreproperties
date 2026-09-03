@@ -62,7 +62,7 @@ export function SiteFooter() {
           </div>
 
           {/* Links + contact */}
-          <div className="grid grid-cols-2 gap-x-6 gap-y-6 sm:grid-cols-3 sm:gap-x-8 lg:gap-x-10">
+          <div className="grid grid-cols-2 gap-x-6 gap-y-6 sm:grid-cols-[1fr_1fr_auto] sm:gap-x-8 lg:gap-x-10">
             <FooterSection title="Explore">
               {EXPLORE_LINKS.map((item) => (
                 <li key={item.label}>
@@ -86,10 +86,10 @@ export function SiteFooter() {
               <li>
                 <a
                   href={`mailto:${BRAND.email}`}
-                  className="flex items-start gap-2 py-1 text-sm text-slate-400 transition-colors hover:text-white sm:py-1.5"
+                  className="flex items-center gap-2 py-1 text-sm text-slate-400 transition-colors hover:text-white sm:py-1.5"
                 >
-                  <Mail className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-500" />
-                  <span className="break-all">{BRAND.email}</span>
+                  <Mail className="h-3.5 w-3.5 shrink-0 text-slate-500" />
+                  <span className="whitespace-nowrap">{BRAND.email}</span>
                 </a>
               </li>
               <li>
