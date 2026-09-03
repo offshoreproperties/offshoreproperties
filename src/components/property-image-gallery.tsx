@@ -285,6 +285,80 @@ function GalleryLightbox({
   );
 }
 
+function DesktopMosaic({
+  images,
+  title,
+  onOpen,
+}: {
+  images: string[];
+  title: string;
+  onOpen: (index: number) => void;
+}) {
+  const shown = images.slice(0, 5);
+  const extra = Math.max(0, images.length - shown.length);
+
+  const tile = (src: string, i: number, className: string) => (
+    <button
+      key={`${src}-${i}`}
+      type="button"
+      onClick={() => onOpen(i)}
+      className={cn(
+        "relative min-h-0 overflow-hidden bg-slate-100 transition hover:brightness-[0.97]",
+        className,
+      )}
+      aria-label={`${title} — photo ${i + 1}`}
+    >
+      <MediaPreview
+        src={src}
+        alt={`${title} — photo ${i + 1}`}
+        className="h-full w-full object-cover"
+        loading={i === 0 ? "eager" : "lazy"}
+        fetchPriority={i === 0 ? "high" : "auto"}
+      />
+      {i === shown.length - 1 && extra > 0 && (
+        <span className="absolute inset-0 flex items-center justify-center bg-black/45 text-sm font-semibold text-white">
+          +{extra} more
+        </span>
+      )}
+    </button>
+  );
+
+  if (images.length === 1) {
+    return (
+      <div className="relative hidden md:block">
+        {tile(images[0], 0, "aspect-[16/9] max-h-[min(62vh,560px)] w-full rounded-2xl")}
+      </div>
+    );
+  }
+
+  if (images.length === 2) {
+    return (
+      <div className="relative hidden h-[min(56vh,500px)] md:grid md:grid-cols-2 md:gap-3">
+        {tile(images[0], 0, "rounded-2xl")}
+        {tile(images[1], 1, "rounded-2xl")}
+      </div>
+    );
+  }
+
+  // 3+ photos: large hero + stacked tiles with visible gutters
+  if (images.length === 3) {
+    return (
+      <div className="relative hidden h-[min(58vh,540px)] md:grid md:grid-cols-3 md:grid-rows-2 md:gap-3">
+        {tile(images[0], 0, "col-span-2 row-span-2 rounded-2xl")}
+        {tile(images[1], 1, "rounded-2xl")}
+        {tile(images[2], 2, "rounded-2xl")}
+      </div>
+    );
+  }
+
+  return (
+      <div className="relative hidden h-[min(58vh,540px)] md:grid md:grid-cols-4 md:grid-rows-2 md:gap-3">
+      {tile(images[0], 0, "col-span-2 row-span-2 rounded-2xl")}
+      {shown.slice(1).map((src, idx) => tile(src, idx + 1, "rounded-2xl"))}
+    </div>
+  );
+}
+
 export function PropertyImageGallery({
   images,
   title,
@@ -346,10 +420,28 @@ export function PropertyImageGallery({
   return (
     <>
       <div className={cn(edgeToEdge ? "" : "bg-white")}>
-        <div className="w-full">
+        <div className="relative w-full">
+          <DesktopMosaic
+            images={images}
+            title={title}
+            onOpen={(i) => {
+              setActive(i);
+              setLightboxOpen(true);
+            }}
+          />
+          <button
+            type="button"
+            onClick={() => setLightboxOpen(true)}
+            className="absolute right-4 top-4 z-[2] hidden items-center gap-1.5 rounded-full bg-white/95 px-3 py-1.5 text-xs font-medium text-slate-900 shadow-sm ring-1 ring-slate-200/80 transition hover:bg-white md:flex"
+            aria-label={`View ${title} photos full screen`}
+          >
+            <Expand className="h-3.5 w-3.5" />
+            Expand
+          </button>
+
           <div
             className={cn(
-              "relative w-full overflow-hidden bg-slate-100",
+              "relative w-full overflow-hidden bg-slate-100 md:hidden",
               edgeToEdge ? "sm:rounded-2xl" : "rounded-lg",
             )}
           >
@@ -416,7 +508,7 @@ export function PropertyImageGallery({
           {images.length > 1 && (
             <div
               className={cn(
-                "mt-2 flex gap-1.5 overflow-x-auto px-4 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
+                "mt-2.5 flex gap-2.5 overflow-x-auto px-4 md:hidden [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
                 edgeToEdge ? "sm:px-0" : "",
               )}
             >
@@ -426,7 +518,7 @@ export function PropertyImageGallery({
                   type="button"
                   onClick={() => setActive(i)}
                   className={cn(
-                    "relative h-14 w-[72px] shrink-0 overflow-hidden rounded-md ring-2 transition sm:h-16 sm:w-20",
+                    "relative h-16 w-[84px] shrink-0 overflow-hidden rounded-lg ring-2 transition sm:h-[4.5rem] sm:w-24",
                     i === active ? "ring-blue-600" : "ring-transparent opacity-75 hover:opacity-100",
                   )}
                 >
