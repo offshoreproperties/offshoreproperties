@@ -58,7 +58,7 @@ if (!WATERMARK_PNG) {
   process.exit(1);
 }
 
-const WATERMARK_VERSION = "9";
+const WATERMARK_VERSION = "10";
 
 console.log(`Using logo: ${WATERMARK_PNG}`);
 console.log(`Watermark version: ${WATERMARK_VERSION}${force ? " (--force)" : ""}\n`);
@@ -68,7 +68,6 @@ const db = createClient(url, key, { auth: { persistSession: false } });
 const IMAGE_EXT = new Set(["jpg", "jpeg", "png", "webp", "gif"]);
 const VIDEO_EXT = new Set(["mp4", "webm", "mov", "m4v"]);
 const IMAGE_WM_SCALE = 0.2;
-const IMAGE_WM_CLEAR_SCALE = 0.5;
 const IMAGE_WM_REAPPLY_SCALE = 0.2;
 const IMAGE_WM_OPACITY = 0.24;
 const IMAGE_WM_REAPPLY_OPACITY = 0.24;
@@ -102,9 +101,9 @@ async function watermarkPng(width, opacity, maxWidth, maxHeight) {
 
 async function watermarkImage(buffer, ext, replaceExisting) {
   let source = buffer;
-  if (replaceExisting) {
+  if (replaceExisting && ext !== "gif") {
     try {
-      source = await clearExistingWatermarkZone(buffer, ext);
+      source = await inpaintExistingWatermark(buffer, ext);
     } catch {
       source = buffer;
     }
@@ -125,82 +124,18 @@ async function watermarkImage(buffer, ext, replaceExisting) {
   return pipeline.toBuffer();
 }
 
-async function clearExistingWatermarkZone(buffer, ext) {
-  const meta = await sharp(buffer, { animated: ext === "gif" }).metadata();
-  const width = meta.width ?? 1200;
-  const height = meta.height ?? 800;
-  const shortSide = Math.min(width, height);
-
-  const patchW = Math.min(width, Math.max(80, Math.round(shortSide * IMAGE_WM_CLEAR_SCALE)));
-  const patchH = Math.min(height, Math.max(64, Math.round(patchW * 0.74)));
-  const left = Math.max(0, Math.round((width - patchW) / 2));
-  const top = Math.max(0, Math.round((height - patchH) / 2));
-  const band = Math.max(48, Math.round(shortSide * 0.14));
-  const halfH = Math.max(1, Math.floor(patchH / 2));
-
-  const topSample = await sharp(buffer, { animated: ext === "gif" })
-    .extract({
-      left,
-      top: Math.max(0, top - Math.min(band, top)),
-      width: patchW,
-      height: Math.max(1, Math.min(band, top || band)),
-    })
-    .resize({ width: patchW, height: halfH, fit: "fill" })
-    .png()
-    .toBuffer();
-
-  const bottomHeight = Math.max(1, Math.min(band, height - (top + patchH)));
-  const bottomSourceTop = Math.min(height - bottomHeight, top + patchH);
-  const bottomSample = await sharp(buffer, { animated: ext === "gif" })
-    .extract({
-      left,
-      top: bottomSourceTop,
-      width: patchW,
-      height: bottomHeight,
-    })
-    .resize({ width: patchW, height: patchH - halfH, fit: "fill" })
-    .png()
-    .toBuffer();
-
-  const rebuilt = await sharp({
-    create: {
-      width: patchW,
-      height: patchH,
-      channels: 4,
-      background: { r: 0, g: 0, b: 0, alpha: 0 },
-    },
-  })
-    .composite([
-      { input: topSample, left: 0, top: 0, blend: "over" },
-      { input: bottomSample, left: 0, top: halfH, blend: "over" },
-    ])
-    .png()
-    .toBuffer();
-
-  const maskSvg = Buffer.from(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="${patchW}" height="${patchH}">
-      <defs>
-        <radialGradient id="g" cx="50%" cy="50%" r="70%">
-          <stop offset="0%" stop-color="#fff" stop-opacity="1"/>
-          <stop offset="58%" stop-color="#fff" stop-opacity="1"/>
-          <stop offset="88%" stop-color="#fff" stop-opacity="0.18"/>
-          <stop offset="100%" stop-color="#fff" stop-opacity="0"/>
-        </radialGradient>
-      </defs>
-      <rect width="100%" height="100%" fill="url(#g)"/>
-    </svg>`,
-  );
-  const mask = await sharp(maskSvg).png().toBuffer();
-
-  const healed = await sharp(rebuilt)
-    .ensureAlpha()
-    .composite([{ input: mask, blend: "dest-in" }])
-    .png()
-    .toBuffer();
-
-  return sharp(buffer, { animated: ext === "gif" })
-    .composite([{ input: healed, left, top, blend: "over" }])
-    .toBuffer();
+async function inpaintExistingWatermark(buffer, ext) {
+  const id = crypto.randomUUID();
+  const inPath = join(tmpdir(), `${id}-in.${ext}`);
+  const outPath = join(tmpdir(), `${id}-out.${ext}`);
+  const scriptPath = join(root, "scripts", "inpaint-watermark.py");
+  try {
+    await writeFile(inPath, buffer);
+    await runPythonInpaint([scriptPath, inPath, outPath]);
+    return await readFile(outPath);
+  } finally {
+    await Promise.allSettled([unlink(inPath), unlink(outPath)]);
+  }
 }
 
 function runFfmpeg(args) {
@@ -214,6 +149,21 @@ function runFfmpeg(args) {
     proc.on("close", (code) => {
       if (code === 0) resolve();
       else reject(new Error(stderr.slice(-500) || `ffmpeg exit ${code}`));
+    });
+  });
+}
+
+function runPythonInpaint(args) {
+  return new Promise((resolve, reject) => {
+    const proc = spawn("python", args, { stdio: ["ignore", "pipe", "pipe"] });
+    let stderr = "";
+    proc.stderr?.on("data", (c) => {
+      stderr += String(c);
+    });
+    proc.on("error", reject);
+    proc.on("close", (code) => {
+      if (code === 0) resolve();
+      else reject(new Error(stderr.slice(-800) || `python exited with code ${code}`));
     });
   });
 }

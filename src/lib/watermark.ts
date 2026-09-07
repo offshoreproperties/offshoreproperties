@@ -9,14 +9,12 @@ import sharp from "sharp";
 
 /** Fraction of the shorter image side used for watermark width */
 const IMAGE_WM_SCALE = 0.2;
-/** Old center badge area to rebuild on already-posted photos */
-const IMAGE_WM_CLEAR_SCALE = 0.5;
 /** Fresh stamp after clear — small, transparent logo only */
 const IMAGE_WM_REAPPLY_SCALE = 0.2;
 /** Logo opacity — readable, not a dark plate */
 const IMAGE_WM_OPACITY = 0.24;
 const IMAGE_WM_REAPPLY_OPACITY = 0.24;
-export const WATERMARK_VERSION = "9";
+export const WATERMARK_VERSION = "10";
 /** Center logo opacity for video overlay (0–1) */
 const VIDEO_WM_ALPHA = 0.34;
 const VIDEO_EXTENSIONS = new Set(["mp4", "webm", "mov", "m4v", "3gp", "3g2", "avi", "mkv"]);
@@ -145,17 +143,7 @@ export async function applyImageWatermark(
   const replaceExisting = options?.replaceExisting === true;
   const scale = replaceExisting ? IMAGE_WM_REAPPLY_SCALE : IMAGE_WM_SCALE;
   const opacity = replaceExisting ? IMAGE_WM_REAPPLY_OPACITY : IMAGE_WM_OPACITY;
-  let source = input;
-  if (replaceExisting) {
-    try {
-      source = await clearExistingWatermarkZone(input, contentType);
-    } catch (err) {
-      console.warn("[watermark] clear skipped:", err);
-      source = input;
-    }
-  }
-
-  const image = sharp(source, { animated: contentType === "image/gif" });
+  const image = sharp(input, { animated: contentType === "image/gif" });
   const meta = await image.metadata();
   const width = meta.width ?? 1200;
   const height = meta.height ?? 800;
@@ -198,87 +186,6 @@ export async function applyImageWatermark(
             : "image/gif",
     watermarked: true,
   };
-}
-
-/**
- * Rebuild the old badge area from nearby image content so already-posted
- * photos lose the old square before the new transparent logo is added.
- */
-async function clearExistingWatermarkZone(input: Buffer, contentType: string): Promise<Buffer> {
-  const meta = await sharp(input, { animated: contentType === "image/gif" }).metadata();
-  const width = meta.width ?? 1200;
-  const height = meta.height ?? 800;
-  const shortSide = Math.min(width, height);
-
-  const patchW = Math.min(width, Math.max(80, Math.round(shortSide * IMAGE_WM_CLEAR_SCALE)));
-  const patchH = Math.min(height, Math.max(64, Math.round(patchW * 0.74)));
-  const left = Math.max(0, Math.round((width - patchW) / 2));
-  const top = Math.max(0, Math.round((height - patchH) / 2));
-  const band = Math.max(48, Math.round(shortSide * 0.14));
-  const halfH = Math.max(1, Math.floor(patchH / 2));
-
-  const topSample = await sharp(input, { animated: contentType === "image/gif" })
-    .extract({
-      left,
-      top: Math.max(0, top - Math.min(band, top)),
-      width: patchW,
-      height: Math.max(1, Math.min(band, top || band)),
-    })
-    .resize({ width: patchW, height: halfH, fit: "fill" })
-    .png()
-    .toBuffer();
-
-  const bottomHeight = Math.max(1, Math.min(band, height - (top + patchH)));
-  const bottomSourceTop = Math.min(height - bottomHeight, top + patchH);
-  const bottomSample = await sharp(input, { animated: contentType === "image/gif" })
-    .extract({
-      left,
-      top: bottomSourceTop,
-      width: patchW,
-      height: bottomHeight,
-    })
-    .resize({ width: patchW, height: patchH - halfH, fit: "fill" })
-    .png()
-    .toBuffer();
-
-  const rebuilt = await sharp({
-    create: {
-      width: patchW,
-      height: patchH,
-      channels: 4,
-      background: { r: 0, g: 0, b: 0, alpha: 0 },
-    },
-  })
-    .composite([
-      { input: topSample, left: 0, top: 0, blend: "over" },
-      { input: bottomSample, left: 0, top: halfH, blend: "over" },
-    ])
-    .png()
-    .toBuffer();
-
-  const maskSvg = Buffer.from(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="${patchW}" height="${patchH}">
-      <defs>
-        <radialGradient id="g" cx="50%" cy="50%" r="70%">
-          <stop offset="0%" stop-color="#fff" stop-opacity="1"/>
-          <stop offset="58%" stop-color="#fff" stop-opacity="1"/>
-          <stop offset="88%" stop-color="#fff" stop-opacity="0.18"/>
-          <stop offset="100%" stop-color="#fff" stop-opacity="0"/>
-        </radialGradient>
-      </defs>
-      <rect width="100%" height="100%" fill="url(#g)"/>
-    </svg>`,
-  );
-
-  const healed = await sharp(rebuilt)
-    .ensureAlpha()
-    .composite([{ input: await sharp(maskSvg).png().toBuffer(), blend: "dest-in" }])
-    .png()
-    .toBuffer();
-
-  return sharp(input, { animated: contentType === "image/gif" })
-    .composite([{ input: healed, left, top, blend: "over" }])
-    .toBuffer();
 }
 
 function runFfmpeg(args: string[]): Promise<void> {
