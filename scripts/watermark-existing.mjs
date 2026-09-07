@@ -24,9 +24,9 @@ const dryRun = process.argv.includes("--dry-run");
 const force = process.argv.includes("--force");
 
 const LOGO_CANDIDATES = [
+  join(root, "public", "Offshore Logo (1).png"),
   join(root, "src", "assets", "brand", "offshore-logo.png"),
   join(root, "public", "offshore-logo.png"),
-  join(root, "public", "Offshore Logo (1).png"),
 ];
 
 const WATERMARK_PNG = LOGO_CANDIDATES.find((p) => existsSync(p));
@@ -58,7 +58,7 @@ if (!WATERMARK_PNG) {
   process.exit(1);
 }
 
-const WATERMARK_VERSION = "10";
+const WATERMARK_VERSION = "11";
 
 console.log(`Using logo: ${WATERMARK_PNG}`);
 console.log(`Watermark version: ${WATERMARK_VERSION}${force ? " (--force)" : ""}\n`);
@@ -69,12 +69,9 @@ const IMAGE_EXT = new Set(["jpg", "jpeg", "png", "webp", "gif"]);
 const VIDEO_EXT = new Set(["mp4", "webm", "mov", "m4v"]);
 const IMAGE_WM_SCALE = 0.2;
 const IMAGE_WM_REAPPLY_SCALE = 0.2;
-const IMAGE_WM_OPACITY = 0.24;
-const IMAGE_WM_REAPPLY_OPACITY = 0.24;
 
-async function watermarkPng(width, opacity, maxWidth, maxHeight) {
+async function watermarkPng(width, maxWidth, maxHeight) {
   const w = Math.max(48, Math.round(width));
-  const alpha = Math.round(255 * opacity);
   const capW = maxWidth != null ? Math.max(24, maxWidth - 4) : w;
   const capH = maxHeight != null ? Math.max(24, maxHeight - 4) : 10_000;
   const fitW = Math.min(w, capW, capH);
@@ -87,14 +84,6 @@ async function watermarkPng(width, opacity, maxWidth, maxHeight) {
       withoutEnlargement: false,
     })
     .ensureAlpha()
-    .composite([
-      {
-        input: Buffer.from([255, 255, 255, alpha]),
-        raw: { width: 1, height: 1, channels: 4 },
-        tile: true,
-        blend: "dest-in",
-      },
-    ])
     .png()
     .toBuffer();
 }
@@ -110,12 +99,11 @@ async function watermarkImage(buffer, ext, replaceExisting) {
   }
 
   const scale = replaceExisting ? IMAGE_WM_REAPPLY_SCALE : IMAGE_WM_SCALE;
-  const opacity = replaceExisting ? IMAGE_WM_REAPPLY_OPACITY : IMAGE_WM_OPACITY;
   const image = sharp(source, { animated: ext === "gif" });
   const meta = await image.metadata();
   const w = meta.width ?? 1200;
   const h = meta.height ?? 800;
-  const wm = await watermarkPng(Math.min(w, h) * scale, opacity, w, h);
+  const wm = await watermarkPng(Math.min(w, h) * scale, w, h);
   let pipeline = image.composite([{ input: wm, gravity: "center", blend: "over" }]);
   if (ext === "png") pipeline = pipeline.png();
   else if (ext === "webp") pipeline = pipeline.webp({ quality: 88 });
@@ -169,7 +157,6 @@ function runPythonInpaint(args) {
 }
 
 async function watermarkVideo(buffer, ext, replaceExisting) {
-  const opacity = replaceExisting ? IMAGE_WM_REAPPLY_OPACITY : 0.36;
   const wmSize = replaceExisting ? 480 : 420;
   const id = crypto.randomUUID();
   const inPath = join(tmpdir(), `${id}-in.${ext}`);
@@ -177,7 +164,7 @@ async function watermarkVideo(buffer, ext, replaceExisting) {
   const outPath = join(tmpdir(), `${id}-out.${ext}`);
   try {
     await writeFile(inPath, buffer);
-    await writeFile(wmPath, await watermarkPng(wmSize, opacity));
+    await writeFile(wmPath, await watermarkPng(wmSize));
     await runFfmpeg([
       "-hide_banner",
       "-loglevel",
@@ -187,7 +174,7 @@ async function watermarkVideo(buffer, ext, replaceExisting) {
       "-i",
       wmPath,
       "-filter_complex",
-      `[1]format=rgba,colorchannelmixer=aa=${opacity}[wm];[0][wm]overlay=(W-w)/2:(H-h)/2:format=auto`,
+      `[1]format=rgba[wm];[0][wm]overlay=(W-w)/2:(H-h)/2:format=auto`,
       "-c:v",
       "libx264",
       "-preset",
