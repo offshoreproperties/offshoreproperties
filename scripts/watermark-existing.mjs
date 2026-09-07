@@ -22,6 +22,7 @@ const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const BUCKET = "property-images";
 const dryRun = process.argv.includes("--dry-run");
 const force = process.argv.includes("--force");
+const removeOnly = process.argv.includes("--remove-only");
 
 const LOGO_CANDIDATES = [
   join(root, "public", "Offshore Logo (1).png"),
@@ -58,7 +59,7 @@ if (!WATERMARK_PNG) {
   process.exit(1);
 }
 
-const WATERMARK_VERSION = "11";
+const WATERMARK_VERSION = removeOnly ? "plain-1" : "11";
 
 console.log(`Using logo: ${WATERMARK_PNG}`);
 console.log(`Watermark version: ${WATERMARK_VERSION}${force ? " (--force)" : ""}\n`);
@@ -96,6 +97,13 @@ async function watermarkImage(buffer, ext, replaceExisting) {
     } catch {
       source = buffer;
     }
+  }
+  if (removeOnly) {
+    const image = sharp(source, { animated: ext === "gif" });
+    if (ext === "png") return image.png().toBuffer();
+    if (ext === "webp") return image.webp({ quality: 88 }).toBuffer();
+    if (ext === "gif") return image.gif().toBuffer();
+    return image.jpeg({ quality: 88, mozjpeg: true }).toBuffer();
   }
 
   const scale = replaceExisting ? IMAGE_WM_REAPPLY_SCALE : IMAGE_WM_SCALE;
@@ -157,6 +165,7 @@ function runPythonInpaint(args) {
 }
 
 async function watermarkVideo(buffer, ext, replaceExisting) {
+  if (removeOnly) return buffer;
   const wmSize = replaceExisting ? 480 : 420;
   const id = crypto.randomUUID();
   const inPath = join(tmpdir(), `${id}-in.${ext}`);
@@ -227,7 +236,15 @@ async function fileMetadata(path) {
 }
 
 async function main() {
-  console.log(dryRun ? "DRY RUN — no uploads\n" : force ? "Re-watermarking all storage files…\n" : "Watermarking existing storage files…\n");
+  console.log(
+    dryRun
+      ? "DRY RUN — no uploads\n"
+      : removeOnly
+        ? "Removing logos from existing storage files…\n"
+        : force
+          ? "Re-watermarking all storage files…\n"
+          : "Watermarking existing storage files…\n",
+  );
   const paths = await listAllFiles();
   let done = 0;
   let skipped = 0;
@@ -271,14 +288,17 @@ async function main() {
       const { error: upErr } = await db.storage.from(BUCKET).upload(path, output, {
         contentType: contentTypeFor(ext),
         upsert: true,
-        metadata: { watermarked: "true", watermarkVersion: WATERMARK_VERSION },
+        metadata: {
+          watermarked: removeOnly ? "false" : "true",
+          watermarkVersion: WATERMARK_VERSION,
+        },
       });
       if (upErr) {
         console.error(`upload failed: ${path}`, upErr.message);
         continue;
       }
       done++;
-      console.log(`  ✓ watermarked (v${WATERMARK_VERSION})`);
+      console.log(removeOnly ? `  ✓ cleaned (${WATERMARK_VERSION})` : `  ✓ watermarked (v${WATERMARK_VERSION})`);
     } catch (err) {
       console.error(`failed: ${path}`, err instanceof Error ? err.message : err);
     }
