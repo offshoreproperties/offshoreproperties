@@ -7,8 +7,8 @@ import numpy as np
 
 def build_mask(width: int, height: int) -> np.ndarray:
     short_side = min(width, height)
-    mask_w = max(80, int(short_side * 0.5))
-    mask_h = max(64, int(mask_w * 0.72))
+    mask_w = max(72, int(short_side * 0.34))
+    mask_h = max(96, int(short_side * 0.42))
     x = max(0, (width - mask_w) // 2)
     y = max(0, (height - mask_h) // 2)
 
@@ -20,6 +20,12 @@ def build_mask(width: int, height: int) -> np.ndarray:
     cv2.circle(mask, (x + mask_w - radius, y + radius), radius, 255, -1)
     cv2.circle(mask, (x + radius, y + mask_h - radius), radius, 255, -1)
     cv2.circle(mask, (x + mask_w - radius, y + mask_h - radius), radius, 255, -1)
+
+    band_w = max(80, int(short_side * 0.4))
+    band_h = max(28, int(short_side * 0.08))
+    bx = max(0, (width - band_w) // 2)
+    by = max(0, y + int(mask_h * 0.62))
+    cv2.rectangle(mask, (bx, by), (bx + band_w, min(height - 1, by + band_h)), 255, -1)
     return mask
 
 
@@ -38,7 +44,7 @@ def main() -> int:
 
     height, width = image.shape[:2]
     mask = build_mask(width, height)
-    restored = cv2.inpaint(image, mask, 7, cv2.INPAINT_TELEA)
+    restored = cv2.inpaint(image, mask, 5, cv2.INPAINT_TELEA)
 
     ok = cv2.imwrite(str(output_path), restored)
     if not ok:
