@@ -9,14 +9,14 @@ import sharp from "sharp";
 
 /** Fraction of the shorter image side used for watermark width */
 const IMAGE_WM_SCALE = 0.2;
-/** Cover the old frosted rectangle, then fade out as an ellipse — no hard box */
-const IMAGE_WM_CLEAR_SCALE = 0.78;
+/** Cover the old watermark area without introducing a large foggy plate */
+const IMAGE_WM_CLEAR_SCALE = 0.58;
 /** Fresh stamp after clear — small, transparent logo only */
 const IMAGE_WM_REAPPLY_SCALE = 0.2;
 /** Logo opacity — readable, not a dark plate */
-const IMAGE_WM_OPACITY = 0.32;
-const IMAGE_WM_REAPPLY_OPACITY = 0.32;
-export const WATERMARK_VERSION = "6";
+const IMAGE_WM_OPACITY = 0.24;
+const IMAGE_WM_REAPPLY_OPACITY = 0.24;
+export const WATERMARK_VERSION = "7";
 /** Center logo opacity for video overlay (0–1) */
 const VIDEO_WM_ALPHA = 0.34;
 const VIDEO_EXTENSIONS = new Set(["mp4", "webm", "mov", "m4v", "3gp", "3g2", "avi", "mkv"]);
@@ -138,8 +138,8 @@ async function passthroughImage(
 }
 
 /**
- * Cover old frosted/stacked center marks using surrounding pixels.
- * Uses a soft ellipse so it does not look like a dark glass rectangle.
+ * Cover old center marks using neighboring image data without blurring the
+ * full area, so the replacement does not look like a frosted rectangle.
  */
 async function clearExistingWatermarkZone(input: Buffer, contentType: string): Promise<Buffer> {
   const meta = await sharp(input, { animated: contentType === "image/gif" }).metadata();
@@ -160,7 +160,7 @@ async function clearExistingWatermarkZone(input: Buffer, contentType: string): P
     const buf = await sharp(input, { animated: contentType === "image/gif" })
       .extract(region)
       .resize(patchW, patchH, { fit: "fill" })
-      .blur(10)
+      .sharpen(0.6)
       .png()
       .toBuffer();
     strips.push(buf);
@@ -194,7 +194,7 @@ async function clearExistingWatermarkZone(input: Buffer, contentType: string): P
   if (!strips.length) {
     const fallback = await sharp(input, { animated: contentType === "image/gif" })
       .extract({ left, top, width: patchW, height: patchH })
-      .blur(14)
+      .median(3)
       .png()
       .toBuffer();
     strips.push(fallback);
@@ -206,7 +206,7 @@ async function clearExistingWatermarkZone(input: Buffer, contentType: string): P
       .ensureAlpha()
       .composite([
         {
-          input: Buffer.from([255, 255, 255, 80]),
+          input: Buffer.from([255, 255, 255, 64]),
           raw: { width: 1, height: 1, channels: 4 },
           tile: true,
           blend: "dest-in",
@@ -222,8 +222,8 @@ async function clearExistingWatermarkZone(input: Buffer, contentType: string): P
       <defs>
         <radialGradient id="g" cx="50%" cy="50%" r="62%">
           <stop offset="0%" stop-color="#fff" stop-opacity="1"/>
-          <stop offset="42%" stop-color="#fff" stop-opacity="1"/>
-          <stop offset="78%" stop-color="#fff" stop-opacity="0.35"/>
+          <stop offset="34%" stop-color="#fff" stop-opacity="1"/>
+          <stop offset="74%" stop-color="#fff" stop-opacity="0.2"/>
           <stop offset="100%" stop-color="#fff" stop-opacity="0"/>
         </radialGradient>
       </defs>
@@ -234,7 +234,6 @@ async function clearExistingWatermarkZone(input: Buffer, contentType: string): P
 
   const healSoft = await sharp(heal)
     .resize(patchW, patchH, { fit: "fill" })
-    .blur(6)
     .ensureAlpha()
     .composite([{ input: ellipseMask, blend: "dest-in" }])
     .png()
