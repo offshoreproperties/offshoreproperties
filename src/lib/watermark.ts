@@ -8,16 +8,15 @@ import ffmpegPath from "ffmpeg-static";
 import sharp from "sharp";
 
 /** Fraction of the shorter image side used for watermark width */
-const IMAGE_WM_SCALE = 0.24;
-/** Must cover stacked logos + grey plates from earlier passes */
-const IMAGE_WM_CLEAR_SCALE = 0.72;
-/** Fresh stamp size after a clear pass — keep smaller than the clear zone */
-const IMAGE_WM_REAPPLY_SCALE = 0.24;
-/** Overall watermark opacity (0–1) */
-const IMAGE_WM_OPACITY = 0.36;
-const IMAGE_WM_REAPPLY_OPACITY = 0.36;
-/** Bump when storage metadata is stale — re-run batch script after logo/clear changes */
-export const WATERMARK_VERSION = "5";
+const IMAGE_WM_SCALE = 0.2;
+/** Cover the old frosted rectangle, then fade out as an ellipse — no hard box */
+const IMAGE_WM_CLEAR_SCALE = 0.78;
+/** Fresh stamp after clear — small, transparent logo only */
+const IMAGE_WM_REAPPLY_SCALE = 0.2;
+/** Logo opacity — readable, not a dark plate */
+const IMAGE_WM_OPACITY = 0.32;
+const IMAGE_WM_REAPPLY_OPACITY = 0.32;
+export const WATERMARK_VERSION = "6";
 /** Center logo opacity for video overlay (0–1) */
 const VIDEO_WM_ALPHA = 0.34;
 const VIDEO_EXTENSIONS = new Set(["mp4", "webm", "mov", "m4v", "3gp", "3g2", "avi", "mkv"]);
@@ -139,8 +138,8 @@ async function passthroughImage(
 }
 
 /**
- * Fully cover stacked center watermarks / grey plates.
- * Heals from surrounding pixels with an opaque core so old logos cannot show through.
+ * Cover old frosted/stacked center marks using surrounding pixels.
+ * Uses a soft ellipse so it does not look like a dark glass rectangle.
  */
 async function clearExistingWatermarkZone(input: Buffer, contentType: string): Promise<Buffer> {
   const meta = await sharp(input, { animated: contentType === "image/gif" }).metadata();
@@ -148,12 +147,12 @@ async function clearExistingWatermarkZone(input: Buffer, contentType: string): P
   const height = meta.height ?? 800;
   const shortSide = Math.min(width, height);
 
-  const patchW = Math.min(width, Math.max(32, Math.round(shortSide * IMAGE_WM_CLEAR_SCALE)));
-  const patchH = Math.min(height, Math.max(32, Math.round(shortSide * IMAGE_WM_CLEAR_SCALE * 0.82)));
+  const patchW = Math.min(width, Math.max(48, Math.round(shortSide * IMAGE_WM_CLEAR_SCALE)));
+  const patchH = Math.min(height, Math.max(48, Math.round(shortSide * IMAGE_WM_CLEAR_SCALE * 0.72)));
   const left = Math.max(0, Math.round((width - patchW) / 2));
   const top = Math.max(0, Math.round((height - patchH) / 2));
 
-  const band = Math.max(32, Math.round(shortSide * 0.14));
+  const band = Math.max(40, Math.round(shortSide * 0.16));
   const strips: Buffer[] = [];
 
   const pushStrip = async (region: { left: number; top: number; width: number; height: number }) => {
@@ -161,7 +160,7 @@ async function clearExistingWatermarkZone(input: Buffer, contentType: string): P
     const buf = await sharp(input, { animated: contentType === "image/gif" })
       .extract(region)
       .resize(patchW, patchH, { fit: "fill" })
-      .blur(22)
+      .blur(10)
       .png()
       .toBuffer();
     strips.push(buf);
@@ -194,8 +193,8 @@ async function clearExistingWatermarkZone(input: Buffer, contentType: string): P
 
   if (!strips.length) {
     const fallback = await sharp(input, { animated: contentType === "image/gif" })
-      .blur(50)
       .extract({ left, top, width: patchW, height: patchH })
+      .blur(14)
       .png()
       .toBuffer();
     strips.push(fallback);
@@ -207,7 +206,7 @@ async function clearExistingWatermarkZone(input: Buffer, contentType: string): P
       .ensureAlpha()
       .composite([
         {
-          input: Buffer.from([255, 255, 255, 90]),
+          input: Buffer.from([255, 255, 255, 80]),
           raw: { width: 1, height: 1, channels: 4 },
           tile: true,
           blend: "dest-in",
@@ -218,48 +217,31 @@ async function clearExistingWatermarkZone(input: Buffer, contentType: string): P
     heal = await sharp(heal).composite([{ input: faded, blend: "over" }]).png().toBuffer();
   }
 
-  // Opaque core (old marks cannot bleed through) + short feather so there is no hard box.
-  const featherRadius = Math.max(10, Math.round(Math.min(patchW, patchH) * 0.06));
-  const coreW = Math.max(8, patchW - featherRadius * 2);
-  const coreH = Math.max(8, patchH - featherRadius * 2);
-  const mask = await sharp({
-    create: {
-      width: patchW,
-      height: patchH,
-      channels: 4,
-      background: { r: 0, g: 0, b: 0, alpha: 0 },
-    },
-  })
-    .composite([
-      {
-        input: await sharp({
-          create: {
-            width: coreW,
-            height: coreH,
-            channels: 4,
-            background: { r: 255, g: 255, b: 255, alpha: 1 },
-          },
-        })
-          .blur(featherRadius)
-          .png()
-          .toBuffer(),
-        gravity: "center",
-        blend: "over",
-      },
-    ])
-    .png()
-    .toBuffer();
+  const svg = Buffer.from(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${patchW}" height="${patchH}">
+      <defs>
+        <radialGradient id="g" cx="50%" cy="50%" r="62%">
+          <stop offset="0%" stop-color="#fff" stop-opacity="1"/>
+          <stop offset="42%" stop-color="#fff" stop-opacity="1"/>
+          <stop offset="78%" stop-color="#fff" stop-opacity="0.35"/>
+          <stop offset="100%" stop-color="#fff" stop-opacity="0"/>
+        </radialGradient>
+      </defs>
+      <rect width="100%" height="100%" fill="url(#g)"/>
+    </svg>`,
+  );
+  const ellipseMask = await sharp(svg).png().toBuffer();
 
-  const healOpaque = await sharp(heal)
+  const healSoft = await sharp(heal)
     .resize(patchW, patchH, { fit: "fill" })
-    .blur(8)
+    .blur(6)
     .ensureAlpha()
-    .composite([{ input: mask, blend: "dest-in" }])
+    .composite([{ input: ellipseMask, blend: "dest-in" }])
     .png()
     .toBuffer();
 
   return sharp(input, { animated: contentType === "image/gif" })
-    .composite([{ input: healOpaque, left, top, blend: "over" }])
+    .composite([{ input: healSoft, left, top, blend: "over" }])
     .toBuffer();
 }
 
@@ -275,9 +257,7 @@ export async function applyImageWatermark(
   let source = input;
   if (replaceExisting) {
     try {
-      // Two clear passes so stacked logos / grey plates are fully covered.
       source = await clearExistingWatermarkZone(input, contentType);
-      source = await clearExistingWatermarkZone(source, contentType);
     } catch (err) {
       console.warn("[watermark] clear skipped:", err);
       source = input;
