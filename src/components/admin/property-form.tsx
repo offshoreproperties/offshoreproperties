@@ -980,7 +980,7 @@ function DraggableImageGrid({
               <audio src={url} controls className="h-8 w-full max-w-full" preload="metadata" />
             </div>
           ) : (
-            <img src={url} alt="" className="h-full w-full object-cover pointer-events-none" />
+            <img src={url} alt="" className="h-full w-full object-cover object-left-top pointer-events-none" />
           )}
           <div className="absolute left-1 top-1 flex flex-col gap-0.5">
             <button
