@@ -62,6 +62,11 @@ function publicUrlFor(path: string): string {
   return urlData.publicUrl;
 }
 
+function withCacheBust(url: string, version: string): string {
+  const sep = url.includes("?") ? "&" : "?";
+  return `${url}${sep}v=${encodeURIComponent(version)}-${Date.now()}`;
+}
+
 const MetaSchema = z
   .object({
     fileName: z.string().min(1).max(200),
@@ -178,7 +183,12 @@ export const finalizePropertyUpload = createServerFn({ method: "POST" })
         }
       }
 
-      return { url: publicUrlFor(data.path), watermarked: result.watermarked };
+      const finalUrl = publicUrlFor(data.path);
+      if (result.watermarked) {
+        const { WATERMARK_VERSION } = await import("@/lib/watermark");
+        return { url: withCacheBust(finalUrl, WATERMARK_VERSION), watermarked: true };
+      }
+      return { url: finalUrl, watermarked: false };
     } catch (err) {
       console.error("[upload] finalize failed — returning original URL:", err);
       return { url: fallbackUrl, watermarked: false };
@@ -250,5 +260,9 @@ export const uploadPropertyImage = createServerFn({ method: "POST" })
       throw new Error(error.message || "Storage upload failed — try again in a moment.");
     }
 
-    return { url: publicUrlFor(path), path };
+    const publicUrl = publicUrlFor(path);
+    return {
+      url: result.watermarked ? withCacheBust(publicUrl, watermarkVersion) : publicUrl,
+      path,
+    };
   });
