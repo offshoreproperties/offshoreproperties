@@ -12,6 +12,7 @@ const IMAGE_WM_SCALE = 0.2;
 /** Fresh stamp after clear — small, transparent logo only */
 const IMAGE_WM_REAPPLY_SCALE = 0.2;
 export const WATERMARK_VERSION = "11";
+const WATERMARK_EDGE_PADDING = 24;
 /** Center logo opacity for video overlay (0–1) */
 const VIDEO_WM_ALPHA = 0.34;
 const VIDEO_EXTENSIONS = new Set(["mp4", "webm", "mov", "m4v", "3gp", "3g2", "avi", "mkv"]);
@@ -142,10 +143,13 @@ export async function applyImageWatermark(
   }
 
   const format = outputImageType(contentType);
+  const left = Math.min(WATERMARK_EDGE_PADDING, Math.max(0, width - 1));
+  const top = Math.min(WATERMARK_EDGE_PADDING, Math.max(0, height - 1));
   let pipeline = image.composite([
     {
       input: watermark,
-      gravity: "center",
+      left,
+      top,
       blend: "over",
     },
   ]);
@@ -218,7 +222,7 @@ export async function applyVideoWatermark(
     await writeFile(inPath, input);
     await writeFile(wmPath, wmPng);
 
-    const filter = `[1]format=rgba[wm];[0][wm]overlay=(W-w)/2:(H-h)/2:format=auto`;
+    const filter = `[1]format=rgba[wm];[0][wm]overlay=${WATERMARK_EDGE_PADDING}:${WATERMARK_EDGE_PADDING}:format=auto`;
 
     await runFfmpeg([
       "-hide_banner",
