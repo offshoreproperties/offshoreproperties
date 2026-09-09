@@ -35,6 +35,7 @@ import {
   prepareFileForUpload,
   resolvePropertyUploadMime,
 } from "@/lib/media";
+import { preloadWatermarkLogo } from "@/lib/client-watermark";
 import { Loader2, MapPin, Upload, X, GripVertical, Link2, Video, Mic, Cloud, CloudOff, ChevronUp, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { userFacingError } from "@/lib/user-facing-error";
@@ -263,11 +264,28 @@ export function PropertyForm({
     if (autosaveEnabled) scheduleSave();
   }, [autosaveEnabled, getSnapshot, scheduleSave]);
 
+  useEffect(() => {
+    preloadWatermarkLogo();
+  }, []);
+
   const showShortLet = listingType === "short_let";
 
   const uploadOneFile = useCallback(
     async (file: File) => {
-      const prepared = await prepareFileForUpload(file);
+      let prepared: File;
+      try {
+        prepared = await prepareFileForUpload(file);
+      } catch (err) {
+        const mime = resolvePropertyUploadMime(file);
+        if (mime?.startsWith("image/") && mime !== "image/gif" && mime !== "image/heic" && mime !== "image/heif") {
+          throw new Error(
+            err instanceof Error
+              ? `Watermark failed: ${err.message}`
+              : "Watermark failed — could not stamp the logo on this photo",
+          );
+        }
+        prepared = file;
+      }
       const contentType = resolvePropertyUploadMime(prepared);
       if (!contentType) throw new Error("Unsupported file type");
 

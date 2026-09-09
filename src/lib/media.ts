@@ -129,92 +129,51 @@ export const MAX_RECORDING_UPLOAD_BYTES = MAX_VIDEO_UPLOAD_BYTES;
 const COMPRESS_SKIP_BYTES = 1_500_000;
 const COMPRESS_MAX_EDGE = 2048;
 const COMPRESS_JPEG_QUALITY = 0.88;
-const CLIENT_WATERMARK_SCALE = 0.2;
-const CLIENT_WATERMARK_PADDING = 24;
 
-let clientWatermarkBitmapPromise: Promise<ImageBitmap | null> | null = null;
-
-async function loadClientWatermarkBitmap(): Promise<ImageBitmap | null> {
-  if (typeof window === "undefined" || typeof createImageBitmap !== "function") return null;
-  if (clientWatermarkBitmapPromise) return clientWatermarkBitmapPromise;
-
-  clientWatermarkBitmapPromise = (async () => {
-    try {
-      const response = await fetch("/offshore-logo.png", { cache: "no-store" });
-      if (!response.ok) return null;
-      const blob = await response.blob();
-      return await createImageBitmap(blob);
-    } catch {
-      return null;
-    }
-  })();
-
-  return clientWatermarkBitmapPromise;
-}
-
-/** Shrink large photos before base64 upload — avoids server 500s and speeds uploads. */
+/** Shrink large photos, then stamp the brand watermark before upload. */
 export async function prepareFileForUpload(file: File): Promise<File> {
   const mime = resolvePropertyUploadMime(file);
-  if (!mime?.startsWith("image/") || mime === "image/gif") return file;
-  if (typeof createImageBitmap !== "function") return file;
-
-  try {
-    const bitmap = await createImageBitmap(file);
-    const originalWidth = bitmap.width;
-    const originalHeight = bitmap.height;
-    let { width, height } = bitmap;
-    const shouldCompress = file.size > COMPRESS_SKIP_BYTES;
-    const longest = Math.max(width, height);
-    if (longest > COMPRESS_MAX_EDGE) {
-      const scale = COMPRESS_MAX_EDGE / longest;
-      width = Math.round(width * scale);
-      height = Math.round(height * scale);
-    }
-
-    const canvas = document.createElement("canvas");
-    canvas.width = width;
-    canvas.height = height;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) {
-      bitmap.close();
-      return file;
-    }
-    ctx.drawImage(bitmap, 0, 0, width, height);
-    bitmap.close();
-
-    const watermark = await loadClientWatermarkBitmap();
-    if (watermark) {
-      const inset = Math.min(CLIENT_WATERMARK_PADDING, Math.max(0, width - 1), Math.max(0, height - 1));
-      const targetWidth = Math.max(48, Math.round(Math.min(width, height) * CLIENT_WATERMARK_SCALE));
-      const scale = targetWidth / Math.max(1, watermark.width);
-      const watermarkHeight = Math.max(1, Math.round(watermark.height * scale));
-      ctx.drawImage(watermark, inset, inset, targetWidth, watermarkHeight);
-    }
-
-    const outputType =
-      shouldCompress
-        ? "image/jpeg"
-        : mime === "image/png"
-          ? "image/png"
-          : mime === "image/webp"
-            ? "image/webp"
-            : "image/jpeg";
-    const changed = width !== originalWidth || height !== originalHeight || shouldCompress || !!watermark;
-
-    const blob = await new Promise<Blob | null>((resolve) => {
-      canvas.toBlob(
-        (b) => resolve(b),
-        outputType,
-        outputType === "image/jpeg" || outputType === "image/webp" ? COMPRESS_JPEG_QUALITY : undefined,
-      );
-    });
-    if (!blob) return file;
-    if (!changed && blob.size >= file.size) return file;
-
-    const baseName = file.name.replace(/\.[^.]+$/i, "") || "photo";
-    const ext = outputType === "image/png" ? "png" : outputType === "image/webp" ? "webp" : "jpg";
-    return new File([blob], `${baseName}.${ext}`, { type: outputType, lastModified: Date.now() });
-  } catch {
+  if (!mime?.startsWith("image/") || mime === "image/gif" || mime === "image/heic" || mime === "image/heif") {
     return file;
   }
+
+  let prepared = file;
+
+  // Optional downscale for very large photos.
+  if (typeof createImageBitmap === "function" && file.size > COMPRESS_SKIP_BYTES) {
+    try {
+      const bitmap = await createImageBitmap(file);
+      let { width, height } = bitmap;
+      const longest = Math.max(width, height);
+      if (longest > COMPRESS_MAX_EDGE) {
+        const scale = COMPRESS_MAX_EDGE / longest;
+        width = Math.round(width * scale);
+        height = Math.round(height * scale);
+      }
+
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d");
+      if (ctx) {
+        ctx.drawImage(bitmap, 0, 0, width, height);
+        const blob = await new Promise<Blob | null>((resolve) => {
+          canvas.toBlob((b) => resolve(b), "image/jpeg", COMPRESS_JPEG_QUALITY);
+        });
+        if (blob && blob.size < file.size) {
+          const baseName = file.name.replace(/\.[^.]+$/i, "") || "photo";
+          prepared = new File([blob], `${baseName}.jpg`, {
+            type: "image/jpeg",
+            lastModified: Date.now(),
+          });
+        }
+      }
+      bitmap.close();
+    } catch {
+      prepared = file;
+    }
+  }
+
+  const { watermarkImageFile } = await import("@/lib/client-watermark");
+  return watermarkImageFile(prepared);
 }

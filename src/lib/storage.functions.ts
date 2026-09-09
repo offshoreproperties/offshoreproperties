@@ -124,6 +124,11 @@ async function tryWatermark(
   fileName: string,
   contentType: string,
 ): Promise<{ buffer: Buffer; contentType: string; watermarked: boolean }> {
+  // Photos are watermarked in the browser before upload (Cloudflare Workers cannot run sharp).
+  // Keep server watermarking for video only.
+  if (contentType.startsWith("image/")) {
+    return { buffer: raw, contentType, watermarked: false };
+  }
   if (raw.length > MAX_WATERMARK_BYTES) {
     return { buffer: raw, contentType, watermarked: false };
   }
