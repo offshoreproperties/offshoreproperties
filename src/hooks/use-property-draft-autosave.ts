@@ -30,44 +30,57 @@ export function usePropertyDraftAutosave({
   const draftIdRef = useRef(draftId);
   const savingRef = useRef(false);
   const pendingRef = useRef(false);
+  const pendingSnapshotRef = useRef<PropertyFormDraftSnapshot | null>(null);
 
   draftIdRef.current = draftId;
 
-  const flushSave = useCallback(async () => {
-    if (!enabled || savingRef.current) {
-      pendingRef.current = true;
-      return;
-    }
-
-    const snapshot = getSnapshot();
-    const payload = snapshotToDraftPayload(snapshot);
-    if (!draftIdRef.current && !hasDraftContent(payload)) return;
-
-    savingRef.current = true;
-    setSaveState("saving");
-    try {
-      const row = await saveDraft({
-        data: {
-          id: draftIdRef.current ?? undefined,
-          property_id: snapshot.propertyId ?? null,
-          payload,
-        },
-      });
-      draftIdRef.current = row.id;
-      onDraftIdChange(row.id);
-      setLastSavedAt(new Date());
-      setSaveState("saved");
-    } catch (error) {
-      console.error("[draft-autosave]", error);
-      setSaveState("error");
-    } finally {
-      savingRef.current = false;
-      if (pendingRef.current) {
-        pendingRef.current = false;
-        void flushSave();
+  const flushSave = useCallback(
+    async (snapshotOverride?: PropertyFormDraftSnapshot) => {
+      if (!enabled) return;
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
       }
-    }
-  }, [enabled, getSnapshot, onDraftIdChange, saveDraft]);
+      if (savingRef.current) {
+        pendingRef.current = true;
+        if (snapshotOverride) pendingSnapshotRef.current = snapshotOverride;
+        return;
+      }
+
+      const snapshot = snapshotOverride ?? pendingSnapshotRef.current ?? getSnapshot();
+      pendingSnapshotRef.current = null;
+      const payload = snapshotToDraftPayload(snapshot);
+      if (!draftIdRef.current && !hasDraftContent(payload)) return;
+
+      savingRef.current = true;
+      setSaveState("saving");
+      try {
+        const row = await saveDraft({
+          data: {
+            id: draftIdRef.current ?? undefined,
+            property_id: snapshot.propertyId ?? null,
+            payload,
+          },
+        });
+        draftIdRef.current = row.id;
+        onDraftIdChange(row.id);
+        setLastSavedAt(new Date());
+        setSaveState("saved");
+      } catch (error) {
+        console.error("[draft-autosave]", error);
+        setSaveState("error");
+      } finally {
+        savingRef.current = false;
+        if (pendingRef.current) {
+          pendingRef.current = false;
+          const queued = pendingSnapshotRef.current ?? undefined;
+          pendingSnapshotRef.current = null;
+          void flushSave(queued);
+        }
+      }
+    },
+    [enabled, getSnapshot, onDraftIdChange, saveDraft],
+  );
 
   const scheduleSave = useCallback(() => {
     if (!enabled) return;

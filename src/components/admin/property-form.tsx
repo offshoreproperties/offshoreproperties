@@ -317,6 +317,13 @@ export function PropertyForm({
           );
         }
 
+        // Photos are already watermarked in the browser. Skip server finalize so a
+        // Worker/Node pass cannot race and leave a plain file behind the public URL.
+        if (contentType.startsWith("image/")) {
+          const sep = slot.publicUrl.includes("?") ? "&" : "?";
+          return `${slot.publicUrl}${sep}v=wm-${Date.now()}`;
+        }
+
         try {
           const { url } = await finalizeUpload({
             data: {
@@ -397,7 +404,9 @@ export function PropertyForm({
     let completed = 0;
     let failed = 0;
     let lastError = "";
-    let firstUrl: string | undefined;
+    const uploadedUrls: string[] = [];
+    const baseImages = images;
+    const baseHero = heroImage;
     const pending = [...valid];
 
     async function worker() {
@@ -406,8 +415,7 @@ export function PropertyForm({
         if (!file) break;
         try {
           const url = await uploadOneFile(file);
-          if (!firstUrl) firstUrl = url;
-          setImages((prev) => [...prev, url]);
+          uploadedUrls.push(url);
           completed += 1;
         } catch (e) {
           failed += 1;
@@ -424,9 +432,20 @@ export function PropertyForm({
         Array.from({ length: Math.min(UPLOAD_CONCURRENCY, valid.length) }, () => worker()),
       );
       if (completed > 0) {
-        setHeroImage((current) => current || firstUrl || "");
+        const nextImages = [...baseImages, ...uploadedUrls];
+        const nextHero = baseHero || uploadedUrls[0] || "";
+        setImages(nextImages);
+        setHeroImage(nextHero);
         toast.success(`Uploaded ${completed} file${completed === 1 ? "" : "s"}`);
-        if (autosaveEnabled) void flushSave();
+        // Pass an explicit snapshot so autosave cannot race past React state and
+        // persist the pre-upload image list (which looked like a "temporary" logo).
+        if (autosaveEnabled) {
+          await flushSave({
+            ...getSnapshot(),
+            images: nextImages,
+            heroImage: nextHero,
+          });
+        }
       }
       if (failed > 0 && completed === 0) {
         toast.error(lastError || "Upload failed — check you're logged in as admin and try again.");
