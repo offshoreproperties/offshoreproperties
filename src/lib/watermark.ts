@@ -7,12 +7,12 @@ import { fileURLToPath } from "node:url";
 import ffmpegPath from "ffmpeg-static";
 import sharp from "sharp";
 
-export const WATERMARK_VERSION = "12";
-const WATERMARK_EDGE_PADDING = 36;
+export const WATERMARK_VERSION = "13";
+const WATERMARK_EDGE_PADDING = 40;
 /** Fraction of the shorter image side used for watermark width */
-const IMAGE_WM_SCALE = 0.1;
+const IMAGE_WM_SCALE = 0.095;
 /** Fresh stamp after clear — small, transparent logo only */
-const IMAGE_WM_REAPPLY_SCALE = 0.1;
+const IMAGE_WM_REAPPLY_SCALE = 0.095;
 /** Center logo opacity for video overlay (0–1) */
 const VIDEO_WM_ALPHA = 0.34;
 const VIDEO_EXTENSIONS = new Set(["mp4", "webm", "mov", "m4v", "3gp", "3g2", "avi", "mkv"]);
@@ -144,8 +144,8 @@ export async function applyImageWatermark(
   }
 
   const format = outputImageType(contentType);
-  const padX = Math.max(18, Math.min(48, Math.round(width * 0.045)));
-  const padY = Math.max(18, Math.min(48, Math.round(height * 0.04)));
+  const padX = Math.max(24, Math.min(64, Math.round(width * 0.06)));
+  const padY = Math.max(24, Math.min(64, Math.round(height * 0.05)));
   const left = Math.min(padX, Math.max(0, width - wmWidth - padX));
   const top = Math.min(padY, Math.max(0, height - 1));
   let pipeline = image.composite([

@@ -60,7 +60,7 @@ if (!WATERMARK_PNG) {
   process.exit(1);
 }
 
-const WATERMARK_VERSION = removeOnly ? "plain-1" : "12";
+const WATERMARK_VERSION = removeOnly ? "plain-1" : "13";
 
 console.log(`Using logo: ${WATERMARK_PNG}`);
 console.log(`Watermark version: ${WATERMARK_VERSION}${force ? " (--force)" : ""}\n`);
@@ -69,8 +69,8 @@ const db = createClient(url, key, { auth: { persistSession: false } });
 
 const IMAGE_EXT = new Set(["jpg", "jpeg", "png", "webp", "gif"]);
 const VIDEO_EXT = new Set(["mp4", "webm", "mov", "m4v"]);
-const IMAGE_WM_SCALE = 0.1;
-const IMAGE_WM_REAPPLY_SCALE = 0.1;
+const IMAGE_WM_SCALE = 0.095;
+const IMAGE_WM_REAPPLY_SCALE = 0.095;
 
 async function watermarkPng(width, maxWidth, maxHeight) {
   const w = Math.max(44, Math.round(width));
@@ -91,8 +91,8 @@ async function watermarkPng(width, maxWidth, maxHeight) {
 }
 
 function watermarkPlacement(photoW, photoH, wmW, wmH) {
-  const padX = Math.max(18, Math.min(48, Math.round(photoW * 0.045)));
-  const padY = Math.max(18, Math.min(48, Math.round(photoH * 0.04)));
+  const padX = Math.max(24, Math.min(64, Math.round(photoW * 0.06)));
+  const padY = Math.max(24, Math.min(64, Math.round(photoH * 0.05)));
   const left = Math.min(padX, Math.max(0, photoW - wmW - padX));
   const top = Math.min(padY, Math.max(0, photoH - wmH - padY));
   return { left, top };

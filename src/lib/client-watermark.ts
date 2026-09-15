@@ -5,10 +5,10 @@
  * - small enough not to dominate
  * - inset from edges so object-cover / rounded crops never clip it
  */
-const WATERMARK_SCALE = 0.1;
-const WATERMARK_MAX_RATIO = 0.16;
-const WATERMARK_PAD_X_RATIO = 0.045;
-const WATERMARK_PAD_Y_RATIO = 0.04;
+const WATERMARK_SCALE = 0.095;
+const WATERMARK_MAX_RATIO = 0.15;
+const WATERMARK_PAD_X_RATIO = 0.06;
+const WATERMARK_PAD_Y_RATIO = 0.05;
 const JPEG_QUALITY = 0.92;
 
 const LOGO_CANDIDATES = [
@@ -111,8 +111,8 @@ export function watermarkSize(photoW: number, photoH: number, logoW: number, log
   }
 
   // Inset from both edges so the full mark stays visible after card/gallery crops.
-  const padX = Math.max(18, Math.min(48, Math.round(photoW * WATERMARK_PAD_X_RATIO)));
-  const padY = Math.max(18, Math.min(48, Math.round(photoH * WATERMARK_PAD_Y_RATIO)));
+  const padX = Math.max(24, Math.min(64, Math.round(photoW * WATERMARK_PAD_X_RATIO)));
+  const padY = Math.max(24, Math.min(64, Math.round(photoH * WATERMARK_PAD_Y_RATIO)));
   const left = Math.min(padX, Math.max(0, photoW - targetWidth - padX));
   const top = Math.min(padY, Math.max(0, photoH - targetHeight - padY));
   return { targetWidth, targetHeight, left, top };

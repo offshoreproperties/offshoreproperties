@@ -23,28 +23,12 @@ def fill_rounded_rect(mask: np.ndarray, x: int, y: int, w: int, h: int) -> None:
 
 
 def build_mask(width: int, height: int) -> np.ndarray:
-    """Cover old center watermarks and previous top-left marks."""
+    """Only clear the top-left stamp zone — avoid damaging the rest of the photo."""
     short_side = min(width, height)
     mask = np.zeros((height, width), dtype=np.uint8)
-
-    # Center logo zone (older stamps)
-    mask_w = max(72, int(short_side * 0.34))
-    mask_h = max(96, int(short_side * 0.42))
-    cx = max(0, (width - mask_w) // 2)
-    cy = max(0, (height - mask_h) // 2)
-    fill_rounded_rect(mask, cx, cy, mask_w, mask_h)
-
-    band_w = max(80, int(short_side * 0.4))
-    band_h = max(28, int(short_side * 0.08))
-    bx = max(0, (width - band_w) // 2)
-    by = max(0, cy + int(mask_h * 0.62))
-    cv2.rectangle(mask, (bx, by), (bx + band_w, min(height - 1, by + band_h)), 255, -1)
-
-    # Top-left zone (recent stamps that were too large / clipped)
-    tl_w = max(96, int(short_side * 0.28))
-    tl_h = max(110, int(short_side * 0.32))
+    tl_w = max(110, int(short_side * 0.3))
+    tl_h = max(130, int(short_side * 0.34))
     fill_rounded_rect(mask, 0, 0, tl_w, tl_h)
-
     return mask
 
 
