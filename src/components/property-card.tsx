@@ -17,9 +17,11 @@ import {
   formatArea,
   propertyTypeLabel,
   statusLabel,
-  listingTypeShort,
+  listingTypesShortLabel,
+  propertyListingTypes,
   propertyLocationLine,
 } from "@/lib/format";
+import { primaryListingType } from "@/lib/listing-types";
 import { AmenitiesDisplay } from "@/components/amenities-display";
 import { cn } from "@/lib/utils";
 import { isVideoUrl, isAudioUrl } from "@/lib/media";
@@ -54,6 +56,7 @@ export type PropertyCardData = {
   title: string;
   property_type: string;
   listing_type: string;
+  listing_types?: string[] | null;
   status?: string | null;
   price: number;
   currency: string;
@@ -76,12 +79,13 @@ export type PropertyCardData = {
 
 function allImages(p: PropertyCardData): string[] {
   const imgs: string[] = [];
-  if (p.hero_image) imgs.push(p.hero_image);
+  // Keep admin images[] order so carousel matches the draft/property form sequence.
   if (p.images) {
     for (const u of p.images) {
       if (u && !imgs.includes(u)) imgs.push(u);
     }
   }
+  if (p.hero_image && !imgs.includes(p.hero_image)) imgs.unshift(p.hero_image);
   return imgs;
 }
 
@@ -113,7 +117,7 @@ function ImageCarousel({ images, title }: { images: string[]; title: string }) {
   if (images.length === 1) {
     return (
       <div className="relative aspect-[4/3] w-full overflow-hidden bg-neutral-100">
-        <CardMedia src={images[0]} alt={title} className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
+        <CardMedia src={images[0]} alt={title} className="h-full w-full object-cover object-top transition duration-500 group-hover:scale-105" />
       </div>
     );
   }
@@ -129,7 +133,7 @@ function ImageCarousel({ images, title }: { images: string[]; title: string }) {
       >
         {images.map((src, i) => (
           <div key={src} className="aspect-[4/3] w-full min-w-full shrink-0 snap-start snap-always bg-neutral-100">
-            <CardMedia src={src} alt={`${title} ${i + 1}`} className="pointer-events-none h-full w-full select-none object-cover" loading={i === 0 ? "eager" : "lazy"} />
+            <CardMedia src={src} alt={`${title} ${i + 1}`} className="pointer-events-none h-full w-full select-none object-cover object-top" loading={i === 0 ? "eager" : "lazy"} />
           </div>
         ))}
       </div>
@@ -166,6 +170,8 @@ export function PropertyCard({ p }: { p: PropertyCardData }) {
   const features = (p.features ?? []).filter(Boolean);
   const status = p.status ?? "available";
   const imgs = allImages(p);
+  const listingTypes = propertyListingTypes(p);
+  const priceType = primaryListingType(listingTypes, p.listing_type);
 
   type Stat = "bed" | "bath" | "area" | "plot";
   const stats: { kind: Stat; label: string }[] = [];
@@ -197,7 +203,7 @@ export function PropertyCard({ p }: { p: PropertyCardData }) {
             {propertyTypeLabel(p.property_type)}
           </span>
           <span className="rounded-md bg-blue-600/90 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white backdrop-blur sm:text-[11px]">
-            {listingTypeShort(p.listing_type)}
+            {listingTypesShortLabel(listingTypes)}
           </span>
         </div>
         {status !== "available" && (
@@ -226,7 +232,7 @@ export function PropertyCard({ p }: { p: PropertyCardData }) {
 
         <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
           <p className="text-base font-extrabold leading-none text-blue-600 sm:text-lg">
-            {formatPrice(Number(p.price), p.currency, p.listing_type)}
+            {formatPrice(Number(p.price), p.currency, priceType)}
           </p>
           {stats.length > 0 && (
             <ul className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] font-medium text-neutral-700 sm:text-xs">

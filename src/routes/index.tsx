@@ -14,6 +14,7 @@ import { listProperties } from "@/lib/properties.functions";
 import { listPropertiesForMap } from "@/lib/maps.functions";
 import type { MapListing } from "@/lib/maps.functions";
 import { BRAND } from "@/lib/constants";
+import { matchesListingFilter, propertyListingTypes } from "@/lib/listing-types";
 import { z } from "zod";
 
 const homeSearchSchema = z.object({
@@ -85,9 +86,9 @@ function Index() {
   const all = data?.rows ?? [];
 
   const listings = useMemo(() => {
-    if (homeTab === "buy") return all.filter((p) => p.listing_type === "sale");
+    if (homeTab === "buy") return all.filter((p) => matchesListingFilter(propertyListingTypes(p), "sale", p.listing_type));
     if (homeTab === "rent")
-      return all.filter((p) => p.listing_type === "rent" || p.listing_type === "short_let");
+      return all.filter((p) => matchesListingFilter(propertyListingTypes(p), "rent", p.listing_type));
     return all;
   }, [all, homeTab]);
 

@@ -133,14 +133,21 @@ const COMPRESS_JPEG_QUALITY = 0.88;
 /** Shrink large photos, then stamp the brand watermark before upload. */
 export async function prepareFileForUpload(file: File): Promise<File> {
   const mime = resolvePropertyUploadMime(file);
-  if (!mime?.startsWith("image/") || mime === "image/gif" || mime === "image/heic" || mime === "image/heif") {
+  // GIFs stay unprocessed (animation). Everything else that is an image gets stamped.
+  if (!mime?.startsWith("image/") || mime === "image/gif") {
     return file;
   }
 
   let prepared = file;
 
-  // Optional downscale for very large photos.
-  if (typeof createImageBitmap === "function" && file.size > COMPRESS_SKIP_BYTES) {
+  // Decode HEIC/HEIF (and any other format the browser can read) into a bitmap-backed JPEG first.
+  const needsDecode =
+    mime === "image/heic" ||
+    mime === "image/heif" ||
+    file.size > COMPRESS_SKIP_BYTES ||
+    typeof createImageBitmap === "function";
+
+  if (needsDecode && typeof createImageBitmap === "function") {
     try {
       const bitmap = await createImageBitmap(file);
       let { width, height } = bitmap;
@@ -160,7 +167,7 @@ export async function prepareFileForUpload(file: File): Promise<File> {
         const blob = await new Promise<Blob | null>((resolve) => {
           canvas.toBlob((b) => resolve(b), "image/jpeg", COMPRESS_JPEG_QUALITY);
         });
-        if (blob && blob.size < file.size) {
+        if (blob) {
           const baseName = file.name.replace(/\.[^.]+$/i, "") || "photo";
           prepared = new File([blob], `${baseName}.jpg`, {
             type: "image/jpeg",
@@ -170,6 +177,7 @@ export async function prepareFileForUpload(file: File): Promise<File> {
       }
       bitmap.close();
     } catch {
+      // If the browser cannot decode HEIC, watermarkImageFile may still succeed via <img>.
       prepared = file;
     }
   }

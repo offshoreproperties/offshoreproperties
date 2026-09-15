@@ -5,6 +5,7 @@ import { supabaseAnonServer } from "@/integrations/supabase/client.anon-server";
 import { requireAdminAuth } from "@/integrations/supabase/admin-middleware";
 import { rateLimit } from "@/lib/rate-limit";
 import { LISTING_BADGE_OPTIONS } from "@/lib/listing-badges";
+import { normalizeListingTypes, serializeListingType } from "@/lib/listing-types";
 
 /** Strip PostgREST filter operators from user input */
 function sanitizeFilter(value: string): string {
@@ -48,10 +49,14 @@ export const listProperties = createServerFn({ method: "POST" })
 
     if (data.propertyType && data.propertyType !== "any") q = q.eq("property_type", data.propertyType);
     if (data.listingType && data.listingType !== "any") {
-      q =
-        data.listingType === "rent"
-          ? q.in("listing_type", ["rent", "short_let"])
-          : q.eq("listing_type", data.listingType);
+      // Dual sale+rent listings use listing_type = sale_and_rent so they match both filters.
+      if (data.listingType === "rent") {
+        q = q.in("listing_type", ["rent", "short_let", "sale_and_rent"]);
+      } else if (data.listingType === "sale") {
+        q = q.in("listing_type", ["sale", "sale_and_rent"]);
+      } else {
+        q = q.eq("listing_type", data.listingType);
+      }
     }
     if (data.minPrice != null) q = q.gte("price", data.minPrice);
     if (data.maxPrice != null) q = q.lte("price", data.maxPrice);
@@ -183,6 +188,7 @@ const PropertyInputSchema = z.object({
   slug: z.string().min(1).max(120),
   property_type: z.string().min(1).max(40),
   listing_type: z.string().min(1).max(40),
+  listing_types: z.array(z.enum(["sale", "rent", "short_let"])).min(1).max(3).optional(),
   status: z.string().min(1).max(40),
   price: z.number().nonnegative(),
   currency: z.string().min(3).max(3),
@@ -216,8 +222,15 @@ export const upsertProperty = createServerFn({ method: "POST" })
   .middleware([requireAdminAuth])
   .inputValidator((input: unknown) => PropertyInputSchema.parse(input))
   .handler(async ({ data }) => {
+    const listing_types = normalizeListingTypes(
+      data.listing_types?.length ? data.listing_types : [data.listing_type],
+      data.listing_type,
+    );
+    const listing_type = serializeListingType(listing_types);
+    const { listing_types: _ignored, ...rest } = data;
+    const payload = { ...rest, listing_type };
     const { error, data: row } = await supabaseAdmin
-      .from("properties").upsert(data).select("id, slug").single();
+      .from("properties").upsert(payload).select("id, slug").single();
     if (error) throw new Error(error.message);
     return row;
   });

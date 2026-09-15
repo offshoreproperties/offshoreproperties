@@ -1,8 +1,10 @@
 /** Browser-side image watermark — works on Cloudflare Workers where sharp cannot. */
 
-const WATERMARK_SCALE = 0.22;
-const WATERMARK_PADDING = 20;
-const JPEG_QUALITY = 0.9;
+/** Keep the mark small so object-cover cards do not crop or blow it up. */
+const WATERMARK_SCALE = 0.11;
+const WATERMARK_MAX_RATIO = 0.18;
+const WATERMARK_PAD_RATIO = 0.028;
+const JPEG_QUALITY = 0.92;
 
 const LOGO_CANDIDATES = [
   "/watermark-mark.png",
@@ -87,6 +89,32 @@ function canvasToBlob(
   });
 }
 
+function watermarkSize(photoW: number, photoH: number, logoW: number, logoH: number) {
+  const shortSide = Math.min(photoW, photoH);
+  let targetWidth = Math.round(shortSide * WATERMARK_SCALE);
+  targetWidth = Math.min(targetWidth, Math.round(photoW * WATERMARK_MAX_RATIO));
+  targetWidth = Math.max(48, targetWidth);
+
+  const scale = targetWidth / Math.max(1, logoW);
+  let targetHeight = Math.max(1, Math.round(logoH * scale));
+
+  // Never let the mark cover more than ~18% of the frame height either.
+  const maxH = Math.round(photoH * WATERMARK_MAX_RATIO);
+  if (targetHeight > maxH) {
+    const shrink = maxH / targetHeight;
+    targetHeight = maxH;
+    targetWidth = Math.max(40, Math.round(targetWidth * shrink));
+  }
+
+  const pad = Math.max(
+    12,
+    Math.min(36, Math.round(shortSide * WATERMARK_PAD_RATIO)),
+  );
+  const left = Math.min(pad, Math.max(0, photoW - targetWidth));
+  const top = Math.min(pad, Math.max(0, photoH - targetHeight));
+  return { targetWidth, targetHeight, left, top };
+}
+
 /** Stamp the Offshore logo in the top-left of a photo before upload. */
 export async function watermarkImageFile(file: File): Promise<File> {
   if (typeof document === "undefined") {
@@ -107,33 +135,20 @@ export async function watermarkImageFile(file: File): Promise<File> {
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("Canvas unavailable for watermarking");
 
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
   ctx.drawImage(photo, 0, 0, width, height);
 
-  const targetWidth = Math.max(64, Math.round(Math.min(width, height) * WATERMARK_SCALE));
-  const scale = targetWidth / Math.max(1, logo.naturalWidth || logo.width);
-  const targetHeight = Math.max(1, Math.round((logo.naturalHeight || logo.height) * scale));
-  const left = Math.min(WATERMARK_PADDING, Math.max(0, width - targetWidth));
-  const top = Math.min(WATERMARK_PADDING, Math.max(0, height - targetHeight));
+  const logoW = logo.naturalWidth || logo.width;
+  const logoH = logo.naturalHeight || logo.height;
+  const { targetWidth, targetHeight, left, top } = watermarkSize(width, height, logoW, logoH);
   ctx.drawImage(logo, left, top, targetWidth, targetHeight);
 
-  const inputType = (file.type || "image/jpeg").toLowerCase();
-  const outputType =
-    inputType === "image/png"
-      ? "image/png"
-      : inputType === "image/webp"
-        ? "image/webp"
-        : "image/jpeg";
-
-  const blob = await canvasToBlob(
-    canvas,
-    outputType,
-    outputType === "image/jpeg" || outputType === "image/webp" ? JPEG_QUALITY : undefined,
-  );
-
+  // Always encode photos as JPEG so HEIC/PNG uploads still store a stamped image.
+  const blob = await canvasToBlob(canvas, "image/jpeg", JPEG_QUALITY);
   const baseName = file.name.replace(/\.[^.]+$/i, "") || "photo";
-  const ext = outputType === "image/png" ? "png" : outputType === "image/webp" ? "webp" : "jpg";
-  return new File([blob], `${baseName}.${ext}`, {
-    type: outputType,
+  return new File([blob], `${baseName}.jpg`, {
+    type: "image/jpeg",
     lastModified: Date.now(),
   });
 }

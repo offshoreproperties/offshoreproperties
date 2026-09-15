@@ -9,6 +9,7 @@ export const PropertyDraftPayloadSchema = z.object({
   slug: z.string().max(120).optional(),
   property_type: z.string().max(40).optional(),
   listing_type: z.string().max(40).optional(),
+  listing_types: z.array(z.enum(["sale", "rent", "short_let"])).max(3).optional(),
   status: z.string().max(40).optional(),
   price: z.string().max(40).optional(),
   currency: z.string().max(3).optional(),
@@ -54,6 +55,7 @@ export type PropertyFormDraftSnapshot = {
   slug: string;
   property_type: string;
   listing_type: string;
+  listing_types: string[];
   status: string;
   price: string;
   currency: string;
@@ -89,6 +91,7 @@ export function snapshotToDraftPayload(snapshot: PropertyFormDraftSnapshot): Pro
     slug: snapshot.slug,
     property_type: snapshot.property_type,
     listing_type: snapshot.listing_type,
+    listing_types: snapshot.listing_types,
     status: snapshot.status,
     price: snapshot.price,
     currency: snapshot.currency,
@@ -132,6 +135,11 @@ export function draftPayloadToFormInitial(payload: PropertyDraftPayload): Partia
     slug: payload.slug ?? "",
     property_type: payload.property_type ?? "villa",
     listing_type: payload.listing_type ?? "sale",
+    listing_types: payload.listing_types?.length
+      ? payload.listing_types
+      : payload.listing_type
+        ? [payload.listing_type]
+        : ["sale"],
     status: payload.status ?? "available",
     price: payload.price ? Number(payload.price) : 0,
     currency: payload.currency ?? DEFAULT_CURRENCY,

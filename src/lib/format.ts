@@ -62,8 +62,11 @@ export function listingTypeShort(t: string) {
   if (t === "sale") return "Sale";
   if (t === "rent") return "Rent";
   if (t === "short_let") return "Short let";
+  if (t === "sale_and_rent") return "Sale · Rent";
   return t;
 }
+
+export { listingTypesShortLabel, propertyListingTypes, matchesListingFilter } from "@/lib/listing-types";
 
 const SQM_PER_ACRE = 4046.86;
 

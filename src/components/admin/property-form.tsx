@@ -7,6 +7,13 @@ import { checkGoogleMapsApi } from "@/lib/maps.functions";
 import { adminListAgents } from "@/lib/admin-agents.functions";
 import { slugify } from "@/lib/format";
 import { PROPERTY_TYPES, LISTING_TYPES, DEFAULT_CURRENCY } from "@/lib/constants";
+import {
+  normalizeListingTypes,
+  primaryListingType,
+  propertyListingTypes,
+  serializeListingType,
+  type ListingTypeValue,
+} from "@/lib/listing-types";
 import { sortAmenities } from "@/lib/amenities";
 import { getGoogleMapsApiKey, googleMapsConfigError } from "@/lib/google-maps";
 import { parseGoogleMapsUrl } from "@/lib/maps-url";
@@ -51,6 +58,7 @@ export type PropertyFormValues = {
   slug: string;
   property_type: string;
   listing_type: string;
+  listing_types: string[];
   status: string;
   price: number;
   currency: string;
@@ -132,7 +140,13 @@ export function PropertyForm({
   const [title, setTitle] = useState(initial?.title ?? "");
   const [slug, setSlug] = useState(initial?.slug ?? "");
   const [propertyType, setPropertyType] = useState(initial?.property_type ?? "villa");
-  const [listingType, setListingType] = useState(initial?.listing_type ?? "sale");
+  const [listingTypes, setListingTypes] = useState<ListingTypeValue[]>(() =>
+    propertyListingTypes({
+      listing_type: initial?.listing_type,
+      listing_types: initial?.listing_types,
+    }),
+  );
+  const listingType = primaryListingType(listingTypes);
   const [status, setStatus] = useState(initial?.status ?? "available");
   const [price, setPrice] = useState(String(initial?.price ?? ""));
   const [currency, setCurrency] = useState(initial?.currency ?? DEFAULT_CURRENCY);
@@ -191,6 +205,7 @@ export function PropertyForm({
       slug,
       property_type: propertyType,
       listing_type: listingType,
+      listing_types: listingTypes,
       status,
       price,
       currency,
@@ -224,6 +239,7 @@ export function PropertyForm({
       slug,
       propertyType,
       listingType,
+      listingTypes,
       status,
       price,
       currency,
@@ -268,7 +284,15 @@ export function PropertyForm({
     preloadWatermarkLogo();
   }, []);
 
-  const showShortLet = listingType === "short_let";
+  const showShortLet = listingTypes.includes("short_let");
+
+  function toggleListingType(value: ListingTypeValue) {
+    setListingTypes((prev) => {
+      const has = prev.includes(value);
+      const next = has ? prev.filter((t) => t !== value) : [...prev, value];
+      return normalizeListingTypes(next.length ? next : ["sale"]);
+    });
+  }
 
   const uploadOneFile = useCallback(
     async (file: File) => {
@@ -277,7 +301,7 @@ export function PropertyForm({
         prepared = await prepareFileForUpload(file);
       } catch (err) {
         const mime = resolvePropertyUploadMime(file);
-        if (mime?.startsWith("image/") && mime !== "image/gif" && mime !== "image/heic" && mime !== "image/heif") {
+        if (mime?.startsWith("image/") && mime !== "image/gif") {
           throw new Error(
             err instanceof Error
               ? `Watermark failed: ${err.message}`
@@ -528,7 +552,8 @@ export function PropertyForm({
         title,
         slug: slug || slugify(title),
         property_type: propertyType,
-        listing_type: listingType,
+        listing_type: serializeListingType(listingTypes),
+        listing_types: listingTypes,
         status,
         price: Number(price),
         currency,
@@ -648,16 +673,36 @@ export function PropertyForm({
             </SelectContent>
           </Select>
         </div>
-        <div className="space-y-1.5">
+        <div className="space-y-1.5 sm:col-span-2">
           <Label>Listing</Label>
-          <Select value={listingType} onValueChange={setListingType}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {LISTING_TYPES.filter((t) => t.value !== "any").map((t) => (
-                <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="flex flex-wrap gap-2">
+            {LISTING_TYPES.filter((t) => t.value !== "any").map((t) => {
+              const value = t.value as ListingTypeValue;
+              const checked = listingTypes.includes(value);
+              return (
+                <label
+                  key={t.value}
+                  className={cn(
+                    "inline-flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm transition",
+                    checked
+                      ? "border-blue-600 bg-blue-50 text-blue-900"
+                      : "border-neutral-200 bg-white text-neutral-700 hover:border-neutral-300",
+                  )}
+                >
+                  <input
+                    type="checkbox"
+                    className="h-4 w-4 accent-blue-600"
+                    checked={checked}
+                    onChange={() => toggleListingType(value)}
+                  />
+                  {t.label}
+                </label>
+              );
+            })}
+          </div>
+          <p className="text-xs text-neutral-500">
+            Tick both For sale and For rent when the property is available either way. Price uses sale first when both are selected.
+          </p>
         </div>
         <div className="space-y-1.5">
           <Label>Price *</Label>

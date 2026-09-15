@@ -5,6 +5,7 @@ import { useMemo } from "react";
 import { PropertiesMap } from "@/components/properties-map";
 import { listPropertiesForMap, type MapListing } from "@/lib/maps.functions";
 import type { HomeTab } from "@/components/public-header";
+import { matchesListingFilter, propertyListingTypes } from "@/lib/listing-types";
 import { Map, ArrowUpRight } from "lucide-react";
 
 type HomeListingsMapProps = {
@@ -28,9 +29,9 @@ export function HomeListingsMap({
   });
 
   const filtered = useMemo(() => {
-    if (homeTab === "buy") return properties.filter((p) => p.listing_type === "sale");
+    if (homeTab === "buy") return properties.filter((p) => matchesListingFilter(propertyListingTypes(p), "sale", p.listing_type));
     if (homeTab === "rent") {
-      return properties.filter((p) => p.listing_type === "rent" || p.listing_type === "short_let");
+      return properties.filter((p) => matchesListingFilter(propertyListingTypes(p), "rent", p.listing_type));
     }
     return properties;
   }, [properties, homeTab]);

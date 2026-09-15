@@ -66,8 +66,11 @@ export function collectPropertyImages(
       if (u && !out.includes(u)) out.push(u);
     }
   };
-  add(hero);
+
+  // Admin drag order in images[] is the source of truth for gallery sequence.
+  // Only prepend hero when it is not already in the list.
   for (const u of images ?? []) add(u);
+  if (hero && !out.includes(hero)) out.unshift(hero);
   return out;
 }
 
@@ -275,7 +278,7 @@ function GalleryLightbox({
                   i === active ? "ring-blue-500" : "ring-transparent opacity-60 hover:opacity-100",
                 )}
               >
-                <MediaPreview src={src} alt="" className="h-full w-full object-cover" loading="lazy" />
+                <MediaPreview src={src} alt="" className="h-full w-full object-cover object-top" loading="lazy" />
               </button>
             ))}
           </div>
@@ -311,7 +314,7 @@ function DesktopMosaic({
       <MediaPreview
         src={src}
         alt={`${title} — photo ${i + 1}`}
-        className="h-full w-full object-cover"
+        className="h-full w-full object-cover object-top"
         loading={i === 0 ? "eager" : "lazy"}
         fetchPriority={i === 0 ? "high" : "auto"}
       />
@@ -466,7 +469,7 @@ export function PropertyImageGallery({
                       <MediaPreview
                         src={src}
                         alt={`${title} — photo ${i + 1}`}
-                        className="pointer-events-none h-full w-full select-none object-cover"
+                        className="pointer-events-none h-full w-full select-none object-cover object-top"
                         loading={near ? "eager" : "lazy"}
                         fetchPriority={i === active ? "high" : "auto"}
                       />
@@ -522,7 +525,7 @@ export function PropertyImageGallery({
                     i === active ? "ring-blue-600" : "ring-transparent opacity-75 hover:opacity-100",
                   )}
                 >
-                  <MediaPreview src={src} alt="" className="h-full w-full object-cover" loading="lazy" />
+                  <MediaPreview src={src} alt="" className="h-full w-full object-cover object-top" loading="lazy" />
                 </button>
               ))}
             </div>
