@@ -100,21 +100,43 @@ function watermarkPlacement(photoW, photoH, wmW, wmH) {
 
 async function watermarkImage(buffer, ext, replaceExisting) {
   // Normalize EXIF orientation first so stamps are never tilted.
+  // IMPORTANT: do not run large-area inpaint here — it permanently destroys photo detail
+  // and creates frosted-glass scars. New logos are stamped cleanly on top only.
   let source = await sharp(buffer, { animated: ext === "gif" }).rotate().toBuffer();
-  if (replaceExisting && ext !== "gif") {
-    try {
-      source = await inpaintExistingWatermark(source, ext === "jpg" ? "jpeg" : ext);
-      source = await sharp(source).rotate().toBuffer();
-    } catch {
-      /* keep oriented source */
-    }
-  }
   if (removeOnly) {
     const image = sharp(source, { animated: ext === "gif" });
     if (ext === "png") return image.png().toBuffer();
     if (ext === "webp") return image.webp({ quality: 88 }).toBuffer();
     if (ext === "gif") return image.gif().toBuffer();
     return image.jpeg({ quality: 88, mozjpeg: true }).toBuffer();
+  }
+
+  // Optional light clear of only the tiny top-left stamp pad before re-stamping.
+  if (replaceExisting && ext !== "gif") {
+    try {
+      const meta = await sharp(source).metadata();
+      const w = meta.width ?? 1200;
+      const h = meta.height ?? 800;
+      const short = Math.min(w, h);
+      const clearW = Math.max(80, Math.round(short * 0.22));
+      const clearH = Math.max(90, Math.round(short * 0.24));
+      // Soften only a small corner using a blurred clone of neighboring pixels — no center inpaint.
+      const neighbor = await sharp(source)
+        .extract({
+          left: Math.min(w - 1, clearW),
+          top: 0,
+          width: Math.min(clearW, Math.max(1, w - clearW)),
+          height: Math.min(clearH, h),
+        })
+        .blur(8)
+        .resize(clearW, clearH, { fit: "fill" })
+        .toBuffer();
+      source = await sharp(source)
+        .composite([{ input: neighbor, left: 0, top: 0, blend: "over" }])
+        .toBuffer();
+    } catch {
+      /* keep oriented source */
+    }
   }
 
   const scale = replaceExisting ? IMAGE_WM_REAPPLY_SCALE : IMAGE_WM_SCALE;
