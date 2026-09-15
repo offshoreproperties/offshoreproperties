@@ -117,7 +117,7 @@ function ImageCarousel({ images, title }: { images: string[]; title: string }) {
   if (images.length === 1) {
     return (
       <div className="relative aspect-[4/3] w-full overflow-hidden bg-neutral-100">
-        <CardMedia src={images[0]} alt={title} className="h-full w-full object-cover object-top transition duration-500 group-hover:scale-105" />
+        <CardMedia src={images[0]} alt={title} className="h-full w-full object-cover object-left-top transition duration-500 group-hover:scale-105" />
       </div>
     );
   }
@@ -133,7 +133,7 @@ function ImageCarousel({ images, title }: { images: string[]; title: string }) {
       >
         {images.map((src, i) => (
           <div key={src} className="aspect-[4/3] w-full min-w-full shrink-0 snap-start snap-always bg-neutral-100">
-            <CardMedia src={src} alt={`${title} ${i + 1}`} className="pointer-events-none h-full w-full select-none object-cover object-top" loading={i === 0 ? "eager" : "lazy"} />
+            <CardMedia src={src} alt={`${title} ${i + 1}`} className="pointer-events-none h-full w-full select-none object-cover object-left-top" loading={i === 0 ? "eager" : "lazy"} />
           </div>
         ))}
       </div>

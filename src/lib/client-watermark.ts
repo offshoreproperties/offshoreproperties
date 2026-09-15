@@ -1,9 +1,14 @@
 /** Browser-side image watermark — works on Cloudflare Workers where sharp cannot. */
 
-/** Keep the mark small so object-cover cards do not crop or blow it up. */
-const WATERMARK_SCALE = 0.11;
-const WATERMARK_MAX_RATIO = 0.18;
-const WATERMARK_PAD_RATIO = 0.028;
+/**
+ * Keep the mark fully inside the visible frame:
+ * - small enough not to dominate
+ * - inset from edges so object-cover / rounded crops never clip it
+ */
+const WATERMARK_SCALE = 0.1;
+const WATERMARK_MAX_RATIO = 0.16;
+const WATERMARK_PAD_X_RATIO = 0.045;
+const WATERMARK_PAD_Y_RATIO = 0.04;
 const JPEG_QUALITY = 0.92;
 
 const LOGO_CANDIDATES = [
@@ -89,29 +94,27 @@ function canvasToBlob(
   });
 }
 
-function watermarkSize(photoW: number, photoH: number, logoW: number, logoH: number) {
+export function watermarkSize(photoW: number, photoH: number, logoW: number, logoH: number) {
   const shortSide = Math.min(photoW, photoH);
   let targetWidth = Math.round(shortSide * WATERMARK_SCALE);
   targetWidth = Math.min(targetWidth, Math.round(photoW * WATERMARK_MAX_RATIO));
-  targetWidth = Math.max(48, targetWidth);
+  targetWidth = Math.max(44, targetWidth);
 
   const scale = targetWidth / Math.max(1, logoW);
   let targetHeight = Math.max(1, Math.round(logoH * scale));
 
-  // Never let the mark cover more than ~18% of the frame height either.
   const maxH = Math.round(photoH * WATERMARK_MAX_RATIO);
   if (targetHeight > maxH) {
     const shrink = maxH / targetHeight;
     targetHeight = maxH;
-    targetWidth = Math.max(40, Math.round(targetWidth * shrink));
+    targetWidth = Math.max(36, Math.round(targetWidth * shrink));
   }
 
-  const pad = Math.max(
-    12,
-    Math.min(36, Math.round(shortSide * WATERMARK_PAD_RATIO)),
-  );
-  const left = Math.min(pad, Math.max(0, photoW - targetWidth));
-  const top = Math.min(pad, Math.max(0, photoH - targetHeight));
+  // Inset from both edges so the full mark stays visible after card/gallery crops.
+  const padX = Math.max(18, Math.min(48, Math.round(photoW * WATERMARK_PAD_X_RATIO)));
+  const padY = Math.max(18, Math.min(48, Math.round(photoH * WATERMARK_PAD_Y_RATIO)));
+  const left = Math.min(padX, Math.max(0, photoW - targetWidth - padX));
+  const top = Math.min(padY, Math.max(0, photoH - targetHeight - padY));
   return { targetWidth, targetHeight, left, top };
 }
 
@@ -137,6 +140,7 @@ export async function watermarkImageFile(file: File): Promise<File> {
 
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = "high";
+  // Browsers honor EXIF orientation when drawing via <img>, so the stamp stays upright.
   ctx.drawImage(photo, 0, 0, width, height);
 
   const logoW = logo.naturalWidth || logo.width;
@@ -144,7 +148,6 @@ export async function watermarkImageFile(file: File): Promise<File> {
   const { targetWidth, targetHeight, left, top } = watermarkSize(width, height, logoW, logoH);
   ctx.drawImage(logo, left, top, targetWidth, targetHeight);
 
-  // Always encode photos as JPEG so HEIC/PNG uploads still store a stamped image.
   const blob = await canvasToBlob(canvas, "image/jpeg", JPEG_QUALITY);
   const baseName = file.name.replace(/\.[^.]+$/i, "") || "photo";
   return new File([blob], `${baseName}.jpg`, {

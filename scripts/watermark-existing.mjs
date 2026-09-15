@@ -25,6 +25,7 @@ const force = process.argv.includes("--force");
 const removeOnly = process.argv.includes("--remove-only");
 
 const LOGO_CANDIDATES = [
+  join(root, "public", "watermark-mark.png"),
   join(root, "public", "Offshore Logo (1).png"),
   join(root, "src", "assets", "brand", "offshore-logo.png"),
   join(root, "public", "offshore-logo.png"),
@@ -59,7 +60,7 @@ if (!WATERMARK_PNG) {
   process.exit(1);
 }
 
-const WATERMARK_VERSION = removeOnly ? "plain-1" : "11";
+const WATERMARK_VERSION = removeOnly ? "plain-1" : "12";
 
 console.log(`Using logo: ${WATERMARK_PNG}`);
 console.log(`Watermark version: ${WATERMARK_VERSION}${force ? " (--force)" : ""}\n`);
@@ -68,14 +69,14 @@ const db = createClient(url, key, { auth: { persistSession: false } });
 
 const IMAGE_EXT = new Set(["jpg", "jpeg", "png", "webp", "gif"]);
 const VIDEO_EXT = new Set(["mp4", "webm", "mov", "m4v"]);
-const IMAGE_WM_SCALE = 0.2;
-const IMAGE_WM_REAPPLY_SCALE = 0.2;
+const IMAGE_WM_SCALE = 0.1;
+const IMAGE_WM_REAPPLY_SCALE = 0.1;
 
 async function watermarkPng(width, maxWidth, maxHeight) {
-  const w = Math.max(48, Math.round(width));
-  const capW = maxWidth != null ? Math.max(24, maxWidth - 4) : w;
-  const capH = maxHeight != null ? Math.max(24, maxHeight - 4) : 10_000;
-  const fitW = Math.min(w, capW, capH);
+  const w = Math.max(44, Math.round(width));
+  const capW = maxWidth != null ? Math.max(24, maxWidth - 8) : w;
+  const capH = maxHeight != null ? Math.max(24, maxHeight - 8) : 10_000;
+  const fitW = Math.min(w, capW, Math.round(capH * 0.9));
   return sharp(WATERMARK_PNG)
     .trim({ threshold: 8 })
     .resize({
@@ -89,13 +90,23 @@ async function watermarkPng(width, maxWidth, maxHeight) {
     .toBuffer();
 }
 
+function watermarkPlacement(photoW, photoH, wmW, wmH) {
+  const padX = Math.max(18, Math.min(48, Math.round(photoW * 0.045)));
+  const padY = Math.max(18, Math.min(48, Math.round(photoH * 0.04)));
+  const left = Math.min(padX, Math.max(0, photoW - wmW - padX));
+  const top = Math.min(padY, Math.max(0, photoH - wmH - padY));
+  return { left, top };
+}
+
 async function watermarkImage(buffer, ext, replaceExisting) {
-  let source = buffer;
+  // Normalize EXIF orientation first so stamps are never tilted.
+  let source = await sharp(buffer, { animated: ext === "gif" }).rotate().toBuffer();
   if (replaceExisting && ext !== "gif") {
     try {
-      source = await inpaintExistingWatermark(buffer, ext);
+      source = await inpaintExistingWatermark(source, ext === "jpg" ? "jpeg" : ext);
+      source = await sharp(source).rotate().toBuffer();
     } catch {
-      source = buffer;
+      /* keep oriented source */
     }
   }
   if (removeOnly) {
@@ -111,8 +122,10 @@ async function watermarkImage(buffer, ext, replaceExisting) {
   const meta = await image.metadata();
   const w = meta.width ?? 1200;
   const h = meta.height ?? 800;
-  const wm = await watermarkPng(Math.min(w, h) * scale, w, h);
-  let pipeline = image.composite([{ input: wm, gravity: "center", blend: "over" }]);
+  const wm = await watermarkPng(Math.min(w, h) * scale, Math.round(w * 0.16), Math.round(h * 0.16));
+  const wmMeta = await sharp(wm).metadata();
+  const { left, top } = watermarkPlacement(w, h, wmMeta.width ?? 48, wmMeta.height ?? 48);
+  let pipeline = image.composite([{ input: wm, left, top, blend: "over" }]);
   if (ext === "png") pipeline = pipeline.png();
   else if (ext === "webp") pipeline = pipeline.webp({ quality: 88 });
   else if (ext === "gif") pipeline = pipeline.gif();
@@ -183,7 +196,7 @@ async function watermarkVideo(buffer, ext, replaceExisting) {
       "-i",
       wmPath,
       "-filter_complex",
-      `[1]format=rgba[wm];[0][wm]overlay=(W-w)/2:(H-h)/2:format=auto`,
+      `[1]format=rgba[wm];[0][wm]overlay=36:36:format=auto`,
       "-c:v",
       "libx264",
       "-preset",

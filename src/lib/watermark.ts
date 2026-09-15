@@ -7,12 +7,12 @@ import { fileURLToPath } from "node:url";
 import ffmpegPath from "ffmpeg-static";
 import sharp from "sharp";
 
+export const WATERMARK_VERSION = "12";
+const WATERMARK_EDGE_PADDING = 36;
 /** Fraction of the shorter image side used for watermark width */
-const IMAGE_WM_SCALE = 0.2;
+const IMAGE_WM_SCALE = 0.1;
 /** Fresh stamp after clear — small, transparent logo only */
-const IMAGE_WM_REAPPLY_SCALE = 0.2;
-export const WATERMARK_VERSION = "11";
-const WATERMARK_EDGE_PADDING = 24;
+const IMAGE_WM_REAPPLY_SCALE = 0.1;
 /** Center logo opacity for video overlay (0–1) */
 const VIDEO_WM_ALPHA = 0.34;
 const VIDEO_EXTENSIONS = new Set(["mp4", "webm", "mov", "m4v", "3gp", "3g2", "avi", "mkv"]);
@@ -130,7 +130,8 @@ export async function applyImageWatermark(
 ): Promise<{ buffer: Buffer; contentType: string; watermarked: boolean }> {
   const replaceExisting = options?.replaceExisting === true;
   const scale = replaceExisting ? IMAGE_WM_REAPPLY_SCALE : IMAGE_WM_SCALE;
-  const image = sharp(input, { animated: contentType === "image/gif" });
+  // Auto-orient from EXIF so phone photos are not tilted under the logo.
+  const image = sharp(input, { animated: contentType === "image/gif" }).rotate();
   const meta = await image.metadata();
   const width = meta.width ?? 1200;
   const height = meta.height ?? 800;
@@ -143,8 +144,10 @@ export async function applyImageWatermark(
   }
 
   const format = outputImageType(contentType);
-  const left = Math.min(WATERMARK_EDGE_PADDING, Math.max(0, width - 1));
-  const top = Math.min(WATERMARK_EDGE_PADDING, Math.max(0, height - 1));
+  const padX = Math.max(18, Math.min(48, Math.round(width * 0.045)));
+  const padY = Math.max(18, Math.min(48, Math.round(height * 0.04)));
+  const left = Math.min(padX, Math.max(0, width - wmWidth - padX));
+  const top = Math.min(padY, Math.max(0, height - 1));
   let pipeline = image.composite([
     {
       input: watermark,

@@ -939,16 +939,60 @@ export function PropertyForm({
           />
         </div>
         {images.length > 0 && (
-          <DraggableImageGrid
-            images={images}
-            heroImage={heroImage}
-            onReorder={setImages}
-            onRemove={(url) => {
-              setImages((prev) => prev.filter((u) => u !== url));
-              if (heroImage === url) setHeroImage("");
-            }}
-            onSetHero={setHeroImage}
-          />
+          <>
+            <p className="mt-3 text-xs text-neutral-500">
+              Drag photos or use the arrows to set website order. Photo <strong>1</strong> is first on the listing.
+            </p>
+            <DraggableImageGrid
+              images={images}
+              heroImage={heroImage}
+              onReorder={(next) => {
+                setImages(next);
+                // Keep hero as first photo when it was following the list order.
+                if (!heroImage || next.includes(heroImage)) {
+                  setHeroImage(next[0] ?? "");
+                }
+                if (autosaveEnabled) {
+                  void flushSave({
+                    ...getSnapshot(),
+                    images: next,
+                    heroImage: !heroImage || next.includes(heroImage) ? next[0] ?? "" : heroImage,
+                  });
+                }
+              }}
+              onRemove={(url) => {
+                setImages((prev) => {
+                  const next = prev.filter((u) => u !== url);
+                  if (autosaveEnabled) {
+                    const nextHero = heroImage === url ? next[0] ?? "" : heroImage;
+                    void flushSave({
+                      ...getSnapshot(),
+                      images: next,
+                      heroImage: nextHero,
+                    });
+                  }
+                  return next;
+                });
+                if (heroImage === url) setHeroImage((current) => (current === url ? "" : current));
+              }}
+              onSetHero={(url) => {
+                setHeroImage(url);
+                // Move chosen hero to position 1 so website order matches.
+                setImages((prev) => {
+                  if (!prev.includes(url) || prev[0] === url) return prev;
+                  const next = [url, ...prev.filter((u) => u !== url)];
+                  if (autosaveEnabled) {
+                    void flushSave({
+                      ...getSnapshot(),
+                      images: next,
+                      heroImage: url,
+                    });
+                  }
+                  return next;
+                });
+              }}
+            />
+          </>
         )}
         <div className="mt-3 space-y-1.5">
           <Label className="text-xs">Hero image URL (optional override)</Label>
@@ -1068,7 +1112,7 @@ function DraggableImageGrid({
             <button
               type="button"
               disabled={idx === 0}
-              className="touch-show flex h-7 w-7 items-center justify-center rounded-full bg-black/50 text-white opacity-100 disabled:opacity-30 sm:opacity-0 sm:group-hover:opacity-100"
+              className="flex h-7 w-7 items-center justify-center rounded-full bg-black/55 text-white disabled:opacity-25"
               onClick={() => moveItem(idx, -1)}
               aria-label="Move earlier"
             >
@@ -1077,17 +1121,17 @@ function DraggableImageGrid({
             <button
               type="button"
               disabled={idx === images.length - 1}
-              className="touch-show flex h-7 w-7 items-center justify-center rounded-full bg-black/50 text-white opacity-100 disabled:opacity-30 sm:opacity-0 sm:group-hover:opacity-100"
+              className="flex h-7 w-7 items-center justify-center rounded-full bg-black/55 text-white disabled:opacity-25"
               onClick={() => moveItem(idx, 1)}
               aria-label="Move later"
             >
               <ChevronDown className="h-3.5 w-3.5" />
             </button>
           </div>
-          <div className="absolute right-1 top-1 hidden h-6 w-6 items-center justify-center rounded-full bg-black/50 text-white/70 opacity-0 transition group-hover:opacity-100 sm:flex">
+          <div className="absolute right-8 top-1 hidden h-6 w-6 items-center justify-center rounded-full bg-black/50 text-white/70 sm:flex">
             <GripVertical className="h-3.5 w-3.5" />
           </div>
-          <span className="absolute left-1/2 top-1 -translate-x-1/2 rounded bg-black/60 px-1.5 py-0.5 text-[9px] font-medium text-white/60">
+          <span className="absolute left-1/2 top-1 -translate-x-1/2 rounded bg-black/70 px-1.5 py-0.5 text-[10px] font-semibold text-white">
             {idx + 1}
           </span>
           <button
